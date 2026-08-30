@@ -2,10 +2,10 @@ import { useTranslation } from "react-i18next";
 import { Search, CalendarCheck, Map, Sparkles } from "lucide-react";
 
 const steps = [
-  { icon: Search, key: "search", color: "bg-blue-50 text-blue-500" },
-  { icon: CalendarCheck, key: "book", color: "bg-emerald-50 text-emerald-500" },
-  { icon: Map, key: "travel", color: "bg-amber-50 text-amber-500" },
-  { icon: Sparkles, key: "enjoy", color: "bg-purple-50 text-purple-500" },
+  { icon: Search, key: "search", color: "bg-blue-50 text-blue-500 dark:bg-blue-500/15 dark:text-blue-300" },
+  { icon: CalendarCheck, key: "book", color: "bg-emerald-50 text-emerald-500 dark:bg-emerald-500/15 dark:text-emerald-300" },
+  { icon: Map, key: "travel", color: "bg-amber-50 text-amber-500 dark:bg-amber-500/15 dark:text-amber-300" },
+  { icon: Sparkles, key: "enjoy", color: "bg-purple-50 text-purple-500 dark:bg-purple-500/15 dark:text-purple-300" },
 ];
 
 export default function HowItWorks() {
@@ -35,7 +35,7 @@ export default function HowItWorks() {
             >
               {/* Connector line */}
               {i < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-10 left-[60%] w-[80%] h-px bg-gray-200" />
+                <div className="hidden lg:block absolute top-10 left-[60%] w-[80%] h-px bg-gray-200 dark:bg-gray-700" />
               )}
               {/* Step number */}
               <div className="absolute -top-3 -right-3 w-7 h-7 bg-primary text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow-md">

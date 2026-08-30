@@ -20,8 +20,6 @@ export function ThemeProvider({ children }) {
   }, [dark]);
 
   const toggle = useCallback(() => {
-    const root = document.documentElement;
-    root.classList.add("dark-ready");
     setDark((d) => !d);
   }, []);
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
-import { Heart, Bell, Globe, Menu, X, Landmark, Sun, Moon } from "lucide-react";
+import { Globe, Menu, X, Landmark, Sun, Moon } from "lucide-react";
 
 const navKeys = [
   { key: "nav.home", href: "/" },
@@ -63,17 +63,6 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-0.5 sm:gap-1">
-            <button className="hidden sm:flex p-2 rounded-full text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <Heart className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px]" />
-            </button>
-
-            <button className="hidden sm:flex relative p-2 rounded-full text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <Bell className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px]" />
-              <span className="absolute top-1 right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-red-500 text-white text-[8px] sm:text-[9px] font-bold rounded-full flex items-center justify-center">
-                2
-              </span>
-            </button>
-
             {/* Theme toggle */}
             <button
               onClick={toggle}

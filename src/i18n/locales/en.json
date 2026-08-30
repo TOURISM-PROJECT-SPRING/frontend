@@ -58,7 +58,10 @@
     "city": "City",
     "nature": "Nature",
     "heritage": "Heritage",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "categories": { "all": "All", "stays": "Stays", "tours": "Tours", "dining": "Dining" },
+    "noResults": "No destinations found",
+    "from": "from"
   },
   "stays": {
     "title": "Find Your Perfect Stay",
@@ -72,13 +75,15 @@
     "subtitle": "Guided adventures through ancient temples, floating villages, and lush jungles.",
     "searchPlaceholder": "Search tours & activities...",
     "bookNow": "Book Now",
-    "perPerson": "/ person"
+    "perPerson": "/ person",
+    "rating": "rating"
   },
   "dining": {
     "title": "Food & Dining",
     "subtitle": "Savor authentic Khmer cuisine and discover the best restaurants across Cambodia.",
     "searchPlaceholder": "Search restaurants, cafes, street food...",
     "reviews": "reviews",
+    "dishes": "dishes",
     "viewMenu": "View Menu"
   },
   "about": {

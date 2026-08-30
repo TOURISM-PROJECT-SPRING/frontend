@@ -15,7 +15,6 @@ import ContactPage from "./pages/ContactPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-import WelcomeOverlay from "./components/home/WelcomeOverlay";
 
 function PublicLayout() {
   return (
@@ -38,7 +37,6 @@ function PublicLayout() {
         </Routes>
       </main>
       <Footer />
-      <WelcomeOverlay />
     </div>
   );
 }

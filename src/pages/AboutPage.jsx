@@ -52,7 +52,7 @@ export default function AboutPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-gray-50/80 pt-14 sm:pt-20">
+    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900 pt-14 sm:pt-20">
       {/* Hero */}
       <section className="relative py-14 sm:py-20 bg-primary overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -77,13 +77,13 @@ export default function AboutPage() {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-center">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
                 {t("about.story.title")}
               </h2>
-              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-500 leading-relaxed">
+              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
                 {t("about.story.p1")}
               </p>
-              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-500 leading-relaxed">
+              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
                 {t("about.story.p2")}
               </p>
               <div className="mt-5 sm:mt-6 flex items-center gap-2.5 text-sm text-primary font-medium">
@@ -97,15 +97,15 @@ export default function AboutPage() {
                 alt="Cambodia landscape"
                 className="rounded-2xl shadow-xl w-full h-64 sm:h-72 lg:h-80 object-cover"
               />
-              <div className="absolute -bottom-4 sm:-bottom-6 -left-3 sm:-left-6 bg-white rounded-xl shadow-lg p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3">
+              <div className="absolute -bottom-4 sm:-bottom-6 -left-3 sm:-left-6 bg-white dark:bg-gray-950 rounded-xl shadow-lg dark:shadow-black/30 p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Award className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-bold text-gray-900">
+                  <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                     {t("about.story.awardYear")}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-gray-400">
+                  <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
                     {t("about.story.awardTitle")}
                   </p>
                 </div>
@@ -116,16 +116,16 @@ export default function AboutPage() {
       </section>
 
       {/* Stats */}
-      <section className="py-10 sm:py-12 bg-white">
+      <section className="py-10 sm:py-12 bg-white dark:bg-gray-950">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {stats.map(({ key, value, icon: Icon }) => (
-              <div key={key} className="text-center p-4 sm:p-6 rounded-xl bg-gray-50">
+              <div key={key} className="text-center p-4 sm:p-6 rounded-xl bg-gray-50 dark:bg-gray-900">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2.5 sm:mb-3">
                   <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{value}</p>
-                <p className="text-xs sm:text-sm text-gray-400 mt-1">{t(key)}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
+                <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 mt-1">{t(key)}</p>
               </div>
             ))}
           </div>
@@ -135,17 +135,17 @@ export default function AboutPage() {
       {/* Values */}
       <section className="py-10 sm:py-16">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight text-center mb-7 sm:mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight text-center mb-7 sm:mb-10">
             {t("about.values.title")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {values.map(({ key, desc }) => (
               <div
                 key={key}
-                className="p-4 sm:p-6 bg-white rounded-2xl border border-gray-100 hover:shadow-lg hover:shadow-gray-200/50 transition-all"
+                className="p-4 sm:p-6 bg-white dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-none transition-all"
               >
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t(key)}</h3>
-                <p className="text-xs sm:text-sm text-gray-400 mt-1.5 sm:mt-2">{t(desc)}</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{t(key)}</h3>
+                <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 mt-1.5 sm:mt-2">{t(desc)}</p>
               </div>
             ))}
           </div>
@@ -153,9 +153,9 @@ export default function AboutPage() {
       </section>
 
       {/* Team */}
-      <section className="py-10 sm:py-16 bg-white">
+      <section className="py-10 sm:py-16 bg-white dark:bg-gray-950">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight text-center mb-7 sm:mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight text-center mb-7 sm:mb-10">
             {t("about.team.title")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-3xl mx-auto">
@@ -164,9 +164,9 @@ export default function AboutPage() {
                 <img
                   src={member.image}
                   alt={member.name}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto object-cover border-4 border-gray-100"
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto object-cover border-4 border-gray-100 dark:border-gray-800"
                 />
-                <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold text-gray-900">
+                <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                   {member.name}
                 </h3>
                 <p className="text-xs sm:text-sm text-primary font-medium">{t(member.roleKey)}</p>

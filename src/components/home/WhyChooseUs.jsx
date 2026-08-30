@@ -2,10 +2,10 @@ import { useTranslation } from "react-i18next";
 import { Shield, Headphones, Wallet, Award } from "lucide-react";
 
 const reasons = [
-  { icon: Shield, color: "text-green-500 bg-green-50", key: "secure" },
-  { icon: Headphones, color: "text-blue-500 bg-blue-50", key: "support" },
-  { icon: Wallet, color: "text-amber-500 bg-amber-50", key: "price" },
-  { icon: Award, color: "text-purple-500 bg-purple-50", key: "quality" },
+  { icon: Shield, color: "text-green-500 bg-green-50 dark:text-green-300 dark:bg-green-500/15", key: "secure" },
+  { icon: Headphones, color: "text-blue-500 bg-blue-50 dark:text-blue-300 dark:bg-blue-500/15", key: "support" },
+  { icon: Wallet, color: "text-amber-500 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15", key: "price" },
+  { icon: Award, color: "text-purple-500 bg-purple-50 dark:text-purple-300 dark:bg-purple-500/15", key: "quality" },
 ];
 
 export default function WhyChooseUs() {

@@ -26,32 +26,26 @@ html.dark {
   color-scheme: dark;
 }
 
-/* Smooth dark mode transitions */
+html.dark body {
+  background-color: var(--color-gray-950);
+  color: var(--color-gray-200);
+}
+
+/* Smooth color transitions */
 *,
 *::before,
 *::after {
   transition-property: background-color, border-color, color, box-shadow, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 0ms;
-}
-
-html.dark *,
-html.dark *::before,
-html.dark *::after {
   transition-duration: 300ms;
 }
 
-/* Disable transitions on initial load to prevent flash */
-html:not(.dark) *:not(.no-transition),
-html.dark *:not(.no-transition) {
-  transition-duration: 0ms;
-}
-
-/* Re-enable after mount — set via JS */
-.dark-ready *,
-.dark-ready *::before,
-.dark-ready *::after {
-  transition-duration: 300ms !important;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s;
+  }
 }
 
 body {

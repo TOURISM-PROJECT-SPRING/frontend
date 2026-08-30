@@ -7,7 +7,7 @@ export default function OffersPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-gray-50/80">
+    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900">
       <PageBanner
         image="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&h=600&fit=crop&q=80"
         eyebrow="banners.offers.eyebrow"
@@ -20,7 +20,7 @@ export default function OffersPage() {
           {offers.map((offer) => (
             <article
               key={offer.id}
-              className="bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-lg hover:shadow-gray-200/50 transition-all group"
+              className="bg-white dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-none transition-all group"
             >
               <div className="relative h-40 sm:h-44 md:h-48 overflow-hidden">
                 <img
@@ -39,10 +39,10 @@ export default function OffersPage() {
                 )}
               </div>
               <div className="p-3.5 sm:p-4 lg:p-5">
-                <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900">
+                <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white">
                   {offer.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-400 mt-1 line-clamp-2">
+                <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">
                   {offer.description}
                 </p>
                 {offer.code && (
@@ -76,7 +76,7 @@ export default function OffersPage() {
               placeholder={t("offers.newsletter.placeholder")}
               className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-l-xl text-xs sm:text-sm text-white placeholder-white/50 focus:outline-none focus:border-white/50 transition-colors"
             />
-            <button className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-primary text-xs sm:text-sm font-bold rounded-r-xl hover:bg-gray-100 transition-colors shrink-0">
+            <button className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white dark:bg-gray-950 text-primary text-xs sm:text-sm font-bold rounded-r-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0">
               {t("offers.newsletter.subscribe")}
             </button>
           </div>

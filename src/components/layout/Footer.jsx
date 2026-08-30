@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Landmark, Mail, Phone, MapPin, ArrowRight } from "lucide-react";
+import { Landmark, Mail, Phone, MapPin } from "lucide-react";
 
 const FacebookIcon = () => (
   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -42,23 +42,11 @@ const linkSections = [
   },
   {
     titleKey: "footer.sections.company",
-    links: [
-      { key: "footer.links.aboutUs", href: "/about" },
-      { key: "footer.links.careers", href: "/careers" },
-      { key: "footer.links.press", href: "/press" },
-      { key: "footer.links.blog", href: "/blog" },
-      { key: "footer.links.partners", href: "/partners" },
-    ],
+    links: [{ key: "footer.links.aboutUs", href: "/about" }],
   },
   {
     titleKey: "footer.sections.support",
-    links: [
-      { key: "footer.links.helpCenter", href: "/help" },
-      { key: "footer.links.contactUs", href: "/contact" },
-      { key: "footer.links.privacyPolicy", href: "/privacy" },
-      { key: "footer.links.termsOfService", href: "/terms" },
-      { key: "footer.links.refundPolicy", href: "/refunds" },
-    ],
+    links: [{ key: "footer.links.contactUs", href: "/contact" }],
   },
 ];
 
@@ -67,32 +55,6 @@ export default function Footer() {
 
   return (
     <footer className="bg-gray-900 text-gray-300 w-full">
-      <div className="border-b border-gray-800/80">
-        <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
-            <div className="text-center md:text-left">
-              <h3 className="text-base sm:text-lg font-bold text-white">
-                {t("footer.newsletter")}
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-400 mt-1">
-                {t("footer.newsletterDesc")}
-              </p>
-            </div>
-            <div className="flex w-full md:w-auto">
-              <input
-                type="email"
-                placeholder={t("footer.enterEmail")}
-                className="flex-1 md:w-72 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-800/80 border border-gray-700 rounded-l-lg text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/60 transition-colors"
-              />
-              <button className="px-4 sm:px-5 py-2 sm:py-2.5 bg-primary text-white text-xs sm:text-sm font-semibold rounded-r-lg hover:bg-primary-dark transition-colors flex items-center gap-2 shrink-0">
-                {t("footer.subscribe")}
-                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8 lg:gap-10">
           <div className="col-span-2 sm:col-span-2 lg:col-span-2">
