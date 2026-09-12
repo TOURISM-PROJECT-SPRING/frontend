@@ -3,30 +3,25 @@ import axiosClient from '../api/axiosClient';
 export const tourPlaceService = {
   getAllTourPlaces: async () => {
     const response = await axiosClient.get('/tour-places');
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
   getTourPlaceById: async (id) => {
     const response = await axiosClient.get(`/tour-places/${id}`);
-    return response.data;
+    return enrichWithImages(response.data);
   },
   createTourPlace: async (data, images) => {
-    const formData = buildFormData(data);
-    if (images) {
-      images.forEach((image) => formData.append('images', image));
+    const response = await axiosClient.post('/tour-places', data);
+    const created = response.data;
+    if (images && images.length) {
+      await uploadTourPlaceImages(created.id, images);
     }
-    const response = await axiosClient.post('/tour-places', formData, {
-      headers: { 'Content-Type': undefined },
-    });
-    return response.data;
+    return created;
   },
   updateTourPlace: async (id, data, images) => {
-    const formData = buildFormData(data);
-    if (images) {
-      images.forEach((image) => formData.append('images', image));
+    const response = await axiosClient.put(`/tour-places/${id}`, data);
+    if (images && images.length) {
+      await uploadTourPlaceImages(id, images);
     }
-    const response = await axiosClient.put(`/tour-places/${id}`, formData, {
-      headers: { 'Content-Type': undefined },
-    });
     return response.data;
   },
   deleteTourPlace: async (id) => {
@@ -34,54 +29,53 @@ export const tourPlaceService = {
     return response.data;
   },
   addTourPlaceImages: async (id, images) => {
-    const formData = new FormData();
-    images.forEach((image) => formData.append('images', image));
-    const response = await axiosClient.post(`/tour-places/${id}/images`, formData, {
-      headers: { 'Content-Type': undefined },
-    });
-    return response.data;
+    return uploadTourPlaceImages(id, images);
   },
   removeTourPlaceImage: async (id, imageId) => {
-    const response = await axiosClient.delete(`/tour-places/${id}/images/${imageId}`);
+    const response = await axiosClient.delete(`/tour-place-attachments/${imageId}`);
     return response.data;
   },
   clearTourPlaceImages: async (id) => {
-    const response = await axiosClient.delete(`/tour-places/${id}/images`);
-    return response.data;
+    const images = await getTourPlaceAttachments(id);
+    for (const image of images) {
+      await axiosClient.delete(`/tour-place-attachments/${image.id}`);
+    }
   },
   setPrimaryTourPlaceImage: async (id, imageId) => {
-    const response = await axiosClient.post(`/tour-places/${id}/images/${imageId}/primary`);
-    return response.data;
+    return getTourPlaceAttachments(id);
+  },
+  getTourPlaceImages: async (id) => {
+    return getTourPlaceAttachments(id);
   },
   searchTourPlaces: async (keyword) => {
     const response = await axiosClient.get('/tour-places/search', { params: { keyword } });
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
   getTourPlacesByDistrict: async (districtId) => {
     const response = await axiosClient.get(`/tour-places/district/${districtId}`);
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
   getTourPlacesByCategory: async (categoryId) => {
     const response = await axiosClient.get(`/tour-places/category/${categoryId}`);
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
   getTourPlacesByUser: async (userId) => {
     const response = await axiosClient.get(`/tour-places/user/${userId}`);
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
   getTourPlacesByStatus: async (status) => {
     const response = await axiosClient.get(`/tour-places/status/${status}`);
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
   getTourPlacesByMinRating: async (minRating) => {
     const response = await axiosClient.get('/tour-places/rating', { params: { minRating } });
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
   filterByDistrictAndCategory: async (districtId, categoryId) => {
     const response = await axiosClient.get('/tour-places/filter', {
       params: { districtId, categoryId },
     });
-    return response.data;
+    return enrichWithImages(response.data || []);
   },
 };
 
@@ -99,4 +93,30 @@ function buildFormData(data) {
     }
   }
   return formData;
+}
+
+async function uploadTourPlaceImages(id, images) {
+  const formData = buildFormData({ tourPlaceId: id, files: images });
+  const response = await axiosClient.post('/tour-place-attachments', formData, {
+    headers: { 'Content-Type': undefined },
+  });
+  return response.data;
+}
+
+async function getTourPlaceAttachments(id) {
+  const response = await axiosClient.get(`/tour-place-attachments/tour-place/${id}`);
+  return (response.data || []).map((attachment) => ({
+    id: attachment.id,
+    imageUrl: attachment.cloudinaryUrl,
+    isPrimary: (attachment.type || '').toUpperCase() === 'PRIMARY',
+  }));
+}
+
+async function enrichWithImages(places) {
+  if (Array.isArray(places)) {
+    return Promise.all(places.map((place) => enrichWithImages(place)));
+  }
+  if (!places || places.id == null) return places;
+  const placeImages = await getTourPlaceAttachments(places.id).catch(() => []);
+  return { ...places, placeImages };
 }

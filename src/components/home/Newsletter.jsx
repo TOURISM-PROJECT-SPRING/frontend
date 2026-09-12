@@ -1,18 +1,27 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle, X } from "lucide-react";
+import { newsletterService } from "../../services/newsletterService";
 
 export default function Newsletter() {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email) {
-      setSubmitted(true);
+    if (!email) return;
+    setStatus("submitting");
+    setError("");
+    try {
+      await newsletterService.subscribe(email.trim());
+      setStatus("subscribed");
       setEmail("");
-      setTimeout(() => setSubmitted(false), 3000);
+      setTimeout(() => setStatus("idle"), 3000);
+    } catch (err) {
+      setStatus("error");
+      setError(err?.response?.data?.message || "Subscription failed. Please try again.");
     }
   };
 
@@ -44,9 +53,12 @@ export default function Newsletter() {
               </div>
               <button
                 type="submit"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 transition shadow-lg shrink-0"
+                disabled={status === "submitting"}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 transition shadow-lg shrink-0 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {submitted ? (
+                {status === "submitting" ? (
+                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                ) : status === "subscribed" ? (
                   <>
                     <CheckCircle className="w-4 h-4" /> {t("newsletter.subscribed")}
                   </>
@@ -57,6 +69,11 @@ export default function Newsletter() {
                 )}
               </button>
             </form>
+            {status === "error" && (
+              <p className="mt-3 text-xs text-red-300 flex items-center justify-center gap-1">
+                <X className="w-3.5 h-3.5" /> {error}
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -35,7 +35,8 @@ export default function PopularTours() {
           }));
         setTours(sorted);
       } catch (err) {
-        console.error("Error fetching popular tours:", err);
+        console.error("Error loading popular tours:", err);
+        if (!cancelled) setTours([]);
       } finally {
         if (!cancelled) setLoading(false);
       }

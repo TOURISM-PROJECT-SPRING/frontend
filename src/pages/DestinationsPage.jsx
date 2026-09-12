@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, Star, MapPin, SlidersHorizontal } from "lucide-react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Search, Star, MapPin, SlidersHorizontal, Map } from "lucide-react";
 import PageBanner from "../components/ui/PageBanner";
 import { LoadingState, ErrorState } from "../components/ui/AsyncState";
+import EmptyState from "../components/ui/EmptyState";
+import SafeImage from "../components/ui/SafeImage";
 import { hotelService } from "../services/hotelService";
 import { hotelRoomService } from "../services/hotelRoomService";
 import { tourPlaceService } from "../services/tourPlaceService";
@@ -25,23 +28,33 @@ const categoryBadgeStyle = (category) =>
       ? "bg-primary"
       : "bg-amber-500";
 
+const categoryHref = (item) =>
+  item.category === "stays"
+    ? `/stays/${item.id}`
+    : item.category === "tours"
+      ? `/tours/${item.id}`
+      : `/dining/${item.id}`;
+
 export default function DestinationsPage() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const [activeCategory, setActiveCategory] = useState(
+    categories.includes(searchParams.get("tab")) ? searchParams.get("tab") : "all"
+  );
 
   const load = async () => {
     setLoading(true);
     setError(false);
     try {
       const [hotels, hotelRooms, places, restaurants, foods] = await Promise.all([
-        hotelService.getAllHotels(),
+        hotelService.getAllHotelsWithImages(),
         hotelRoomService.getAllHotelRooms(),
         tourPlaceService.getAllTourPlaces(),
-        restaurantService.getAllRestaurants(),
+        restaurantService.getAllRestaurantsWithImages(),
         foodService.getAllFoods(),
       ]);
 
@@ -58,7 +71,7 @@ export default function DestinationsPage() {
           location: hotel.locationName,
           rating: null,
           price: minPrice,
-          image: pickImage(HOTEL_IMAGES, hotel.id),
+          image: hotel.imageUrl || pickImage(HOTEL_IMAGES, hotel.id),
         };
       });
 
@@ -88,7 +101,7 @@ export default function DestinationsPage() {
           location: r.tourismPlaceName,
           rating: null,
           price: minPrice,
-          image: pickImage(RESTAURANT_IMAGES, r.id),
+          image: r.imageUrl || pickImage(RESTAURANT_IMAGES, r.id),
         };
       });
 
@@ -142,7 +155,7 @@ export default function DestinationsPage() {
           <div className="flex items-center gap-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 sm:py-2">
             <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500" />
             <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              {t("featured.showing", { count: items.length })}
+              {t("featured.showing", { count: filtered.length })}
             </span>
           </div>
         </div>
@@ -170,12 +183,13 @@ export default function DestinationsPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {filtered.map((item) => (
-              <article
+              <Link
                 key={item.key}
-                className="bg-white dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-none transition-all cursor-pointer group"
+                to={categoryHref(item)}
+                className="group relative bg-white dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-none transition-all"
               >
                 <div className="relative h-40 sm:h-44 md:h-48 overflow-hidden">
-                  <img
+                  <SafeImage
                     src={item.image}
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -212,17 +226,17 @@ export default function DestinationsPage() {
                     </p>
                   )}
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}
 
         {!loading && !error && filtered.length === 0 && (
-          <div className="text-center py-12 sm:py-16">
-            <p className="text-gray-400 dark:text-gray-500 text-sm sm:text-base">
-              {t("destinations.noResults")}
-            </p>
-          </div>
+          <EmptyState
+            icon={Map}
+            title={t("destinations.noResults")}
+            description={t("destinations.noResultsDesc")}
+          />
         )}
       </div>
     </div>

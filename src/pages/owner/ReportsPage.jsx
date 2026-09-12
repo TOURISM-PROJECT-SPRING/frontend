@@ -1,99 +1,157 @@
-import { BarChart3, Download, TrendingUp, DollarSign, BedDouble } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { DollarSign, BedDouble, Star, TrendingUp } from "lucide-react";
+import useDashboardData from "../../hooks/useDashboardData";
 
-const monthlyRevenue = [
-  { month: "Jan", revenue: 28400, bookings: 95 },
-  { month: "Feb", revenue: 32100, bookings: 108 },
-  { month: "Mar", revenue: 38500, bookings: 124 },
-  { month: "Apr", revenue: 41200, bookings: 132 },
-  { month: "May", revenue: 48965, bookings: 128 },
-];
-
-const propertyPerformance = [
-  { name: "Green Park Resort", revenue: 12480, bookings: 42, occupancy: 82 },
-  { name: "Paradise Hotel", revenue: 9870, bookings: 35, occupancy: 74 },
-  { name: "Angkor Wat Villa", revenue: 14200, bookings: 28, occupancy: 68 },
-  { name: "Riverside Lodge", revenue: 6340, bookings: 15, occupancy: 52 },
-  { name: "Sunset Beach", revenue: 6075, bookings: 8, occupancy: 38 },
-];
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload) return null;
-  return (
-    <div className="bg-white border border-gray-100 rounded-lg shadow-lg p-3">
-      <p className="text-xs font-semibold text-gray-900 mb-1">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} className="text-xs" style={{ color: p.color }}>
-          {p.name}: {typeof p.value === "number" && p.name === "Revenue" ? `$${p.value.toLocaleString()}` : p.value}
-        </p>
-      ))}
-    </div>
-  );
-};
+const money = (v) =>
+  `$${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
 export default function OwnerReportsPage() {
+  const { data, loading } = useDashboardData();
+
+  if (loading) {
+    return <div className="p-12 text-center text-sm text-gray-400">Loading reports from server...</div>;
+  }
+
+  const d = data || {};
+  const totalChannel = d.totalChannel || 0;
+  const months = d.revenueByMonth || [];
+  const maxRevenue = Math.max(...months.map((m) => m.revenue || 0), 1);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">View detailed analytics and export reports</p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition">
-          <Download className="w-4 h-4" />
-          Export Report
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Performance analytics</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Total Revenue", value: "$48,965", icon: DollarSign, color: "bg-green-50 text-green-600", iconBg: "bg-green-100" },
-          { label: "Total Bookings", value: "128", icon: BedDouble, color: "bg-blue-50 text-blue-600", iconBg: "bg-blue-100" },
-          { label: "Avg. Occupancy", value: "68.5%", icon: TrendingUp, color: "bg-orange-50 text-orange-600", iconBg: "bg-orange-100" },
-          { label: "Revenue/Room", value: "$362", icon: BarChart3, color: "bg-purple-50 text-purple-600", iconBg: "bg-purple-100" },
-        ].map((m) => (
-          <div key={m.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 ${m.iconBg} rounded-lg flex items-center justify-center`}>
-                <m.icon className={`w-5 h-5 ${m.color.split(" ")[1]}`} />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{m.value}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{m.label}</p>
-              </div>
-            </div>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-500/15 rounded-lg flex items-center justify-center"><DollarSign className="w-5 h-5 text-green-600" /></div>
+            <div><p className="text-lg font-bold text-gray-900 dark:text-white">{d.revenueText || "$0"}</p><p className="text-xs text-gray-400 dark:text-gray-500">Total Revenue</p></div>
           </div>
-        ))}
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/15 rounded-lg flex items-center justify-center"><BedDouble className="w-5 h-5 text-blue-600" /></div>
+            <div><p className="text-lg font-bold text-gray-900 dark:text-white">{(d.totalBookings || 0).toLocaleString()}</p><p className="text-xs text-gray-400 dark:text-gray-500">Total Bookings</p></div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-500/15 rounded-lg flex items-center justify-center"><Star className="w-5 h-5 text-yellow-600" /></div>
+            <div><p className="text-lg font-bold text-gray-900 dark:text-white">{d.avgRating || "—"}</p><p className="text-xs text-gray-400 dark:text-gray-500">Avg. Rating</p></div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/15 rounded-lg flex items-center justify-center"><TrendingUp className="w-5 h-5 text-orange-600" /></div>
+            <div><p className="text-lg font-bold text-gray-900 dark:text-white">{d.occupancyRate != null ? `${d.occupancyRate}%` : "—"}</p><p className="text-xs text-gray-400 dark:text-gray-500">Occupancy</p></div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Monthly Revenue Trend</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="revenue" name="Revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Bookings by Type</h3>
+          <div className="space-y-4">
+            {(d.bookingsByType || []).map((bt) => (
+              <div key={bt.name}>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-gray-600 dark:text-gray-300">{bt.name}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{bt.value.toLocaleString()}</span>
+                </div>
+                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-2 rounded-full" style={{ width: `${totalChannel ? (bt.value / totalChannel) * 100 : 0}%`, backgroundColor: bt.color || "#3b82f6" }} />
+                </div>
+              </div>
+            ))}
+            {(d.bookingsByType || []).length === 0 && <p className="text-sm text-gray-400">No booking data.</p>}
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Property Revenue Comparison</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={propertyPerformance} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={110} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="revenue" name="Revenue" fill="#22c55e" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Monthly Revenue</h3>
+          <div className="flex items-end gap-2 h-52">
+            {months.map((m) => (
+              <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-1 h-full">
+                <span className="text-[9px] text-gray-400">{money(m.revenue).replace(/\.00$/, "")}</span>
+                <div className="w-full bg-primary/80 rounded-t-md" style={{ height: `${Math.max(((m.revenue || 0) / maxRevenue) * 80, 3)}%` }} />
+                <span className="text-[10px] text-gray-400">{m.month}</span>
+              </div>
+            ))}
+            {months.length === 0 && <p className="text-sm text-gray-400">No revenue data.</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Top Properties by Revenue</h3>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold">Top 5</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-50 dark:border-gray-800">
+                  {["Rank", "Property", "Bookings", "Revenue", "Popularity"].map((h) => (
+                    <th key={h} className="text-left text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-5 py-3">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(d.topProperties || []).map((p) => (
+                  <tr key={p.name} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                    <td className="px-5 py-3">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${p.rank <= 3 ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>{p.rank}</span>
+                    </td>
+                    <td className="px-5 py-3 text-sm font-medium text-gray-900 dark:text-white">{p.name}</td>
+                    <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-300">{(p.bookings || 0).toLocaleString()}</td>
+                    <td className="px-5 py-3 text-sm font-semibold text-primary">{p.revenueText || "$0"}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5"><div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${p.popularity || 0}%` }} /></div>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{p.popularity || 0}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(d.topProperties || []).length === 0 && <div className="text-center py-10 text-sm text-gray-400">No property data.</div>}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Top Places</h3>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-bold">Top 5</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-50 dark:border-gray-800">
+                  {["Rank", "Place", "Location", "Rating", "Bookings", "Revenue"].map((h) => (
+                    <th key={h} className="text-left text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-5 py-3">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(d.topPlaces || []).map((p) => (
+                  <tr key={p.name} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                    <td className="px-5 py-3">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${p.rank <= 3 ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>{p.rank}</span>
+                    </td>
+                    <td className="px-5 py-3 text-sm font-medium text-gray-900 dark:text-white">{p.name}</td>
+                    <td className="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">{p.location || "N/A"}</td>
+                    <td className="px-5 py-3 text-sm text-yellow-500">{p.rating ? `★ ${Number(p.rating).toFixed(1)}` : "—"}</td>
+                    <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-300">{(p.bookings || 0).toLocaleString()}</td>
+                    <td className="px-5 py-3 text-sm font-semibold text-primary">{p.revenueText || "$0"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(d.topPlaces || []).length === 0 && <div className="text-center py-10 text-sm text-gray-400">No place data.</div>}
           </div>
         </div>
       </div>

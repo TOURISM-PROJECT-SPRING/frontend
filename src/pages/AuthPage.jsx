@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   Mail,
   Lock,
@@ -24,10 +25,13 @@ const features = [
 
 export default function AuthPage({ initialMode = "login" }) {
   const { t } = useTranslation();
+  const { login, register } = useAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "", rememberMe: false });
@@ -66,25 +70,58 @@ export default function AuthPage({ initialMode = "login" }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleLogin = (e) => {
+  const getApiError = (err) =>
+    err?.response?.data?.message || err?.response?.data?.error || "Something went wrong. Please try again.";
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (validateLogin()) {
       setLoading(true);
-      setTimeout(() => setLoading(false), 1500);
+      setFormError("");
+      try {
+        await login({ usernameOrEmail: loginForm.email.trim(), password: loginForm.password });
+        navigate("/");
+      } catch (err) {
+        setFormError(getApiError(err));
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const handleRegister = (e) => {
+  const buildUsername = (fullName, email) => {
+    const base =
+      (email.split("@")[0] || "").toLowerCase().replace(/[^a-z0-9]/g, "") ||
+      (fullName || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12) ||
+      "user";
+    return `${base}${Math.floor(Math.random() * 900 + 100)}`;
+  };
+
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (validateRegister()) {
       setLoading(true);
-      setTimeout(() => setLoading(false), 1500);
+      setFormError("");
+      try {
+        await register({
+          fullname: registerForm.fullName.trim(),
+          username: buildUsername(registerForm.fullName, registerForm.email),
+          email: registerForm.email.trim(),
+          password: registerForm.password,
+        });
+        navigate("/");
+      } catch (err) {
+        setFormError(getApiError(err));
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   const switchMode = (m) => {
     setMode(m);
     setErrors({});
+    setFormError("");
     setShowPassword(false);
     setShowConfirm(false);
   };
@@ -184,6 +221,13 @@ export default function AuthPage({ initialMode = "login" }) {
               {t("auth.register.title") || "Create Account"}
             </button>
           </div>
+
+          {formError && (
+            <div className="mb-5 flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 rounded-xl text-xs sm:text-sm text-red-600 dark:text-red-400">
+              <X className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{formError}</span>
+            </div>
+          )}
 
           {/* ===== LOGIN ===== */}
           {mode === "login" && (

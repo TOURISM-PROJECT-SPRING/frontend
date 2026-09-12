@@ -1,17 +1,11 @@
-import { TrendingUp, AlertTriangle, BedDouble, Calendar } from "lucide-react";
-
-const insights = [
-  { title: "Revenue Growth Trend", value: "+22.4%", description: "Your revenue has been consistently growing over the past 4 weeks. The upward trend is driven by increased bookings from the Smart Tourism App.", icon: TrendingUp, color: "bg-green-50 text-green-600", trend: "up" },
-  { title: "Peak Booking Season", value: "Jun-Aug", description: "Historical data shows June to August is your busiest period. Consider increasing rates and preparing additional inventory.", icon: Calendar, color: "bg-blue-50 text-blue-600", trend: "up" },
-  { title: "Guest Satisfaction Alert", value: "3 mentions", description: "Recent reviews mention slow Wi-Fi speed at Green Park Resort. Addressing this could improve your overall rating from 4.6 to 4.8.", icon: AlertTriangle, color: "bg-yellow-50 text-yellow-600", trend: "neutral" },
-  { title: "Occupancy Opportunity", value: "85% potential", description: "This weekend's occupancy is expected to reach 85%. Consider enabling dynamic pricing to maximize revenue per available room.", icon: BedDouble, color: "bg-orange-50 text-orange-600", trend: "up" },
-];
+import { CalendarCheck, DollarSign, BedDouble, MapPin, Star } from "lucide-react";
+import useDashboardData from "../../hooks/useDashboardData";
 
 const recommendations = [
   { title: "Enable Dynamic Pricing", description: "Based on demand patterns, you could increase weekday rates by 12% without impacting occupancy.", impact: "High", category: "Revenue" },
-  { title: "Launch Social Media Campaign", description: "Properties with active social presence see 35% more direct bookings. Consider promoting your Angkor Wat Villa.", impact: "Medium", category: "Marketing" },
-  { title: "Respond to Reviews", description: "You have 5 unanswered reviews. Responding to reviews increases guest trust and repeat bookings by 20%.", impact: "High", category: "Guest Experience" },
-  { title: "Update Property Photos", description: "Listings with professional photos receive 40% more views. Consider updating Sunset Beach House photos.", impact: "Medium", category: "Marketing" },
+  { title: "Launch Social Media Campaign", description: "Properties with active social presence see 35% more direct bookings. Consider promoting your top listings.", impact: "Medium", category: "Marketing" },
+  { title: "Respond to Reviews", description: "Responding to reviews increases guest trust and repeat bookings by 20%.", impact: "High", category: "Guest Experience" },
+  { title: "Update Property Photos", description: "Listings with professional photos receive 40% more views. Refresh your best-performing properties.", impact: "Medium", category: "Marketing" },
 ];
 
 const impactStyle = {
@@ -27,11 +21,48 @@ const categoryStyle = {
 };
 
 export default function OwnerInsightsPage() {
+  const { data } = useDashboardData();
+
+  const insights = data
+    ? [
+        {
+          title: "Total Bookings",
+          value: String(data.totalBookings),
+          description: `${data.roomBookings.length} room, ${data.ticketBookings.length} ticket, ${data.foodOrders.length} food bookings recorded`,
+          icon: CalendarCheck,
+          color: "bg-blue-50 text-blue-600",
+        },
+        {
+          title: "Total Revenue",
+          value: data.revenueText,
+          description: "Accumulated from confirmed room, ticket, and food bookings",
+          icon: DollarSign,
+          color: "bg-green-50 text-green-600",
+        },
+        {
+          title: "Occupancy",
+          value: `${data.occupancyRate ?? 0}%`,
+          description: `${data.rooms.length} rooms listed across ${data.totalHotels} properties`,
+          icon: BedDouble,
+          color: "bg-orange-50 text-orange-600",
+        },
+        {
+          title: "Average Rating",
+          value: data.avgRating ? `${data.avgRating}/5` : "—",
+          description: `${data.totalPlaces} destinations rated by visitors`,
+          icon: Star,
+          color: "bg-yellow-50 text-yellow-600",
+        },
+      ]
+    : [];
+
+  const topProperty = data?.topProperties?.[0] || null;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Insights</h1>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">AI-powered recommendations to grow your business</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Live insights from your bookings and listings</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -52,6 +83,22 @@ export default function OwnerInsightsPage() {
           </div>
         ))}
       </div>
+
+      {topProperty && (
+        <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-5 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <MapPin className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[11px] font-semibold text-primary uppercase tracking-wider">Top Performing Property</p>
+            <h3 className="text-sm text-gray-900 dark:text-white">{topProperty.name}</h3>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-xs text-gray-500 dark:text-gray-400">{topProperty.bookings} bookings</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white">{topProperty.revenueText}</p>
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recommendations</h2>

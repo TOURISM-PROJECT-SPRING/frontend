@@ -4,7 +4,7 @@ import { Star, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { InlineLoader } from "../ui/AsyncState";
 import { provinceService } from "../../services/provinceService";
 import { tourPlaceService } from "../../services/tourPlaceService";
-import { DESTINATION_IMAGES, pickImage } from "../../utils/helpers";
+import { DESTINATION_IMAGES, primaryPlaceImage, pickImage } from "../../utils/helpers";
 
 export default function PopularDestinations() {
   const { t } = useTranslation();
@@ -22,8 +22,10 @@ export default function PopularDestinations() {
         ]);
         if (cancelled) return;
         const enriched = provinces.map((province) => {
+          const name = String(province.name || "").toLowerCase();
           const inProvince = places.filter(
-            (p) => p.district?.province?.id === province.id
+            (p) =>
+              String(p.district?.province?.name || "").toLowerCase() === name
           );
           const avg =
             inProvince.length > 0
@@ -33,20 +35,21 @@ export default function PopularDestinations() {
           return {
             id: province.id,
             title: province.name,
-            image: pickImage(DESTINATION_IMAGES, province.id),
+            image: primaryPlaceImage(inProvince[0], pickImage(DESTINATION_IMAGES, province.id)),
             rating: avg,
             subtitle:
               count > 0
                 ? `${count} ${count === 1 ? "attraction" : "attractions"}`
-                : province.image
-                  ? "Beautiful destination"
-                  : "",
+                : "",
             explore: `Explore ${province.name}`,
           };
         });
-        setDestinations(enriched.filter((d) => d.subtitle));
+        const list = enriched.filter((d) => d.subtitle);
+        setDestinations(list);
       } catch (err) {
-        console.error("Error fetching popular destinations:", err);
+        console.error("Error loading destinations:", err);
+        if (cancelled) return;
+        setDestinations([]);
       } finally {
         if (!cancelled) setLoading(false);
       }

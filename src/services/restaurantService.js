@@ -1,13 +1,34 @@
 import axiosClient from '../api/axiosClient';
+import { restaurantAttachmentService } from './restaurantAttachmentService';
+
+async function withImages(restaurant) {
+  if (!restaurant || restaurant.id == null) return restaurant;
+  try {
+    const attachments = await restaurantAttachmentService.getRestaurantAttachments(restaurant.id);
+    const first = attachments?.[0];
+    return { ...restaurant, imageUrl: first?.cloudinaryUrl || undefined };
+  } catch {
+    return { ...restaurant, imageUrl: undefined };
+  }
+}
 
 export const restaurantService = {
   getAllRestaurants: async () => {
     const response = await axiosClient.get('/restaurants');
     return response.data;
   },
+  getAllRestaurantsWithImages: async () => {
+    const response = await axiosClient.get('/restaurants');
+    const restaurants = response.data || [];
+    return Promise.all(restaurants.map(withImages));
+  },
   getRestaurantById: async (id) => {
     const response = await axiosClient.get(`/restaurants/${id}`);
     return response.data;
+  },
+  getRestaurantByIdWithImages: async (id) => {
+    const response = await axiosClient.get(`/restaurants/${id}`);
+    return withImages(response.data);
   },
   searchRestaurants: async (keyword) => {
     const response = await axiosClient.get('/restaurants/search', { params: { keyword } });

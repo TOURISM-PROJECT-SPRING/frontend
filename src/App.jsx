@@ -6,6 +6,9 @@ import DestinationsPage from "./pages/DestinationsPage";
 import StaysPage from "./pages/StaysPage";
 import ToursPage from "./pages/ToursPage";
 import DiningPage from "./pages/DiningPage";
+import HotelDetailPage from "./pages/HotelDetailPage";
+import TourPlaceDetailPage from "./pages/TourPlaceDetailPage";
+import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import FeaturedExperiencesPage from "./pages/FeaturedExperiencesPage";
 import AboutCambodiaPage from "./pages/AboutCambodiaPage";
 import AboutPage from "./pages/AboutPage";
@@ -26,8 +29,11 @@ function PublicLayout() {
           <Route path="/destinations" element={<DestinationsPage />} />
           <Route path="/destinations/:id" element={<DestinationsPage />} />
           <Route path="/stays" element={<StaysPage />} />
+          <Route path="/stays/:id" element={<HotelDetailPage />} />
           <Route path="/tours" element={<ToursPage />} />
+          <Route path="/tours/:id" element={<TourPlaceDetailPage />} />
           <Route path="/dining" element={<DiningPage />} />
+          <Route path="/dining/:id" element={<RestaurantDetailPage />} />
           <Route path="/experiences" element={<FeaturedExperiencesPage />} />
           <Route path="/about-cambodia" element={<AboutCambodiaPage />} />
           <Route path="/about" element={<AboutPage />} />

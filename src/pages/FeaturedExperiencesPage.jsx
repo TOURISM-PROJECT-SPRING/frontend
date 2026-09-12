@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Star,
@@ -15,6 +15,9 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import PageBanner from "../components/ui/PageBanner";
+import { ticketService } from "../services/ticketService";
+import { tourPlaceService } from "../services/tourPlaceService";
+import { primaryPlaceImage, pickImage, TRAVEL_IMAGES } from "../utils/helpers";
 
 const categories = [
   { id: "all", icon: Compass, key: "featured.categories.all" },
@@ -24,194 +27,73 @@ const categories = [
   { id: "culinary", icon: UtensilsCrossed, key: "featured.categories.culinary" },
 ];
 
-const experiences = [
+const CULTURE_KEYWORDS = [
   {
-    id: 1,
-    title: "Sunrise at Angkor Wat",
-    location: "Siem Reap",
-    category: "cultural",
-    rating: 4.9,
-    reviews: 2847,
-    price: 35,
-    duration: "4 Hours",
-    groupSize: "Max 15",
-    badge: "Most Popular",
-    image:
-      "https://images.unsplash.com/photo-1508159441828-3d031a33e1e3?w=600&h=400&fit=crop&q=80",
-    highlights: ["Sunrise", "Angkor Wat", "Guide", "Transport"],
+    id: "cultural",
+    regex: /temple|heritage|palace|museum|angkor|wat|royal|city|cruise|village/,
   },
-  {
-    id: 2,
-    title: "Kulen Waterfall Adventure",
-    location: "Phnom Kulen",
-    category: "nature",
-    rating: 4.8,
-    reviews: 1203,
-    price: 45,
-    duration: "Full Day",
-    groupSize: "Max 12",
-    badge: "Top Rated",
-    image:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop&q=80",
-    highlights: ["Waterfall", "Swimming", "Lunch", "Transport"],
-  },
-  {
-    id: 3,
-    title: "Floating Village Tour",
-    location: "Tonle Sap Lake",
-    category: "cultural",
-    rating: 4.7,
-    reviews: 956,
-    price: 30,
-    duration: "Half Day",
-    groupSize: "Max 20",
-    badge: "Bestseller",
-    image:
-      "https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?w=600&h=400&fit=crop&q=80",
-    highlights: ["Boat Ride", "Village", "Guide", "Lunch"],
-  },
-  {
-    id: 4,
-    title: "Khmer Cooking Class",
-    location: "Phnom Penh",
-    category: "culinary",
-    rating: 4.9,
-    reviews: 743,
-    price: 25,
-    duration: "3 Hours",
-    groupSize: "Max 8",
-    badge: "Editor's Pick",
-    image:
-      "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&h=400&fit=crop&q=80",
-    highlights: ["Market Tour", "Cooking", "Recipe Book", "Meal"],
-  },
-  {
-    id: 5,
-    title: "Mondulkiri Elephant Sanctuary",
-    location: "Mondulkiri",
-    category: "nature",
-    rating: 4.8,
-    reviews: 198,
-    price: 55,
-    duration: "Full Day",
-    groupSize: "Max 10",
-    badge: "Eco Friendly",
-    image:
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=400&fit=crop&q=80",
-    highlights: ["Elephants", "Nature", "Guide", "Lunch"],
-  },
-  {
-    id: 6,
-    title: "Koh Rong Island Hopping",
-    location: "Sihanoukville",
-    category: "adventure",
-    rating: 4.8,
-    reviews: 312,
-    price: 45,
-    duration: "Full Day",
-    groupSize: "Max 16",
-    badge: "Adventure",
-    image:
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop&q=80",
-    highlights: ["Snorkeling", "Beach", "Lunch", "Boat"],
-  },
-  {
-    id: 7,
-    title: "Battambang Countryside",
-    location: "Battambang",
-    category: "cultural",
-    rating: 4.6,
-    reviews: 154,
-    price: 40,
-    duration: "Full Day",
-    groupSize: "Max 12",
-    badge: "Hidden Gem",
-    image:
-      "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=600&h=400&fit=crop&q=80",
-    highlights: ["Train", "Temple", "Guide", "Transport"],
-  },
-  {
-    id: 8,
-    title: "Phnom Penh City Tour",
-    location: "Phnom Penh",
-    category: "cultural",
-    rating: 4.7,
-    reviews: 432,
-    price: 25,
-    duration: "Half Day",
-    groupSize: "Max 20",
-    badge: "City Tour",
-    image:
-      "https://images.unsplash.com/photo-1569949381669-ecf31ae866fd?w=600&h=400&fit=crop&q=80",
-    highlights: ["Royal Palace", "Markets", "Guide", "Transport"],
-  },
-  {
-    id: 9,
-    title: "Tonle Sap Sunset Cruise",
-    location: "Siem Reap",
-    category: "adventure",
-    rating: 4.7,
-    reviews: 289,
-    price: 38,
-    duration: "2 Hours",
-    groupSize: "Max 20",
-    badge: "Sunset",
-    image:
-      "https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=600&h=400&fit=crop&q=80",
-    highlights: ["Sunset", "Boat", "Drinks", "Guide"],
-  },
-  {
-    id: 10,
-    title: "Street Food Night Walk",
-    location: "Phnom Penh",
-    category: "culinary",
-    rating: 4.8,
-    reviews: 567,
-    price: 20,
-    duration: "3 Hours",
-    groupSize: "Max 12",
-    badge: "Foodie Favorite",
-    image:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop&q=80",
-    highlights: ["Street Food", "Night Market", "Guide", "Tastings"],
-  },
-  {
-    id: 11,
-    title: "Kampot Pepper Farm Tour",
-    location: "Kampot",
-    category: "culinary",
-    rating: 4.6,
-    reviews: 134,
-    price: 32,
-    duration: "Half Day",
-    groupSize: "Max 10",
-    badge: "Unique",
-    image:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop&q=80",
-    highlights: ["Farm Tour", "Tasting", "Guide", "Lunch"],
-  },
-  {
-    id: 12,
-    title: "Cardamom Mountains Trek",
-    location: "Koh Kong",
-    category: "adventure",
-    rating: 4.7,
-    reviews: 87,
-    price: 65,
-    duration: "2 Days",
-    groupSize: "Max 8",
-    badge: "Off the Beaten Path",
-    image:
-      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop&q=80",
-    highlights: ["Trekking", "Camping", "Wildlife", "Guide"],
-  },
+  { id: "nature", regex: /beach|island|waterfall|lake|nature|forest|swim|dolphin/ },
+  { id: "culinary", regex: /food|cook|dining|tasting|pepper|crab|meal/ },
 ];
+
+function cultureCategory(ticket, place) {
+  const s = [ticket?.name, ticket?.description, place?.name, place?.placeCategory?.name]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  for (const rule of CULTURE_KEYWORDS) {
+    if (rule.regex.test(s)) return rule.id;
+  }
+  return "adventure";
+}
+
+function toExperience(ticket, place) {
+  return {
+    id: ticket.id,
+    title: ticket.name,
+    location: place?.district?.province?.name || ticket.tourismPlaceName || "",
+    category: cultureCategory(ticket, place),
+    rating: place?.rating ?? null,
+    reviews: null,
+    price: Number(ticket.price) || 0,
+    duration: null,
+    groupSize: null,
+    badge: place?.placeCategory?.name || (ticket.isAvailable ? "Available" : "Sold Out"),
+    image: primaryPlaceImage(place, pickImage(TRAVEL_IMAGES, ticket.id)),
+    highlights: null,
+    description: ticket.description,
+  };
+}
 
 export default function FeaturedExperiencesPage() {
   const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState("all");
   const [liked, setLiked] = useState({});
   const [sortBy, setSortBy] = useState("popular");
+  const [experiences, setExperiences] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [tickets, places] = await Promise.all([
+          ticketService.getAvailableTickets(),
+          tourPlaceService.getAllTourPlaces(),
+        ]);
+        if (cancelled) return;
+        const placeMap = new Map((places || []).map((p) => [p.id, p]));
+        const mapped = (tickets || [])
+          .map((tk) => toExperience(tk, placeMap.get(tk.tourismPlaceId)))
+          .filter((e) => e && e.title);
+        setExperiences(mapped);
+      } catch (err) {
+        console.error("Failed to load experiences:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered =
     activeCategory === "all"
@@ -221,8 +103,8 @@ export default function FeaturedExperiencesPage() {
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === "price-low") return a.price - b.price;
     if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "rating") return b.rating - a.rating;
-    return b.reviews - a.reviews;
+    if (sortBy === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+    return (b.reviews ?? b.rating ?? 0) - (a.reviews ?? a.rating ?? 0);
   });
 
   const toggleLike = (id) => {
@@ -314,45 +196,57 @@ export default function FeaturedExperiencesPage() {
                   />
                 </button>
                 {/* Rating */}
-                <div className="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-3 flex items-center gap-1 bg-white/95 backdrop-blur-sm text-gray-900 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
-                  <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 fill-amber-400" />
-                  {exp.rating}
-                </div>
+                {exp.rating != null && (
+                  <div className="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-3 flex items-center gap-1 bg-white/95 backdrop-blur-sm text-gray-900 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
+                    <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 fill-amber-400" />
+                    {exp.rating}
+                  </div>
+                )}
               </div>
 
               {/* Content */}
               <div className="p-3.5 sm:p-4 lg:p-5">
                 <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
-                  <p className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                  <p className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 min-w-0">
                     <MapPin className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">{exp.location}</span>
                   </p>
-                  <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 ml-auto shrink-0">
-                    <Clock className="w-3.5 h-3.5" />
-                    {exp.duration}
-                  </div>
+                  {exp.duration && (
+                    <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 ml-auto shrink-0">
+                      <Clock className="w-3.5 h-3.5" />
+                      {exp.duration}
+                    </div>
+                  )}
                 </div>
 
                 <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2">
                   {exp.title}
                 </h3>
 
-                {/* Highlights */}
-                <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2 sm:mt-3">
-                  {exp.highlights.map((h) => (
-                    <span
-                      key={h}
-                      className="px-1.5 sm:px-2 py-0.5 bg-primary/5 text-primary text-[10px] sm:text-xs font-medium rounded-md"
-                    >
-                      {h}
-                    </span>
-                  ))}
-                </div>
+                {/* Highlights or description snippet */}
+                {exp.highlights?.length ? (
+                  <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2 sm:mt-3">
+                    {exp.highlights.map((h) => (
+                      <span
+                        key={h}
+                        className="px-1.5 sm:px-2 py-0.5 bg-primary/5 text-primary text-[10px] sm:text-xs font-medium rounded-md"
+                      >
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                ) : exp.description ? (
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-3 line-clamp-2">
+                    {exp.description}
+                  </p>
+                ) : null}
 
                 {/* Reviews */}
+                {exp.reviews != null && (
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     ({exp.reviews.toLocaleString()} {t("aboutCambodia.experiences.reviews")})
-                </p>
+                  </p>
+                )}
 
                 {/* Footer */}
                 <div className="flex items-end justify-between mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-800">
@@ -363,10 +257,12 @@ export default function FeaturedExperiencesPage() {
                     <span className="text-xs text-gray-400 dark:text-gray-500 ml-0.5 sm:ml-1">
                       / {t("featured.person")}
                     </span>
-                    <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      <Users className="w-3.5 h-3.5" />
-                      {exp.groupSize}
-                    </div>
+                    {exp.groupSize && (
+                      <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        <Users className="w-3.5 h-3.5" />
+                        {exp.groupSize}
+                      </div>
+                    )}
                   </div>
                   <button className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 bg-primary text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl hover:bg-primary-dark transition-colors shadow-md shadow-primary/20">
                     {t("featured.bookNow")}

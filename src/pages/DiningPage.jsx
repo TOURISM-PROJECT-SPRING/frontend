@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MapPin, Clock, DollarSign, UtensilsCrossed } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Search, MapPin, Clock, DollarSign, UtensilsCrossed } from "lucide-react";
 import PageBanner from "../components/ui/PageBanner";
 import { LoadingState, ErrorState } from "../components/ui/AsyncState";
+import EmptyState from "../components/ui/EmptyState";
+import SafeImage from "../components/ui/SafeImage";
 import { restaurantService } from "../services/restaurantService";
 import { foodService } from "../services/foodService";
 import { RESTAURANT_IMAGES, pickImage, formatPrice, formatTime } from "../utils/helpers";
@@ -13,13 +16,14 @@ export default function DiningPage() {
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
     setError(false);
     try {
       const [restaurantList, foodList] = await Promise.all([
-        restaurantService.getAllRestaurants(),
+        restaurantService.getAllRestaurantsWithImages(),
         foodService.getAllFoods(),
       ]);
       setRestaurants(restaurantList);
@@ -45,7 +49,8 @@ export default function DiningPage() {
           counts[f.foodCategoryName] = (counts[f.foodCategoryName] || 0) + 1;
         });
         const cuisine =
-          Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "Khmer";
+          Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] ||
+          t("dining.cuisineFallback");
         const minPrice = items.length
           ? Math.min(...items.map((f) => f.price))
           : null;
@@ -54,10 +59,21 @@ export default function DiningPage() {
           cuisine,
           dishCount: items.length,
           minPrice,
-          image: pickImage(RESTAURANT_IMAGES, r.id),
+          image: r.imageUrl || pickImage(RESTAURANT_IMAGES, r.id),
         };
       }),
-    [restaurants, foods]
+    [restaurants, foods, t]
+  );
+
+  const filtered = useMemo(
+    () =>
+      dining.filter(
+        (r) =>
+          !search ||
+          r.name?.toLowerCase().includes(search.toLowerCase()) ||
+          r.tourismPlaceName?.toLowerCase().includes(search.toLowerCase())
+      ),
+    [dining, search]
   );
 
   return (
@@ -70,19 +86,31 @@ export default function DiningPage() {
       />
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+        <div className="relative flex-1 mb-6 sm:mb-8 sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("dining.searchPlaceholder")}
+            className="w-full pl-10 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+        </div>
+
         {loading ? (
           <LoadingState rows={6} />
         ) : error ? (
           <ErrorState onRetry={load} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
-            {dining.map((restaurant) => (
-              <article
+            {filtered.map((restaurant) => (
+              <Link
                 key={restaurant.id}
-                className="bg-white dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-none transition-all cursor-pointer group"
+                to={`/dining/${restaurant.id}`}
+                className="group relative bg-white dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-none transition-all"
               >
                 <div className="relative h-44 sm:h-48 md:h-52 overflow-hidden">
-                  <img
+                  <SafeImage
                     src={restaurant.image}
                     alt={restaurant.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -98,7 +126,7 @@ export default function DiningPage() {
                     {restaurant.minPrice !== null && (
                       <span className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm text-gray-900 dark:text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
                         <DollarSign className="w-3.5 h-3.5" />
-                        from {formatPrice(restaurant.minPrice)}
+                        {t("destinations.from")} {formatPrice(restaurant.minPrice)}
                       </span>
                     )}
                   </div>
@@ -120,13 +148,22 @@ export default function DiningPage() {
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2.5 sm:mt-3 line-clamp-2">
                     {restaurant.description}
                   </p>
-                  <button className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-primary/10 text-primary text-xs sm:text-sm font-semibold rounded-lg hover:bg-primary hover:text-white transition-colors">
+                  <span className="inline-flex w-full justify-center mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-primary/10 text-primary text-xs sm:text-sm font-semibold rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
                     {t("dining.viewMenu")}
-                  </button>
+                  </span>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
+          <EmptyState
+            icon={UtensilsCrossed}
+            title={t("dining.noResults")}
+            onAction={() => setSearch("")}
+            actionLabel={t("common.tryAgain")}
+          />
         )}
       </div>
     </div>

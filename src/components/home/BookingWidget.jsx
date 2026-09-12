@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Hotel,
@@ -19,6 +20,7 @@ const inputField =
 
 export default function BookingWidget() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("stays");
   const [location, setLocation] = useState("");
   const [guests] = useState(t("booking.guestsDefault"));
@@ -29,6 +31,17 @@ export default function BookingWidget() {
     { id: "dining", label: t("booking.dining"), icon: UtensilsCrossed },
     { id: "experiences", label: t("booking.experiences"), icon: Sparkles },
   ];
+
+  const handleSearch = () => {
+    if (activeTab === "experiences") {
+      navigate("/featured-experiences");
+      return;
+    }
+    const query = new URLSearchParams();
+    query.set("tab", activeTab);
+    if (location.trim()) query.set("q", location.trim());
+    navigate(`/destinations?${query.toString()}`);
+  };
 
   return (
     <section className="relative z-20 -mt-10 sm:-mt-14 md:-mt-16 pb-6 sm:pb-8 w-full">
@@ -115,7 +128,10 @@ export default function BookingWidget() {
               </div>
 
               <div className="flex items-end sm:col-span-2 lg:col-span-1">
-                <button className="w-full flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-primary text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-md shadow-primary/20">
+                <button
+                  onClick={handleSearch}
+                  className="w-full flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-primary text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-md shadow-primary/20"
+                >
                   <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {t("booking.search")}
                 </button>

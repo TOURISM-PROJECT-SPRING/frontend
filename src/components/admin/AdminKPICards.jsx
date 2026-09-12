@@ -1,23 +1,20 @@
-import {
-  Users,
-  Building2,
-  MapPin,
-  CalendarCheck,
-  Wallet,
-  Star,
-  TrendingUp,
-} from "lucide-react";
-
-const metrics = [
-  { label: "Total Users", value: "2,568", change: "+12.5%", icon: Users, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10" },
-  { label: "Total Owners", value: "356", change: "+8.3%", icon: Building2, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
-  { label: "Total Places", value: "1,245", change: "+15.7%", icon: MapPin, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
-  { label: "Total Bookings", value: "4,789", change: "+18.6%", icon: CalendarCheck, color: "text-primary", bg: "bg-primary/10" },
-  { label: "Total Revenue", value: "$48,965", change: "+22.4%", icon: Wallet, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
-  { label: "Total Reviews", value: "1,356", change: "+10.2%", icon: Star, color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
-];
+import { MapPin, Building2, BedDouble, CalendarCheck, Wallet, UtensilsCrossed, TrendingUp } from "lucide-react";
+import useDashboardData from "../../hooks/useDashboardData";
 
 export default function AdminKPICards() {
+  const { data } = useDashboardData();
+
+  const metrics = data
+    ? [
+        { label: "Total Places", value: String(data.totalPlaces), footer: "tour places live", icon: MapPin, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
+        { label: "Total Hotels", value: String(data.totalHotels), footer: `${data.totalRooms} rooms`, icon: Building2, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
+        { label: "Total Restaurants", value: String(data.totalRestaurants), footer: `${data.totalFoods} dishes`, icon: UtensilsCrossed, color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+        { label: "Total Bookings", value: String(data.totalBookings), footer: `${data.roomBookings.length} rooms / ${data.ticketBookings.length} tickets / ${data.foodOrders.length} food`, icon: CalendarCheck, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10" },
+        { label: "Total Revenue", value: data.revenueText, footer: "across all channels", icon: Wallet, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
+        { label: "Avg Rating", value: data.avgRating ? `${data.avgRating}/5` : "—", footer: `${data.totalPlaces} places rated`, icon: BedDouble, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
+      ]
+    : [];
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
       {metrics.map((m, i) => (
@@ -32,11 +29,10 @@ export default function AdminKPICards() {
             </div>
             <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{m.label}</span>
           </div>
-          <p className="text-lg font-bold text-gray-900 dark:text-white animate-count-up" style={{ animationDelay: `${i * 75 + 200}ms` }}>{m.value}</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-white">{m.value}</p>
           <div className="flex items-center gap-1 mt-1">
-            <TrendingUp className="w-3 h-3 text-green-500" />
-            <span className="text-[10px] font-medium text-green-600">{m.change}</span>
-            <span className="text-[9px] text-gray-300 dark:text-gray-600">vs last week</span>
+            <TrendingUp className="w-3 h-3 text-primary" />
+            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">{m.footer}</span>
           </div>
         </div>
       ))}

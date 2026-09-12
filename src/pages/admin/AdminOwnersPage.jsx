@@ -1,71 +1,62 @@
-import { useState } from "react";
-import { Search, Plus, Eye, Edit3, Trash2, X, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import { managementService } from "../../services/managementService";
 
-const initialOwners = [
-  { id: 1, name: "Sok Dara", email: "dara@angkorresort.com", phone: "012 345 678", business: "Angkor Resort & Spa", properties: 3, revenue: "$45,200", rating: 4.8, status: "Active", avatar: "https://i.pravatar.cc/150?img=1" },
-  { id: 2, name: "Chan Bopha", email: "bopha@riversidehotel.com", phone: "015 234 567", business: "Riverside Hotel Group", properties: 5, revenue: "$62,800", rating: 4.6, status: "Active", avatar: "https://i.pravatar.cc/150?img=5" },
-  { id: 3, name: "Lim Visal", email: "visal@paradiselodge.com", phone: "017 876 543", business: "Paradise Lodge", properties: 2, revenue: "$18,400", rating: 4.9, status: "Pending", avatar: "https://i.pravatar.cc/150?img=3" },
-  { id: 4, name: "Keo Chantrea", email: "chantrea@beachhouse.com", phone: "098 765 432", business: "Koh Rong Beach Houses", properties: 4, revenue: "$31,500", rating: 4.5, status: "Active", avatar: "https://i.pravatar.cc/150?img=8" },
-  { id: 5, name: "Hun Many", email: "many@templeinn.com", phone: "011 999 888", business: "Temple Inn Collection", properties: 1, revenue: "$0", rating: 0, status: "Rejected", avatar: "https://i.pravatar.cc/150?img=12" },
-  { id: 6, name: "Sun Sophea", email: "sophea@skylineresorts.com", phone: "093 456 789", business: "Skyline Resorts", properties: 6, revenue: "$78,300", rating: 4.7, status: "Active", avatar: "https://i.pravatar.cc/150?img=16" },
-];
+const norm = (s) => String(s || "").toUpperCase();
 
-const statusColors = { Active: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400", Pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400", Rejected: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400" };
+const verificationColors = {
+  VERIFIED: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400",
+  PENDING: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/15 dark:text-yellow-400",
+};
+
+const verificationColor = (status) => verificationColors[norm(status)] || "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400";
 
 export default function AdminOwnersPage() {
-  const [owners, setOwners] = useState(initialOwners);
+  const [owners, setOwners] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("All");
-  const [formOpen, setFormOpen] = useState(false);
-  const [editItem, setEditItem] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [viewTarget, setViewTarget] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await managementService.getOwners();
+        setOwners(data || []);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching owners:", error);
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filtered = owners.filter((o) => {
-    const matchSearch = o.name.toLowerCase().includes(search.toLowerCase()) || o.business.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "All" || o.status === filter;
-    return matchSearch && matchFilter;
+    const business = o.businessName || "";
+    const owner = o.userName || "";
+    return `${business} ${owner}`.toLowerCase().includes(search.toLowerCase());
   });
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.target));
-    data.properties = parseInt(data.properties) || 0;
-    if (editItem) {
-      setOwners((prev) => prev.map((o) => (o.id === editItem.id ? { ...o, ...data } : o)));
-    } else {
-      setOwners((prev) => [{ ...data, id: Date.now(), revenue: "$0", rating: 0, status: "Pending", avatar: `https://i.pravatar.cc/150?u=${Date.now()}` }, ...prev]);
-    }
-    setFormOpen(false);
-    setEditItem(null);
-  };
-
-  const handleDelete = () => {
-    setOwners((prev) => prev.filter((o) => o.id !== deleteTarget.id));
-    setDeleteTarget(null);
-  };
+  if (loading) {
+    return <div className="p-12 text-center text-sm text-gray-400">Loading owners from server...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Owners / Businesses</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Manage property owners and business accounts.</p>
-        </div>
-        <button onClick={() => { setEditItem(null); setFormOpen(true); }} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition">
-          <Plus className="w-4 h-4" /> Add Owner
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Owners / Businesses</h1>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Property owners and business accounts</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-          <input type="text" placeholder="Search by name or business..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition" />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {["All", "Active", "Pending", "Rejected"].map((s) => (
-            <button key={s} onClick={() => setFilter(s)} className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filter === s ? "bg-primary text-white" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800"}`}>{s}</button>
-          ))}
+          <input
+            type="text"
+            placeholder="Search by business or owner..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition"
+          />
         </div>
       </div>
 
@@ -74,41 +65,24 @@ export default function AdminOwnersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800">
-                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Owner</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Business</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Properties</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Revenue</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Rating</th>
-                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">License No.</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Verification</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Verified At</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Owner</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((o) => (
-                <tr key={o.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 transition">
+                <tr key={o.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                  <td className="px-5 py-3.5 font-medium text-gray-900 dark:text-white">{o.businessName || "N/A"}</td>
+                  <td className="px-5 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-300">{o.businessLicenseNo || "N/A"}</td>
+                  <td className="px-5 py-3.5"><span className={`px-2.5 py-1 rounded-full text-xs font-medium ${verificationColor(o.verificationStatus)}`}>{o.verificationStatus || "N/A"}</span></td>
+                  <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400">{o.verifiedAt ? o.verifiedAt.slice(0, 10) : "—"}</td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <img src={o.avatar} alt={o.name} className="w-9 h-9 rounded-full object-cover" />
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{o.name}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{o.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-gray-600 dark:text-gray-300">{o.business}</td>
-                  <td className="px-5 py-3.5 font-medium text-gray-900 dark:text-white">{o.properties}</td>
-                  <td className="px-5 py-3.5 font-medium text-green-600">{o.revenue}</td>
-                  <td className="px-5 py-3.5">
-                    {o.rating > 0 ? (
-                      <div className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" /><span className="font-medium text-gray-900 dark:text-white">{o.rating}</span></div>
-                    ) : <span className="text-gray-300">—</span>}
-                  </td>
-                  <td className="px-5 py-3.5"><span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[o.status]}`}>{o.status}</span></td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button onClick={() => setViewTarget(o)} className="p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 transition"><Eye className="w-4 h-4" /></button>
-                      <button onClick={() => { setEditItem(o); setFormOpen(true); }} className="p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-primary hover:bg-primary/5 transition"><Edit3 className="w-4 h-4" /></button>
-                      <button onClick={() => setDeleteTarget(o)} className="p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition"><Trash2 className="w-4 h-4" /></button>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{o.userName || "N/A"}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{o.userEmail || ""}</p>
                     </div>
                   </td>
                 </tr>
@@ -118,79 +92,6 @@ export default function AdminOwnersPage() {
         </div>
         {filtered.length === 0 && <div className="text-center py-12"><p className="text-sm text-gray-400 dark:text-gray-500">No owners found.</p></div>}
       </div>
-
-      {viewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewTarget(null)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Owner Details</h3>
-              <button onClick={() => setViewTarget(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 transition"><X className="w-5 h-5 text-gray-400 dark:text-gray-500" /></button>
-            </div>
-            <div className="flex items-center gap-4 mt-4 pb-4 border-b border-gray-100 dark:border-gray-800">
-              <img src={viewTarget.avatar} alt={viewTarget.name} className="w-16 h-16 rounded-full object-cover" />
-              <div>
-                <h4 className="text-base font-semibold text-gray-900 dark:text-white">{viewTarget.name}</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">{viewTarget.business}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColors[viewTarget.status]}`}>{viewTarget.status}</span>
-                  {viewTarget.rating > 0 && <div className="flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-400 fill-yellow-400" /><span className="text-xs font-medium">{viewTarget.rating}</span></div>}
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-400 dark:text-gray-500">Email</p><p className="text-sm font-medium text-gray-900 dark:text-white mt-0.5">{viewTarget.email}</p></div>
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-400 dark:text-gray-500">Phone</p><p className="text-sm font-medium text-gray-900 dark:text-white mt-0.5">{viewTarget.phone}</p></div>
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-400 dark:text-gray-500">Properties</p><p className="text-sm font-medium text-gray-900 dark:text-white mt-0.5">{viewTarget.properties}</p></div>
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-400 dark:text-gray-500">Revenue</p><p className="text-sm font-medium text-green-600 mt-0.5">{viewTarget.revenue}</p></div>
-            </div>
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => { setViewTarget(null); setEditItem(viewTarget); setFormOpen(true); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition"><Edit3 className="w-4 h-4" /> Edit</button>
-              <button onClick={() => { setViewTarget(null); setDeleteTarget(viewTarget); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition"><Trash2 className="w-4 h-4" /> Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {formOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); }} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editItem ? "Edit Owner" : "Add New Owner"}</h2>
-              <button onClick={() => { setFormOpen(false); setEditItem(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:bg-gray-700 transition"><X className="w-5 h-5 text-gray-400 dark:text-gray-500" /></button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 space-y-5">
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Full Name *</label><input name="name" type="text" required defaultValue={editItem?.name || ""} placeholder="e.g. Sok Dara" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Business Name *</label><input name="business" type="text" required defaultValue={editItem?.business || ""} placeholder="e.g. Angkor Resort & Spa" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email *</label><input name="email" type="email" required defaultValue={editItem?.email || ""} placeholder="owner@business.com" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone *</label><input name="phone" type="text" required defaultValue={editItem?.phone || ""} placeholder="012 345 678" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition" /></div>
-              </div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Properties Count</label><input name="properties" type="number" min="0" defaultValue={editItem?.properties || ""} placeholder="0" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition" /></div>
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">{editItem ? "Save Changes" : "Create Owner"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-red-50 rounded-full mx-auto mb-4"><Trash2 className="w-6 h-6 text-red-500" /></div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Owner</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-2">Are you sure you want to delete "{deleteTarget.name}"? This action cannot be undone.</p>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</button>
-              <button onClick={handleDelete} className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition">Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

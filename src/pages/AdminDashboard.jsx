@@ -28,6 +28,7 @@ import AdminReportsPage from "./admin/AdminReportsPage";
 import AdminLogsPage from "./admin/AdminLogsPage";
 import AdminSettingsPage from "./admin/AdminSettingsPage";
 import AdminProfilePage from "./admin/AdminProfilePage";
+import AdminContactMessagesPage from "./admin/AdminContactMessagesPage";
 
 function AdminOverview() {
   return (
@@ -93,6 +94,7 @@ export default function AdminDashboard() {
             <Route path="reviews" element={<AdminReviewsPage />} />
             <Route path="promotions" element={<AdminPromotionsPage />} />
             <Route path="notifications" element={<AdminNotificationsPage />} />
+            <Route path="contact-messages" element={<AdminContactMessagesPage />} />
             <Route path="reports" element={<AdminReportsPage />} />
             <Route path="logs" element={<AdminLogsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />

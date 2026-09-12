@@ -16,6 +16,7 @@ import {
   Star,
   Tag,
   Bell,
+  Mail,
   BarChart3,
   ScrollText,
   Settings,
@@ -49,6 +50,7 @@ const sections = [
       { icon: Star, text: "Reviews & Ratings", path: "/admin/reviews" },
       { icon: Tag, text: "Promotions", path: "/admin/promotions" },
       { icon: Bell, text: "Notifications", path: "/admin/notifications" },
+      { icon: Mail, text: "Contact Messages", path: "/admin/contact-messages" },
     ],
   },
   {

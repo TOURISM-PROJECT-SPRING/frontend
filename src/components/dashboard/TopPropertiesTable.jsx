@@ -1,13 +1,6 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-
-const properties = [
-  { rank: 1, name: "Green Park Resort", bookings: 42, revenue: "$12,480", occupancy: 82 },
-  { rank: 2, name: "Paradise Hotel", bookings: 35, revenue: "$9,870", occupancy: 74 },
-  { rank: 3, name: "Angkor Wat Villa", bookings: 28, revenue: "$14,200", occupancy: 68 },
-  { rank: 4, name: "Riverside Lodge", bookings: 15, revenue: "$6,340", occupancy: 52 },
-  { rank: 5, name: "Sunset Beach House", bookings: 8, revenue: "$6,075", occupancy: 38 },
-];
+import useDashboardData from "../../hooks/useDashboardData";
 
 const rankColors = {
   1: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400",
@@ -16,6 +9,9 @@ const rankColors = {
 };
 
 export default function TopPropertiesTable() {
+  const { data } = useDashboardData();
+  const properties = data?.topProperties || [];
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 animate-fade-in-up delay-150">
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-50 dark:border-gray-800">
@@ -28,7 +24,7 @@ export default function TopPropertiesTable() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-50 dark:border-gray-800">
-              {["#", "Property", "Bookings", "Revenue", "Occupancy"].map((h) => (
+              {["#", "Property", "Bookings", "Revenue", "Popularity"].map((h) => (
                 <th key={h} className={`text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-4 py-2.5 ${h === "Bookings" ? "hidden md:table-cell" : ""} ${h === "Revenue" ? "hidden lg:table-cell" : ""}`}>
                   {h}
                 </th>
@@ -45,22 +41,25 @@ export default function TopPropertiesTable() {
                 </td>
                 <td className="px-4 py-2.5 text-[13px] font-medium text-gray-900 dark:text-white">{p.name}</td>
                 <td className="px-4 py-2.5 text-[13px] text-gray-600 dark:text-gray-300 hidden md:table-cell">{p.bookings}</td>
-                <td className="px-4 py-2.5 text-[13px] font-semibold text-gray-900 dark:text-white hidden lg:table-cell">{p.revenue}</td>
+                <td className="px-4 py-2.5 text-[13px] font-semibold text-gray-900 dark:text-white hidden lg:table-cell">{p.revenueText}</td>
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
                     <div className="w-14 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${p.occupancy >= 70 ? "bg-green-500" : p.occupancy >= 50 ? "bg-orange-400" : "bg-red-400"}`}
-                        style={{ width: `${p.occupancy}%` }}
+                        className={`h-full rounded-full transition-all ${p.popularity >= 70 ? "bg-green-500" : p.popularity >= 50 ? "bg-orange-400" : "bg-red-400"}`}
+                        style={{ width: `${p.popularity}%` }}
                       />
                     </div>
-                    <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{p.occupancy}%</span>
+                    <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{p.popularity}%</span>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {!properties.length && (
+          <div className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">No room bookings yet.</div>
+        )}
       </div>
     </div>
   );

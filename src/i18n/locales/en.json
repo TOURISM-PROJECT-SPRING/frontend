@@ -61,6 +61,8 @@
     "viewDetails": "View Details",
     "categories": { "all": "All", "stays": "Stays", "tours": "Tours", "dining": "Dining" },
     "noResults": "No destinations found",
+    "noResultsDesc": "Try adjusting your search or filters.",
+    "found": "{{count}} result(s)",
     "from": "from"
   },
   "stays": {
@@ -68,7 +70,14 @@
     "subtitle": "From luxury resorts to cozy boutique hotels, find the best accommodations across Cambodia.",
     "searchPlaceholder": "Search hotels, resorts, lodges...",
     "bookNow": "Book Now",
-    "perNight": "/ night"
+    "perNight": "/ night",
+    "noResults": "No stays available right now.",
+    "viewDetails": "View Details",
+    "roomTypes": "room types",
+    "location": "Location",
+    "phone": "Phone",
+    "email": "Email",
+    "guests": "Guests"
   },
   "tours": {
     "title": "Unforgettable Tours",
@@ -76,7 +85,10 @@
     "searchPlaceholder": "Search tours & activities...",
     "bookNow": "Book Now",
     "perPerson": "/ person",
-    "rating": "rating"
+    "rating": "rating",
+    "noResults": "No tours available right now.",
+    "viewDetails": "View Details",
+    "location": "Location"
   },
   "dining": {
     "title": "Food & Dining",
@@ -84,7 +96,10 @@
     "searchPlaceholder": "Search restaurants, cafes, street food...",
     "reviews": "reviews",
     "dishes": "dishes",
-    "viewMenu": "View Menu"
+    "viewMenu": "View Menu",
+    "noResults": "No restaurants available right now.",
+    "contactUs": "Contact Us",
+    "cuisineFallback": "Khmer"
   },
   "about": {
     "title": "About Smart Tourism Cambodia",
@@ -120,10 +135,16 @@
     "title": "Exclusive Offers",
     "subtitle": "Save big on Cambodia's best experiences. Limited-time deals you don't want to miss.",
     "validUntil": "Valid until",
-    "newsletter": "Want to be the first to know about new deals?",
-    "newsletterSub": "Subscribe to our newsletter and never miss an offer.",
-    "enterEmail": "Enter your email",
-    "subscribe": "Subscribe"
+    "claimNow": "Claim",
+    "loading": "Loading offers...",
+    "noOffers": "No active promotions available right now.",
+    "copied": "Promo code copied!",
+    "newsletter": {
+      "title": "Want to be the first to know about new deals?",
+      "desc": "Subscribe to our newsletter and never miss an offer.",
+      "placeholder": "Enter your email",
+      "subscribe": "Subscribe"
+    }
   },
   "contact": {
     "title": "Get in Touch",
@@ -173,7 +194,26 @@
     "privacyPolicy": "Privacy Policy",
     "createBtn": "Create Account",
     "alreadyAccount": "Already have an account?",
-    "signInLink": "Sign in"
+    "signInLink": "Sign in",
+    "passwordMatch": "Passwords match",
+    "strength": {
+      "weak": "Weak",
+      "fair": "Fair",
+      "strong": "Strong",
+      "veryStrong": "Very Strong"
+    },
+    "errors": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 6 characters",
+      "nameRequired": "Full name is required",
+      "confirmRequired": "Please confirm your password",
+      "passwordMismatch": "Passwords do not match",
+      "termsRequired": "You must agree to the Terms of Service",
+      "loginFailed": "Sign in failed. Please try again.",
+      "registerFailed": "Registration failed. Please try again."
+    }
   },
   "notFound": {
     "title": "Page not found",
@@ -467,5 +507,50 @@
     "placeholder": "Enter your email address",
     "subscribe": "Subscribe",
     "subscribed": "Subscribed!"
+  },
+  "common": {
+    "backToList": "Back to list",
+    "tryAgain": "Try again",
+    "loading": "Loading...",
+    "viewDetails": "View Details"
+  },
+  "hotelDetail": {
+    "rooms": "Rooms & Rates",
+    "roomType": "Room type",
+    "pricePerNight": "per night",
+    "capacity": "Guests",
+    "total": "Available",
+    "book": "Book room",
+    "bookingSuccess": "Booking request sent!",
+    "bookingError": "Could not create booking. Please try again.",
+    "loginToBook": "Sign in to book",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "nights": "nights",
+    "phone": "Phone",
+    "email": "Email",
+    "location": "Location",
+    "noRooms": "No rooms published yet."
+  },
+  "tourDetail": {
+    "overview": "Overview",
+    "location": "Location",
+    "category": "Category",
+    "status": "Status",
+    "rating": "Rating",
+    "bookExperience": "Book this experience",
+    "browseExperiences": "Browse experiences"
+  },
+  "restaurantDetail": {
+    "about": "About",
+    "hours": "Opening hours",
+    "location": "Location",
+    "menu": "Menu",
+    "emptyMenu": "Menu coming soon",
+    "price": "Price",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "contactUs": "Contact Us"
   }
 }

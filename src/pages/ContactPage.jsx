@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle, X } from "lucide-react";
 import PageBanner from "../components/ui/PageBanner";
+import { contactService } from "../services/contactService";
 
 const contactInfo = [
   {
@@ -29,6 +31,42 @@ const contactInfo = [
 
 export default function ContactPage() {
   const { t } = useTranslation();
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
+
+  const update = (field, value) => setForm((p) => ({ ...p, [field]: value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("submitting");
+    setError("");
+    try {
+      await contactService.sendMessage({
+        name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
+        email: form.email.trim(),
+        subject: form.subject.trim(),
+        message: form.message.trim(),
+      });
+      setStatus("success");
+      setForm({ firstName: "", lastName: "", email: "", subject: "", message: "" });
+      setTimeout(() => setStatus("idle"), 4000);
+    } catch (err) {
+      setStatus("error");
+      setError(
+        err?.response?.data?.message || err?.response?.data?.error || "Failed to send your message. Please try again."
+      );
+    }
+  };
+
+  const inputClass =
+    "w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all dark:placeholder-gray-500";
 
   return (
     <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900">
@@ -72,7 +110,7 @@ export default function ContactPage() {
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-5">
                 {t("contact.form.title")}
               </h2>
-              <form className="space-y-3.5 sm:space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-3.5 sm:space-y-4" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-1.5">
@@ -80,8 +118,10 @@ export default function ContactPage() {
                     </label>
                     <input
                       type="text"
+                      value={form.firstName}
+                      onChange={(e) => update("firstName", e.target.value)}
                       placeholder={t("contact.form.firstNamePlaceholder")}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all dark:placeholder-gray-500"
+                      className={inputClass}
                     />
                   </div>
                   <div>
@@ -90,8 +130,10 @@ export default function ContactPage() {
                     </label>
                     <input
                       type="text"
+                      value={form.lastName}
+                      onChange={(e) => update("lastName", e.target.value)}
                       placeholder={t("contact.form.lastNamePlaceholder")}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all dark:placeholder-gray-500"
+                      className={inputClass}
                     />
                   </div>
                 </div>
@@ -102,8 +144,11 @@ export default function ContactPage() {
                   </label>
                   <input
                     type="email"
+                    required
+                    value={form.email}
+                    onChange={(e) => update("email", e.target.value)}
                     placeholder={t("contact.form.emailPlaceholder")}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all dark:placeholder-gray-500"
+                    className={inputClass}
                   />
                 </div>
 
@@ -113,8 +158,11 @@ export default function ContactPage() {
                   </label>
                   <input
                     type="text"
+                    required
+                    value={form.subject}
+                    onChange={(e) => update("subject", e.target.value)}
                     placeholder={t("contact.form.subjectPlaceholder")}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all dark:placeholder-gray-500"
+                    className={inputClass}
                   />
                 </div>
 
@@ -124,16 +172,38 @@ export default function ContactPage() {
                   </label>
                   <textarea
                     rows={5}
+                    required
+                    value={form.message}
+                    onChange={(e) => update("message", e.target.value)}
                     placeholder={t("contact.form.messagePlaceholder")}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none dark:placeholder-gray-500"
+                    className={inputClass}
                   />
                 </div>
 
+                {status === "success" && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-900 rounded-xl text-xs sm:text-sm text-green-600 dark:text-green-400">
+                    <CheckCircle className="w-4 h-4 shrink-0" />
+                    {t("contact.form.success") || "Thank you! Your message has been sent."}
+                  </div>
+                )}
+
+                {status === "error" && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl text-xs sm:text-sm text-red-600 dark:text-red-400">
+                    <X className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-primary text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-md shadow-primary/20"
+                  disabled={status === "submitting"}
+                  className="flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-primary text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-md shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  {status === "submitting" ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  )}
                   {t("contact.form.submit")}
                 </button>
               </form>

@@ -1,13 +1,34 @@
 import axiosClient from '../api/axiosClient';
+import { hotelAttachmentService } from './hotelAttachmentService';
+
+async function withImages(hotel) {
+  if (!hotel || hotel.id == null) return hotel;
+  try {
+    const attachments = await hotelAttachmentService.getHotelAttachments(hotel.id);
+    const first = attachments?.[0];
+    return { ...hotel, imageUrl: first?.cloudinaryUrl || undefined };
+  } catch {
+    return { ...hotel, imageUrl: undefined };
+  }
+}
 
 export const hotelService = {
   getAllHotels: async () => {
     const response = await axiosClient.get('/hotels');
     return response.data;
   },
+  getAllHotelsWithImages: async () => {
+    const response = await axiosClient.get('/hotels');
+    const hotels = response.data || [];
+    return Promise.all(hotels.map(withImages));
+  },
   getHotelById: async (id) => {
     const response = await axiosClient.get(`/hotels/${id}`);
     return response.data;
+  },
+  getHotelByIdWithImages: async (id) => {
+    const response = await axiosClient.get(`/hotels/${id}`);
+    return withImages(response.data);
   },
   searchHotels: async (keyword) => {
     const response = await axiosClient.get('/hotels/search', { params: { keyword } });

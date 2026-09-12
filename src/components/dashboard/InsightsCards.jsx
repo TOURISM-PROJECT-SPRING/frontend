@@ -1,42 +1,42 @@
-import {
-  TrendingUp,
-  Flame,
-  AlertTriangle,
-  Megaphone,
-} from "lucide-react";
-
-const insights = [
-  {
-    icon: TrendingUp,
-    title: "Revenue is up 22.4%",
-    description: "Keep up the momentum with seasonal promotions.",
-    accent: "border-l-green-500",
-    iconColor: "text-green-500",
-  },
-  {
-    icon: Flame,
-    title: "High demand this weekend",
-    description: "Consider adjusting pricing to maximize revenue.",
-    accent: "border-l-orange-500",
-    iconColor: "text-orange-500",
-  },
-  {
-    icon: AlertTriangle,
-    title: "Improve guest experience",
-    description: "3 recent reviews mentioned Wi-Fi speed.",
-    accent: "border-l-yellow-500",
-    iconColor: "text-yellow-500",
-  },
-  {
-    icon: Megaphone,
-    title: "Promote your properties",
-    description: "Create a limited-time promotion to boost bookings.",
-    accent: "border-l-blue-500",
-    iconColor: "text-blue-500",
-  },
-];
+import { TrendingUp, BedDouble, MapPin, UtensilsCrossed } from "lucide-react";
+import useDashboardData from "../../hooks/useDashboardData";
 
 export default function InsightsCards() {
+  const { data } = useDashboardData();
+
+  const insights = data
+    ? [
+        {
+          icon: TrendingUp,
+          title: `${data.totalBookings} bookings recorded`,
+          description: `${data.totalChannel} across rooms, tickets and food orders.`,
+          accent: "border-l-green-500",
+          iconColor: "text-green-500",
+        },
+        {
+          icon: MapPin,
+          title: `${data.totalPlaces} destinations live`,
+          description: `${data.tickets.length} tickets purchasable across Cambodia.`,
+          accent: "border-l-orange-500",
+          iconColor: "text-orange-500",
+        },
+        {
+          icon: BedDouble,
+          title: `${data.totalHotels} properties and ${data.totalRooms} rooms`,
+          description: "Popularity ranked from actual room bookings.",
+          accent: "border-l-yellow-500",
+          iconColor: "text-yellow-500",
+        },
+        {
+          icon: UtensilsCrossed,
+          title: `${data.totalRestaurants} restaurants, ${data.totalFoods} dishes`,
+          description: `${data.foodOrders.length} food orders placed through the app.`,
+          accent: "border-l-blue-500",
+          iconColor: "text-blue-500",
+        },
+      ]
+    : [];
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {insights.map((item, i) => (
