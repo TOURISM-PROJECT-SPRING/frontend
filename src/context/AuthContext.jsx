@@ -30,12 +30,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(
-    async ({ usernameOrEmail, password } = {}) => {
+    async ({ username, usernameOrEmail, email, password } = {}) => {
       setLoading(true);
       try {
-        const data = await authService.login({ usernameOrEmail, password });
-        persist(data.token, data.user);
-        return { user: data.user, token: data.token };
+        const data = await authService.login({ username, usernameOrEmail, email, password });
+        const receivedToken = data.accessToken || data.token;
+        persist(receivedToken, data.user);
+        return { user: data.user, token: receivedToken };
       } finally {
         setLoading(false);
       }
@@ -44,12 +45,13 @@ export function AuthProvider({ children }) {
   );
 
   const register = useCallback(
-    async ({ fullname, username, email, password } = {}) => {
+    async (payload) => {
       setLoading(true);
       try {
-        const data = await authService.register({ fullname, username, email, password });
-        persist(data.token, data.user);
-        return { user: data.user, token: data.token };
+        const data = await authService.register(payload);
+        const receivedToken = data.accessToken || data.token;
+        persist(receivedToken, data.user);
+        return { user: data.user, token: receivedToken };
       } finally {
         setLoading(false);
       }
@@ -58,6 +60,7 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(() => {
+    authService.logout().catch(() => {});
     persist(null, null);
   }, [persist]);
 

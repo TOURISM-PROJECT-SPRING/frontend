@@ -19,7 +19,15 @@ import NotFoundPage from "./pages/NotFoundPage";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 
+import InboxPage from "./pages/InboxPage";
+import InboxDrawer from "./components/inbox/InboxDrawer";
+import BookingVoucherModal from "./components/inbox/BookingVoucherModal";
+import InboxToast from "./components/inbox/InboxToast";
+import { useInbox } from "./context/InboxContext";
+
 function PublicLayout() {
+  const { selectedBooking, closeBookingDetails } = useInbox();
+
   return (
     <div className="min-h-screen w-full bg-white dark:bg-gray-950 font-sans overflow-x-hidden">
       <Navbar />
@@ -38,11 +46,18 @@ function PublicLayout() {
           <Route path="/about-cambodia" element={<AboutCambodiaPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/offers" element={<OffersPage />} />
+          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/my-bookings" element={<InboxPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer />
+
+      {/* Global Tourist Inbox & Booking Alerts Components */}
+      <InboxDrawer />
+      <BookingVoucherModal booking={selectedBooking} onClose={closeBookingDetails} />
+      <InboxToast />
     </div>
   );
 }

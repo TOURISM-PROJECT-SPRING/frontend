@@ -9,14 +9,18 @@ import {
   Users,
   CalendarDays,
   CheckCircle,
+  CheckCircle2,
   AlertCircle,
   Building2,
+  Bell,
+  Eye,
 } from "lucide-react";
 import { hotelService } from "../services/hotelService";
 import { hotelRoomService } from "../services/hotelRoomService";
 import { hotelAttachmentService } from "../services/hotelAttachmentService";
 import { roomBookingService } from "../services/roomBookingService";
 import { useAuth } from "../context/AuthContext";
+import { useInbox } from "../context/InboxContext";
 import SafeImage from "../components/ui/SafeImage";
 import { LoadingState, ErrorState } from "../components/ui/AsyncState";
 import { HOTEL_IMAGES, pickImage, formatPrice } from "../utils/helpers";
@@ -26,6 +30,7 @@ export default function HotelDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { addBookingAlert, openInbox, viewBookingDetails } = useInbox();
 
   const [hotel, setHotel] = useState(null);
   const [gallery, setGallery] = useState([]);
@@ -36,6 +41,7 @@ export default function HotelDetailPage() {
   const [openFormFor, setOpenFormFor] = useState(null);
   const [booking, setBooking] = useState({ checkIn: "", checkOut: "", numGuest: 2, paymentMethod: "" });
   const [bookingState, setBookingState] = useState("idle");
+  const [lastConfirmedBooking, setLastConfirmedBooking] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -78,7 +84,7 @@ export default function HotelDetailPage() {
     }
     setBookingState("submitting");
     try {
-      await roomBookingService.createRoomBooking({
+      const res = await roomBookingService.createRoomBooking({
         userId: user.id,
         roomId,
         numGuest: Number(booking.numGuest),
@@ -86,9 +92,25 @@ export default function HotelDetailPage() {
         checkOut: booking.checkOut,
         paymentMethod: booking.paymentMethod || undefined,
       });
+
+      const targetRoom = rooms.find((r) => r.id === roomId);
+      const confirmedData = {
+        ...res,
+        id: res?.id || Date.now(),
+        hotelName: hotel?.hotelName,
+        roomType: targetRoom?.roomType || "Standard Room",
+        pricePerNight: targetRoom?.pricePerNight,
+        numGuest: Number(booking.numGuest),
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        paymentMethod: booking.paymentMethod || "Cash on Arrival",
+        status: res?.status || "CONFIRMED",
+      };
+
+      addBookingAlert(confirmedData, "hotel_booking");
+      setLastConfirmedBooking(confirmedData);
       setBookingState("success");
       setOpenFormFor(null);
-      setTimeout(() => setBookingState("idle"), 4000);
     } catch (err) {
       console.error("Booking failed:", err);
       setBookingState("error");
@@ -156,11 +178,10 @@ export default function HotelDetailPage() {
                 <button
                   key={`${url}-${i}`}
                   onClick={() => setActiveImage(url)}
-                  className={`w-20 sm:w-28 h-14 sm:h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-colors ${
-                    activeImage === url
+                  className={`w-20 sm:w-28 h-14 sm:h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-colors ${activeImage === url
                       ? "border-primary"
                       : "border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  }`}
+                    }`}
                 >
                   <SafeImage src={url} alt="" className="w-full h-full object-cover" />
                 </button>
@@ -290,9 +311,37 @@ export default function HotelDetailPage() {
                 )}
 
                 {bookingState === "success" && (
-                  <p className="mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                    <CheckCircle className="w-4 h-4" /> {t("hotelDetail.bookingSuccess")}
-                  </p>
+                  <div className="mt-5 p-4 sm:p-5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl animate-fade-in">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                            {t("hotelDetail.bookingSuccess")}
+                          </h4>
+                          <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                            Your reservation is confirmed and all information has been added to your <strong>Inbox & Alerts</strong>.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        {lastConfirmedBooking && (
+                          <button
+                            onClick={() => viewBookingDetails(lastConfirmedBooking)}
+                            className="px-3.5 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-700 transition flex items-center gap-1.5 shadow-sm"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View Voucher
+                          </button>
+                        )}
+                        <button
+                          onClick={openInbox}
+                          className="px-3.5 py-2 bg-white dark:bg-gray-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 text-xs font-semibold rounded-xl hover:bg-emerald-100/50 dark:hover:bg-gray-800 transition flex items-center gap-1.5"
+                        >
+                          <Bell className="w-3.5 h-3.5 text-primary" /> Open Inbox
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {bookingState === "error" && (
                   <p className="mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm text-red-500 font-medium">

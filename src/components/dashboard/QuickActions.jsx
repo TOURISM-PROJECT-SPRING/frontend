@@ -8,9 +8,10 @@ import {
 
 const actions = [
   { icon: Plus, text: "Add New Property", path: "/owner/properties" },
+  { icon: Plus, text: "Manage & Add Rooms", path: "/owner/rooms" },
+  { icon: Calendar, text: "Manage Reservations", path: "/owner/bookings" },
   { icon: Tag, text: "Create Promotion", path: "/owner/promotions" },
   { icon: CalendarDays, text: "Update Availability", path: "/owner/pricing" },
-  { icon: Calendar, text: "View Calendar", path: "/owner/bookings" },
   { icon: Download, text: "Download Reports", path: "/owner/reports" },
 ];
 

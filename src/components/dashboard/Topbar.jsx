@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Search,
   Bell,
@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const pageTitles = {
   "/owner": "Dashboard",
@@ -32,6 +33,8 @@ const pageTitles = {
 
 export default function Topbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -43,6 +46,14 @@ export default function Topbar() {
     year: "numeric",
   });
 
+  const displayName = user?.fullname || user?.username || "Business Owner";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "BO";
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -51,6 +62,11 @@ export default function Topbar() {
       document.exitFullscreen();
       setIsFullscreen(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -103,12 +119,12 @@ export default function Topbar() {
             onClick={() => setProfileOpen(!profileOpen)}
             className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-2 py-1 transition"
           >
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">SP</span>
+            <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+              <span className="text-xs font-bold text-primary">{initials}</span>
             </div>
             <div className="hidden md:block leading-none text-left">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">Sokunthea Peng</p>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500">Property Owner</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">{user?.roles?.[0] || "Property Owner"}</p>
             </div>
           </button>
 
@@ -117,8 +133,8 @@ export default function Topbar() {
               <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
               <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 shadow-xl py-2 z-50 animate-scale-in">
                 <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-800">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Sokunthea Peng</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">sokunthea@tourism.com</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{user?.email || "owner@smarttourism.com"}</p>
                 </div>
                 <Link
                   to="/owner/profile"
@@ -135,7 +151,10 @@ export default function Topbar() {
                   <Settings className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Settings
                 </Link>
                 <div className="border-t border-gray-50 dark:border-gray-800 my-1" />
-                <button className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition w-full text-left">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition w-full text-left"
+                >
                   <LogOut className="w-4 h-4" /> Sign Out
                 </button>
               </div>
