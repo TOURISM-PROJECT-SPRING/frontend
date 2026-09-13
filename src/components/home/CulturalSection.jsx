@@ -43,10 +43,10 @@ export default function CulturalSection() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#experiences" className="group inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-bold text-brand-900 transition-all hover:bg-gold-300">
-              Discover Tours <Icon name="arrow-right" size={17} className="transition-transform group-hover:translate-x-0.5" />
+            <a href="#experiences" className="group inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-bold text-brand-900 transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:bg-gold-300">
+              Discover Tours <Icon name="arrow-right" size={17} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
             </a>
-            <a href="#destinations" className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10">
+            <a href="#destinations" className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-bold text-white transition-colors duration-500 ease-out hover:bg-white/10">
               Browse Destinations
             </a>
           </div>

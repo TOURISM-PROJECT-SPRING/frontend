@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
 import Button from "../ui/Button";
 import { navLinks } from "../../data/site";
 import { useAuth } from "../../context/AuthContext";
 
+const PROFILE_MENU = [
+  { key: "trips", label: "My Trips", icon: "luggage" },
+  { key: "profile", label: "Profile", icon: "user" },
+  { key: "bookings", label: "Bookings", icon: "calendar" },
+  { key: "account", label: "Account Info", icon: "settings" },
+];
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const isActive = (href) =>
     href === "/" ? location.pathname === "/" : location.pathname.startsWith(href);
 
@@ -22,6 +31,7 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => setProfileOpen(false), [location.pathname]);
 
   const linkClass = (active) =>
     `relative py-1.5 text-sm font-semibold transition-colors ${
@@ -68,13 +78,52 @@ export default function Navbar() {
             EN <Icon name="chevron-down" size={15} />
           </button>
           {isAuthenticated ? (
-            <div className="ml-1 flex items-center gap-2">
-              <Link to="/dashboard">
-                <Button variant="primary" size="sm" icon="grid">Dashboard</Button>
-              </Link>
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-700 text-xs font-bold text-gold-400" title={user?.fullname || "Traveler"}>
+            <div className="relative ml-1 flex items-center gap-2">
+              <button
+                onClick={() => setProfileOpen((v) => !v)}
+                aria-label="Open profile menu"
+                className="group grid h-9 w-9 place-items-center rounded-lg bg-brand-700 text-xs font-bold text-gold-400 transition-colors hover:bg-brand-800"
+              >
                 {(user?.fullname || user?.username || "SD").slice(0, 2).toUpperCase()}
-              </span>
+              </button>
+              {profileOpen && (
+                <>
+                  <button
+                    aria-label="Close profile menu"
+                    className="fixed inset-0 z-40 cursor-default"
+                    onClick={() => setProfileOpen(false)}
+                  />
+                  <div className="absolute right-0 top-12 z-50 w-56 animate-scalein overflow-hidden rounded-2xl border border-line bg-white p-2 shadow-lift">
+                    <div className="border-b border-line px-3 py-2.5">
+                      <p className="truncate text-sm font-bold text-brand-800">
+                        {user?.fullname || user?.username || "Traveler"}
+                      </p>
+                      <p className="truncate text-xs text-muted">{user?.email || "@" + (user?.username || "traveler")}</p>
+                    </div>
+                    {PROFILE_MENU.map((m) => (
+                      <Link
+                        key={m.key}
+                        to="/profile"
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+                      >
+                        <Icon name={m.icon} size={18} className="text-brand-500" />
+                        {m.label}
+                      </Link>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        logout();
+                        navigate("/");
+                      }}
+                      className="mt-1 flex w-full items-center gap-3 rounded-xl border-t border-line px-3 py-2.5 text-sm font-bold text-danger transition-colors hover:bg-danger/10"
+                    >
+                      <Icon name="logout" size={18} />
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <>
@@ -118,9 +167,22 @@ export default function Navbar() {
           </ul>
           <div className="mt-4 flex gap-3">
             {isAuthenticated ? (
-              <Link to="/dashboard" className="flex-1">
-                <Button variant="primary" className="w-full" icon="grid">Dashboard</Button>
-              </Link>
+              <div className="w-full">
+                <div className="flex w-full items-center gap-3 rounded-xl bg-brand-50 px-3 py-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-700 text-xs font-bold text-gold-400">
+                    {(user?.fullname || user?.username || "SD").slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="truncate text-sm font-semibold text-brand-800">Welcome, {user?.fullname || user?.username || "Traveler"}</span>
+                </div>
+                <Link
+                  to="/profile"
+                  className="mt-2 flex w-full items-center gap-3 rounded-xl border border-line px-3 py-3 text-sm font-bold text-brand-800"
+                >
+                  <Icon name="user" size={18} className="text-brand-500" />
+                  My Profile
+                  <Icon name="chevron-right" size={18} className="ml-auto text-muted" />
+                </Link>
+              </div>
             ) : (
               <>
                 <Link to="/login" className="flex-1">

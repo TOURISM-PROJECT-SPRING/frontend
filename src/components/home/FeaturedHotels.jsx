@@ -17,7 +17,7 @@ export default function FeaturedHotels() {
           subtitle="Handpicked resorts and boutique hotels for every kind of traveller."
           action={
             <a href="/hotels" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
-              View All <Icon name="arrow-right" size={16} className="transition-transform group-hover:translate-x-0.5" />
+              View All <Icon name="arrow-right" size={16} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
             </a>
           }
         />

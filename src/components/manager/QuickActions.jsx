@@ -14,11 +14,11 @@ export default function QuickActions({ items = [] }) {
               <span className="block truncate text-sm font-bold text-brand-800">{a.label}</span>
               {a.hint && <span className="block truncate text-xs text-muted">{a.hint}</span>}
             </span>
-            <Icon name="arrow-right" size={16} className="ml-auto shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
+            <Icon name="arrow-right" size={16} className="ml-auto shrink-0 text-muted transition-transform duration-500 ease-out group-hover:translate-x-1 group-hover:text-brand-700" />
           </>
         );
         const cls =
-          "group flex items-center gap-3 rounded-2xl border border-line bg-white p-4 text-left shadow-soft transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lift";
+          "group flex items-center gap-3 rounded-2xl border border-line bg-white p-4 text-left shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:border-brand-300/50 hover:shadow-lift";
         return a.to ? (
           <Link key={a.label} to={a.to} className={cls}>{inner}</Link>
         ) : (

@@ -17,14 +17,14 @@ export default function Services() {
           <Link
             key={s.key}
             to={s.href}
-            className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-white shadow-soft transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:-translate-y-1.5 hover:shadow-lift"
+            className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-white shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform hover:-translate-y-1.5 hover:border-brand-300/50 hover:shadow-lift"
           >
             <div className="relative aspect-[4/3] overflow-hidden">
               <img
                 src={s.image}
                 alt={s.title}
                 loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                className="h-full w-full object-cover transition-transform duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-950/40 to-transparent" />
               <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-brand-700 backdrop-blur">
@@ -37,8 +37,8 @@ export default function Services() {
               <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{s.description}</p>
               <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-brand-700">
                 {s.cta}
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-50 text-brand-700 transition-all group-hover:bg-brand-700 group-hover:text-white">
-                  <Icon name="arrow-right" size={15} className="transition-transform group-hover:translate-x-0.5" />
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-50 text-brand-700 transition-all duration-500 ease-out group-hover:bg-brand-700 group-hover:text-white">
+                  <Icon name="arrow-right" size={15} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
                 </span>
               </span>
             </div>

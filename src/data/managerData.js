@@ -76,6 +76,21 @@ export const ENTITIES = {
     ],
   },
 
+  "place-categories": {
+    title: "Tour Categories",
+    columns: [
+      { key: "name", label: "Category", strong: true },
+      { key: "places", label: "Places" },
+      { key: "status", label: "Status", type: "status" },
+    ],
+    demo: [
+      { id: 1, name: "Temple", places: 12, status: "Active" },
+      { id: 2, name: "Island", places: 4, status: "Active" },
+      { id: 3, name: "Landmark", places: 6, status: "Active" },
+      { id: 4, name: "Nature", places: 7, status: "Active" },
+    ],
+  },
+
   provinces: {
     title: "Provinces",
     columns: [

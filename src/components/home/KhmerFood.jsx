@@ -34,10 +34,10 @@ export default function KhmerFood() {
             </p>
             <a
               href="#restaurants"
-              className="group mt-7 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-bold text-brand-900 transition-all hover:bg-gold-300"
+              className="group mt-7 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-bold text-brand-900 transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:bg-gold-300"
             >
               Explore Food Tours
-              <Icon name="arrow-right" size={17} className="transition-transform group-hover:translate-x-0.5" />
+              <Icon name="arrow-right" size={17} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
             </a>
           </div>
 
@@ -51,7 +51,7 @@ export default function KhmerFood() {
                   src={d.image}
                   alt={d.name}
                   loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-[900ms] group-hover:scale-110"
+                  className="h-full w-full object-cover transition-transform duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-950/85 via-brand-950/10 to-transparent" />
                 <figcaption className="absolute inset-x-0 bottom-0 p-3">

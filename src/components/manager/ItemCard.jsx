@@ -5,7 +5,7 @@ import { money } from "../../lib/format";
 
 export default function ItemCard({ image, title, meta, price, priceUnit, rating, badge, to = "#", actionLabel = "Manage" }) {
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-soft transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-lift">
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1.5 hover:border-brand-300/50 hover:shadow-lift">
       <div className="relative aspect-[16/10] overflow-hidden">
         <SmartImage src={image} alt={title} className="h-full w-full" imgClassName="transition-transform duration-700 ease-out group-hover:scale-110" />
         {badge && (

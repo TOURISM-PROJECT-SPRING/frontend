@@ -16,15 +16,15 @@ export default function ListingCard({ item }) {
   const isRestaurant = item.kind === "restaurant";
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-white shadow-soft transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:-translate-y-1.5 hover:shadow-lift">
+    <article className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-white shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform hover:-translate-y-1.5 hover:border-brand-300/50 hover:shadow-lift">
       <Link to={item.href} className="relative block aspect-[4/3] overflow-hidden">
         <SmartImage
           src={item.image}
           alt={item.title}
           className="h-full w-full"
-          imgClassName="transition-transform duration-700 ease-out group-hover:scale-110"
+          imgClassName="transition-transform duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-950/25 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-950/25 to-transparent opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100" />
         {isRestaurant ? (
           <span className="absolute left-3 top-3">
             <OpenBadge open={item.open} />
@@ -43,7 +43,7 @@ export default function ListingCard({ item }) {
         {item.kind === "hotel" && (
           <button
             aria-label="Save to favorites"
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-brand-700 shadow-sm backdrop-blur transition-colors hover:bg-gold-400 hover:text-brand-900"
+            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-brand-700 shadow-sm backdrop-blur transition-colors duration-500 ease-out hover:bg-gold-400 hover:text-brand-900"
           >
             <Icon name="heart" size={17} />
           </button>
@@ -99,8 +99,8 @@ export default function ListingCard({ item }) {
             to={item.href}
             className={
               item.kind === "hotel"
-                ? "rounded-lg border border-line px-3.5 py-2 text-xs font-bold text-brand-700 transition-colors hover:bg-brand-50"
-                : "rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-800"
+                ? "rounded-lg border border-line px-3.5 py-2 text-xs font-bold text-brand-700 transition-colors duration-500 ease-out hover:bg-brand-50"
+                : "rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-bold text-white transition-colors duration-500 ease-out hover:bg-brand-800"
             }
           >
             {CTA[item.kind] || "View"}

@@ -22,6 +22,7 @@ export const WORKSPACES = {
           { label: "Tour Packages", to: "/manager/tour/packages", icon: "ticket", view: "list", entity: "tour-packages" },
           { label: "Package Stops", to: "/manager/tour/stops", icon: "map-pin", view: "list", entity: "tour-stops" },
           { label: "Tour Guides", to: "/manager/tour/guides", icon: "user", view: "list", entity: "tour-guides" },
+          { label: "Tour Categories", to: "/manager/tour/categories", icon: "layers", view: "list", entity: "place-categories" },
           { label: "Provinces", to: "/manager/tour/provinces", icon: "globe", view: "list", entity: "provinces" },
           { label: "Districts", to: "/manager/tour/districts", icon: "globe", view: "list", entity: "districts" },
         ],
@@ -181,3 +182,55 @@ export function flattenNav(wsKey) {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ */
+/* Unified management console                                          */
+/* ------------------------------------------------------------------ */
+// The console is one workspace that groups Tours, Hotels and Restaurants
+// together — no "choose your workspace" step. UNIFIED_NAV drives the
+// sidebar (curated to the spec); the page routes are still grouped by
+// business under /manager.
+
+export const UNIFIED_NAV = [
+  { label: "Overview", to: "/manager", icon: "grid", view: "overview" },
+  {
+    label: "Tours",
+    icon: "compass",
+    items: [
+      { label: "Tour Overview", to: "/manager/tour", icon: "compass", view: "dashboard", ws: "tour" },
+      { label: "Tour Places", to: "/manager/tour/places", icon: "landmark", view: "list", entity: "tour-places", ws: "tour" },
+      { label: "Tour Packages", to: "/manager/tour/packages", icon: "ticket", view: "list", entity: "tour-packages", ws: "tour" },
+      { label: "Tour Bookings", to: "/manager/tour/bookings", icon: "calendar", view: "list", entity: "tour-bookings", ws: "tour" },
+      { label: "Tour Guides", to: "/manager/tour/guides", icon: "user", view: "list", entity: "tour-guides", ws: "tour" },
+      { label: "Tour Categories", to: "/manager/tour/categories", icon: "layers", view: "list", entity: "place-categories", ws: "tour" },
+    ],
+  },
+  {
+    label: "Hotels",
+    icon: "bed",
+    items: [
+      { label: "Hotel Overview", to: "/manager/hotel", icon: "bed", view: "dashboard", ws: "hotel" },
+      { label: "Hotels", to: "/manager/hotel/hotels", icon: "bed", view: "list", entity: "hotels", ws: "hotel" },
+      { label: "Room Types", to: "/manager/hotel/room-types", icon: "grid", view: "list", entity: "room-types", ws: "hotel" },
+      { label: "Rooms", to: "/manager/hotel/rooms", icon: "layers", view: "list", entity: "rooms", ws: "hotel" },
+      { label: "Hotel Bookings", to: "/manager/hotel/bookings", icon: "calendar", view: "list", entity: "hotel-bookings", ws: "hotel" },
+    ],
+  },
+  {
+    label: "Restaurants",
+    icon: "utensils",
+    items: [
+      { label: "Restaurant Overview", to: "/manager/restaurant", icon: "utensils", view: "dashboard", ws: "restaurant" },
+      { label: "Restaurants", to: "/manager/restaurant/restaurants", icon: "utensils", view: "list", entity: "restaurants", ws: "restaurant" },
+      { label: "Food Categories", to: "/manager/restaurant/categories", icon: "grid", view: "list", entity: "food-categories", ws: "restaurant" },
+      { label: "Foods", to: "/manager/restaurant/foods", icon: "layers", view: "menu", ws: "restaurant" },
+      { label: "Orders", to: "/manager/restaurant/orders", icon: "ticket", view: "list", entity: "food-orders", ws: "restaurant" },
+      { label: "Customers", to: "/manager/restaurant/customers", icon: "users", view: "list", entity: "customers", ws: "restaurant" },
+    ],
+  },
+];
+
+export const UNIFIED_BOTTOM_NAV = [
+  { label: "Settings", to: "/manager/tour/settings", icon: "settings", view: "settings", ws: "tour" },
+  { label: "Profile", to: "/manager/tour/profile", icon: "user", view: "profile", ws: "tour" },
+];

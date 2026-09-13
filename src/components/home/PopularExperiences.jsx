@@ -16,7 +16,7 @@ export default function PopularExperiences() {
         subtitle="Unforgettable journeys across the Kingdom, rated by real travellers."
         action={
           <a href="/tours" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
-            View All <Icon name="arrow-right" size={16} className="transition-transform group-hover:translate-x-0.5" />
+            View All <Icon name="arrow-right" size={16} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
           </a>
         }
       />

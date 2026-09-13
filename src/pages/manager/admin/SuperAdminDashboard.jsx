@@ -39,7 +39,7 @@ export default function SuperAdminDashboard() {
         <p className="mt-1 text-sm text-muted">Welcome, {first} — full oversight across every business line.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Total Users" value="4,820" icon="users" tone="green" delta="+12%" />
         <StatCard label="Tour Packages" value="5" icon="compass" tone="green" />
         <StatCard label="Hotels" value="4" icon="bed" tone="gold" />

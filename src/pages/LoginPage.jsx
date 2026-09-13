@@ -38,7 +38,7 @@ export default function LoginPage({ mode = "login" }) {
   const [form, setForm] = useState({ fullname: "", username: "", email: "", password: "" });
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-  const redirectTo = location.state?.from || "/dashboard";
+  const redirectTo = location.state?.from || "/";
 
   const submit = async (e) => {
     e.preventDefault();

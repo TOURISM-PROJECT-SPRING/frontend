@@ -1,72 +1,208 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
-import { WORKSPACES, WORKSPACE_ORDER, workspaceForPath } from "../../data/managerConfig";
+import { UNIFIED_NAV, UNIFIED_BOTTOM_NAV } from "../../data/managerConfig";
 import { useAuth } from "../../context/AuthContext";
 
-function NavItem({ item, onNavigate }) {
+const BOTTOM_PATHS = new Set(UNIFIED_BOTTOM_NAV.map((i) => i.to));
+
+function isPathActive(pathname, to) {
+  if (to === "/manager") return pathname === "/manager";
+  if (BOTTOM_PATHS.has(pathname)) return pathname === to;
+  return pathname === to || pathname.startsWith(to);
+}
+
+function groupIsActive(entry, pathname) {
+  return entry.items.some((it) => isPathActive(pathname, it.to));
+}
+
+function activeGroupLabel(pathname) {
+  const entry = UNIFIED_NAV.find((e) => e.items && groupIsActive(e, pathname));
+  return entry?.label;
+}
+
+function NavItem({ item, collapsed = false, onNavigate }) {
   return (
     <NavLink
       to={item.to}
+      end
       onClick={onNavigate}
+      title={collapsed ? item.label : undefined}
       className={({ isActive }) =>
-        `group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
-          isActive ? "bg-brand-600 text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
+        `group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500/40 ${
+          collapsed ? "lg:justify-center lg:px-2" : "hover:translate-x-1"
+        } ${
+          isActive
+            ? "bg-brand-700 text-white shadow-soft"
+            : "text-ink/70 hover:bg-brand-50 hover:text-brand-900"
         }`
       }
     >
       {({ isActive }) => (
         <>
-          {isActive && <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gold-400" />}
-          <Icon name={item.icon} size={19} className={isActive ? "text-gold-400" : "text-white/55 group-hover:text-gold-300"} />
-          <span className="flex-1 truncate">{item.label}</span>
+          {isActive && (
+            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold-400" />
+          )}
+          <Icon
+            name={item.icon}
+            size={19}
+            className={`shrink-0 transition-colors ${
+              isActive ? "text-gold-400" : "text-brand-400 group-hover:text-brand-600"
+            }`}
+          />
+          <span className={`flex-1 truncate transition-opacity ${collapsed ? "lg:hidden" : ""}`}>
+            {item.label}
+          </span>
         </>
       )}
     </NavLink>
   );
 }
 
-function Sidebar({ ws, open, onClose }) {
+function GroupItem({ entry, open, collapsed, onToggle, onNavigate }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const active = groupIsActive(entry, location.pathname);
+
+  return (
+    <div className="pt-3">
+      <button
+        type="button"
+        onClick={() => (collapsed ? navigate(entry.items[0].to) : onToggle(entry.label))}
+        aria-expanded={collapsed ? undefined : open}
+        title={collapsed ? entry.label : undefined}
+        className={`group flex w-full items-center rounded-xl text-sm font-bold outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-brand-500/40 ${
+          collapsed ? "justify-center px-2 py-2.5 lg:justify-center" : "gap-3 px-3.5 py-2.5"
+        } ${active ? "text-brand-800" : "text-ink/55 hover:bg-brand-50 hover:text-brand-800"}`}
+      >
+        <Icon
+          name={entry.icon}
+          size={19}
+          className={`shrink-0 transition-colors ${
+            active ? "text-brand-600" : "text-brand-400 group-hover:text-brand-500"
+          }`}
+        />
+        {!collapsed && (
+          <>
+            <span className="flex-1 truncate text-left">{entry.label}</span>
+            <Icon
+              name="chevron-down"
+              size={15}
+              className={`shrink-0 text-muted transition-transform duration-300 ${
+                open ? "rotate-180" : ""
+              }`}
+            />
+          </>
+        )}
+      </button>
+
+      {!collapsed && (
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+            open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="mt-1 ml-2.5 space-y-1 border-l-2 border-line pl-2.5">
+              {entry.items.map((it) => (
+                <NavItem key={it.to + it.label} item={it} onNavigate={onNavigate} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Sidebar({ open, collapsed, onClose }) {
+  const location = useLocation();
+  const [openGroups, setOpenGroups] = useState(() => {
+    const label = activeGroupLabel(location.pathname);
+    return new Set(label ? [label] : []);
+  });
+
+  useEffect(() => {
+    const label = activeGroupLabel(location.pathname);
+    if (label) setOpenGroups((prev) => new Set(prev).add(label));
+  }, [location.pathname]);
+
+  const toggleGroup = (label) => {
+    const entry = UNIFIED_NAV.find((e) => e.label === label);
+    const locked =
+      entry?.items && groupIsActive(entry, location.pathname) && openGroups.has(label);
+    if (locked) return;
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+
   return (
     <>
-      {open && <div onClick={onClose} className="fixed inset-0 z-40 bg-brand-950/50 backdrop-blur-sm lg:hidden" />}
+      {open && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-brand-950/40 backdrop-blur-sm lg:hidden"
+        />
+      )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-brand-700 text-white transition-transform duration-300 ease-out lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-line bg-white transition-[width,transform] duration-300 ease-out lg:translate-x-0 ${
+          collapsed ? "lg:w-20" : "lg:w-72"
+        } ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="px-5 py-5">
-          <Link to="/manager" onClick={onClose}>
-            <Logo tone="light" />
+        <div
+          className={`flex h-16 shrink-0 items-center border-b border-line px-5 ${
+            collapsed ? "lg:justify-center lg:px-0" : ""
+          }`}
+        >
+          <Link
+            to="/manager"
+            onClick={onClose}
+            className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+          >
+            <Logo tone="dark" showText={!collapsed} />
           </Link>
-          <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-bold text-gold-300">
-            <Icon name={ws.icon} size={13} /> {ws.name}
-          </p>
         </div>
 
-        <nav className="mt-1 flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-          {ws.nav.map((entry) =>
+        <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
+          {UNIFIED_NAV.map((entry) =>
             entry.items ? (
-              <div key={entry.label} className="pt-3">
-                <p className="px-3.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-white/40">{entry.label}</p>
-                {entry.items.map((it) => (
-                  <NavItem key={it.to + it.label} item={it} onNavigate={onClose} />
-                ))}
-              </div>
+              <GroupItem
+                key={entry.label}
+                entry={entry}
+                open={openGroups.has(entry.label)}
+                collapsed={collapsed}
+                onToggle={toggleGroup}
+                onNavigate={onClose}
+              />
             ) : (
-              <NavItem key={entry.to + entry.label} item={entry} onNavigate={onClose} />
+              <NavItem
+                key={entry.to + entry.label}
+                item={entry}
+                collapsed={collapsed}
+                onNavigate={onClose}
+              />
             )
           )}
         </nav>
 
-        <div className="border-t border-white/10 p-3">
+        <div className="shrink-0 border-t border-line p-3">
+          <div className="space-y-1">
+            {UNIFIED_BOTTOM_NAV.map((it) => (
+              <NavItem key={it.to} item={it} collapsed={collapsed} onNavigate={onClose} />
+            ))}
+          </div>
           <Link
             to="/"
             onClick={onClose}
-            className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            className="mt-2 flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-muted outline-none transition-colors duration-200 hover:bg-brand-50 hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-500/40"
           >
-            <Icon name="arrow-up-right" size={18} /> Back to platform
+            <Icon name="arrow-up-right" size={18} className="shrink-0" />
+            <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>Back to platform</span>
           </Link>
         </div>
       </aside>
@@ -74,95 +210,69 @@ function Sidebar({ ws, open, onClose }) {
   );
 }
 
-function WorkspaceSwitcher() {
-  const [open, setOpen] = useState(false);
-  const location = useLocation();
-  const current = workspaceForPath(location.pathname);
-  const ws = WORKSPACES[current] || WORKSPACES.tour;
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2 text-sm font-bold text-brand-800 hover:bg-brand-50"
-      >
-        <Icon name={ws.icon} size={16} className="text-brand-600" />
-        <span className="hidden sm:inline">{ws.name}</span>
-        <Icon name="chevron-down" size={15} className="text-muted" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-50 mt-2 w-60 origin-top-right animate-scalein overflow-hidden rounded-2xl border border-line bg-white p-1.5 shadow-lift">
-            <p className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted">Switch workspace</p>
-            {WORKSPACE_ORDER.map((key) => {
-              const w = WORKSPACES[key];
-              const active = key === current;
-              return (
-                <Link
-                  key={key}
-                  to={w.base}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
-                    active ? "bg-brand-50 text-brand-700" : "text-ink/80 hover:bg-brand-50"
-                  }`}
-                >
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-700 text-gold-400">
-                    <Icon name={w.icon} size={16} />
-                  </span>
-                  <span className="flex-1">{w.name}</span>
-                  {active && <Icon name="check" size={16} className="text-brand-600" />}
-                </Link>
-              );
-            })}
-            <div className="my-1 h-px bg-line" />
-            <Link
-              to="/manager"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink/80 hover:bg-brand-50"
-            >
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold-400 text-brand-900">
-                <Icon name="grid" size={16} />
-              </span>
-              Choose workspace
-            </Link>
-          </div>
-        </>
-      )}
-    </div>
-  );
+function currentTitle(pathname) {
+  const flat = [
+    ...UNIFIED_NAV.flatMap((e) => (e.items ? e.items : [e])),
+    ...UNIFIED_BOTTOM_NAV,
+  ];
+  const exact = flat.find((e) => e.to === pathname);
+  if (exact) return exact.label;
+  const nested = flat
+    .filter((e) => e.to !== "/manager")
+    .sort((a, b) => b.to.length - a.to.length)
+    .find((e) => pathname.startsWith(e.to));
+  return nested ? nested.label : "Management Console";
 }
 
-function Header({ ws, onMenu }) {
+function Header({ onMenu, collapsed, onToggleCollapse }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const flat = ws.nav.flatMap((e) => (e.items ? e.items : [e]));
-  const current = flat.find((e) => e.to === location.pathname);
-  const title = current ? current.label : ws.title;
+  const title = currentTitle(location.pathname);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-canvas/85 px-4 py-3 backdrop-blur sm:px-6">
-      <button onClick={onMenu} aria-label="Menu" className="grid h-10 w-10 place-items-center rounded-xl border border-line bg-white text-brand-800 lg:hidden">
+    <header className="sticky top-0 z-30 flex items-center gap-2.5 border-b border-line bg-canvas/85 px-4 py-3 backdrop-blur sm:gap-3 sm:px-6">
+      <button
+        onClick={onMenu}
+        aria-label="Menu"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-white text-brand-800 lg:hidden"
+      >
         <Icon name="menu" size={20} />
       </button>
 
-      <div className="hidden min-w-0 md:block">
-        <p className="truncate text-[11px] font-medium text-muted">
-          {ws.name} <span className="text-line">/</span> <span className="font-semibold text-brand-700">{title}</span>
-        </p>
-        <h1 className="truncate font-display text-lg font-bold text-brand-800">{title}</h1>
+      <button
+        onClick={onToggleCollapse}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-white text-brand-800 transition-colors hover:bg-brand-50 lg:grid"
+      >
+        <Icon
+          name="chevron-right"
+          size={18}
+          className={`transition-transform duration-300 ${collapsed ? "" : "rotate-180"}`}
+        />
+      </button>
+
+      <div className="flex min-w-0 flex-1 items-center">
+        <p className="truncate text-sm font-bold text-brand-800 lg:hidden">{title}</p>
+        <div className="hidden min-w-0 lg:block">
+          <p className="truncate text-[11px] font-medium text-muted">
+            Management Console <span className="text-line">/</span>{" "}
+            <span className="font-semibold text-brand-700">{title}</span>
+          </p>
+          <h1 className="truncate font-display text-lg font-bold leading-tight text-brand-800">
+            {title}
+          </h1>
+        </div>
       </div>
 
-      <label className="ml-auto hidden h-10 flex-1 items-center gap-2.5 rounded-xl border border-line bg-white px-3 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/15 lg:flex lg:max-w-sm">
-        <Icon name="search" size={17} className="text-muted" />
-        <input placeholder="Search…" className="w-full bg-transparent text-sm focus:outline-none" />
-      </label>
-
-      <div className="ml-auto flex items-center gap-2 lg:ml-0">
+      <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+        <label className="hidden h-10 w-64 max-w-xs items-center gap-2.5 rounded-xl border border-line bg-white px-3 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/15 lg:flex">
+          <Icon name="search" size={17} className="text-muted" />
+          <input placeholder="Search…" className="w-full bg-transparent text-sm focus:outline-none" />
+        </label>
         <button className="hidden h-10 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-ink/70 hover:bg-white sm:flex">
           EN <Icon name="chevron-down" size={14} />
         </button>
-        <WorkspaceSwitcher />
         <button aria-label="Notifications" className="relative grid h-10 w-10 place-items-center rounded-xl border border-line bg-white text-brand-800 hover:bg-brand-50">
           <Icon name="bell" size={19} />
           <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-gold-400 ring-2 ring-canvas" />
@@ -188,16 +298,22 @@ function Header({ ws, onMenu }) {
 }
 
 export default function ManagerLayout() {
-  const location = useLocation();
   const [open, setOpen] = useState(false);
-  const wsKey = workspaceForPath(location.pathname) || "tour";
-  const ws = WORKSPACES[wsKey];
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-canvas">
-      <Sidebar ws={ws} open={open} onClose={() => setOpen(false)} />
-      <div className="lg:pl-72">
-        <Header ws={ws} onMenu={() => setOpen(true)} />
+      <Sidebar open={open} collapsed={collapsed} onClose={() => setOpen(false)} />
+      <div
+        className={`transition-[padding] duration-300 ease-out ${
+          collapsed ? "lg:pl-20" : "lg:pl-72"
+        }`}
+      >
+        <Header
+          onMenu={() => setOpen(true)}
+          collapsed={collapsed}
+          onToggleCollapse={() => setCollapsed((c) => !c)}
+        />
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>

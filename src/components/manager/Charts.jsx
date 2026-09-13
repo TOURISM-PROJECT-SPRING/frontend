@@ -1,4 +1,5 @@
 // Lightweight, dependency-free SVG charts tuned to the SovannDomNour palette.
+import { useId } from "react";
 
 export function BarChart({ data = [], color = "#02462e", highlight = "#fec700" }) {
   if (!data.length) return null;
@@ -39,6 +40,7 @@ export function BarChart({ data = [], color = "#02462e", highlight = "#fec700" }
 }
 
 export function LineChart({ data = [], color = "#02462e" }) {
+  const gradId = useId();
   if (data.length < 2) return null;
   const max = Math.max(...data.map((d) => d.value), 1);
   const min = Math.min(...data.map((d) => d.value), 0);
@@ -55,12 +57,12 @@ export function LineChart({ data = [], color = "#02462e" }) {
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-[200px] w-full">
         <defs>
-          <linearGradient id="lc" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.22" />
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={area} fill="url(#lc)" />
+        <path d={area} fill={`url(#${gradId})`} />
         <path d={line} fill="none" stroke={color} strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         {pts.map((p, i) => (
           <circle key={i} cx={p[0]} cy={p[1]} r="0.9" fill={color} vectorEffect="non-scaling-stroke" />

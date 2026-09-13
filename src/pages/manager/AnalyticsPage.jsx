@@ -32,7 +32,7 @@ export default function AnalyticsPage({ title = "Analytics", subtitle = "Operati
         <p className="mt-1 text-sm text-muted">{subtitle}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Bookings" value="1,284" icon="calendar" tone="green" delta="+12%" />
         <StatCard label="Revenue" value="$48.2k" icon="trending-up" tone="gold" delta="+8%" />
         <StatCard label="Conversion" value="3.9%" icon="trending-up" tone="sky" delta="+0.4%" />

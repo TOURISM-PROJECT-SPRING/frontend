@@ -4,7 +4,6 @@ import Footer from "./components/layout/Footer";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
 import ToursPage from "./pages/ToursPage";
 import TourDetailPage from "./pages/TourDetailPage";
 import HotelsPage from "./pages/HotelsPage";
@@ -13,6 +12,7 @@ import RestaurantsPage from "./pages/RestaurantsPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import DestinationsPage from "./pages/DestinationsPage";
 import DestinationDetailPage from "./pages/DestinationDetailPage";
+import ProfilePage from "./pages/ProfilePage";
 import ManagerArea from "./pages/manager/ManagerArea";
 
 function PublicLayout() {
@@ -30,6 +30,14 @@ function PublicLayout() {
           <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
           <Route path="/destinations" element={<DestinationsPage />} />
           <Route path="/destinations/:id" element={<DestinationDetailPage />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -48,14 +56,6 @@ function App() {
         element={
           <ProtectedRoute>
             <ManagerArea />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/*"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
           </ProtectedRoute>
         }
       />
