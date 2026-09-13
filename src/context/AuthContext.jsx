@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { authService } from "../services/authService";
+import { ROLES, hasRole, canUseManager } from "../utils/rbac";
 
 // Token lives under localStorage key "token" because axiosClient.js attaches
 // `Authorization: Bearer <token>` from that exact key.
@@ -42,7 +43,7 @@ const DEMO_USER = {
   fullname: "Sokha Dara",
   username: "demo",
   email: "demo@sovannomnour.app",
-  roles: ["USER"],
+  roles: [ROLES.OWNER],
   demo: true,
 };
 
@@ -65,7 +66,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(
-    async ({ username, password }) => {
+    async ({ username, password, role }) => {
       try {
         const data = await authService.login({ username, password });
         persist(data.accessToken, data.user || null);
@@ -73,8 +74,9 @@ export function AuthProvider({ children }) {
       } catch (e) {
         if (shouldDemoFallback(e)) {
           // Auth endpoint unavailable / backend offline — sign in with a demo account.
-          persist("demo-token", DEMO_USER);
-          return { user: DEMO_USER, demo: true };
+          const demo = role ? { ...DEMO_USER, roles: [role] } : DEMO_USER;
+          persist("demo-token", demo);
+          return { user: demo, demo: true };
         }
         throw new Error(authErrorMessage(e));
       }
@@ -122,6 +124,12 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(token),
       isDemo: Boolean(user?.demo),
       ready,
+      roles: user?.roles || [],
+      hasRole: (role) => hasRole(user, role),
+      isAdmin: hasRole(user, ROLES.ADMIN),
+      isOwner: hasRole(user, ROLES.OWNER),
+      isManager: hasRole(user, ROLES.MANAGER),
+      canUseManager: canUseManager(user),
       login,
       register,
       logout,

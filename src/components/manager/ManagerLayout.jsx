@@ -1,11 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
 import { UNIFIED_NAV, UNIFIED_BOTTOM_NAV } from "../../data/managerConfig";
 import { useAuth } from "../../context/AuthContext";
+import { canAccess } from "../../utils/rbac";
 
 const BOTTOM_PATHS = new Set(UNIFIED_BOTTOM_NAV.map((i) => i.to));
+
+// Only show nav entries the current role is allowed to reach. Groups whose
+// every item is inaccessible are dropped entirely.
+function navForUser(user) {
+  return UNIFIED_NAV.flatMap((entry) => {
+    if (!entry.items) return canAccess(user, entry.to) ? [entry] : [];
+    const items = entry.items.filter((it) => canAccess(user, it.to));
+    return items.length ? [{ ...entry, items }] : [];
+  });
+}
+
+function bottomNavForUser(user) {
+  return UNIFIED_BOTTOM_NAV.filter((it) => canAccess(user, it.to));
+}
 
 function isPathActive(pathname, to) {
   if (to === "/manager") return pathname === "/manager";
@@ -17,8 +32,8 @@ function groupIsActive(entry, pathname) {
   return entry.items.some((it) => isPathActive(pathname, it.to));
 }
 
-function activeGroupLabel(pathname) {
-  const entry = UNIFIED_NAV.find((e) => e.items && groupIsActive(e, pathname));
+function activeGroupLabel(nav, pathname) {
+  const entry = nav.find((e) => e.items && groupIsActive(e, pathname));
   return entry?.label;
 }
 
@@ -118,18 +133,21 @@ function GroupItem({ entry, open, collapsed, onToggle, onNavigate }) {
 
 function Sidebar({ open, collapsed, onClose }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const nav = useMemo(() => navForUser(user), [user]);
+  const bottomNav = useMemo(() => bottomNavForUser(user), [user]);
   const [openGroups, setOpenGroups] = useState(() => {
-    const label = activeGroupLabel(location.pathname);
+    const label = activeGroupLabel(nav, location.pathname);
     return new Set(label ? [label] : []);
   });
 
   useEffect(() => {
-    const label = activeGroupLabel(location.pathname);
+    const label = activeGroupLabel(nav, location.pathname);
     if (label) setOpenGroups((prev) => new Set(prev).add(label));
-  }, [location.pathname]);
+  }, [location.pathname, nav]);
 
   const toggleGroup = (label) => {
-    const entry = UNIFIED_NAV.find((e) => e.label === label);
+    const entry = nav.find((e) => e.label === label);
     const locked =
       entry?.items && groupIsActive(entry, location.pathname) && openGroups.has(label);
     if (locked) return;
@@ -169,7 +187,7 @@ function Sidebar({ open, collapsed, onClose }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
-          {UNIFIED_NAV.map((entry) =>
+          {nav.map((entry) =>
             entry.items ? (
               <GroupItem
                 key={entry.label}
@@ -192,7 +210,7 @@ function Sidebar({ open, collapsed, onClose }) {
 
         <div className="shrink-0 border-t border-line p-3">
           <div className="space-y-1">
-            {UNIFIED_BOTTOM_NAV.map((it) => (
+            {bottomNav.map((it) => (
               <NavItem key={it.to} item={it} collapsed={collapsed} onNavigate={onClose} />
             ))}
           </div>
@@ -210,11 +228,8 @@ function Sidebar({ open, collapsed, onClose }) {
   );
 }
 
-function currentTitle(pathname) {
-  const flat = [
-    ...UNIFIED_NAV.flatMap((e) => (e.items ? e.items : [e])),
-    ...UNIFIED_BOTTOM_NAV,
-  ];
+function currentTitle(pathname, nav, bottom) {
+  const flat = [...nav.flatMap((e) => (e.items ? e.items : [e])), ...bottom];
   const exact = flat.find((e) => e.to === pathname);
   if (exact) return exact.label;
   const nested = flat
@@ -228,7 +243,7 @@ function Header({ onMenu, collapsed, onToggleCollapse }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const title = currentTitle(location.pathname);
+  const title = currentTitle(location.pathname, navForUser(user), bottomNavForUser(user));
 
   return (
     <header className="sticky top-0 z-30 flex items-center gap-2.5 border-b border-line bg-canvas/85 px-4 py-3 backdrop-blur sm:gap-3 sm:px-6">

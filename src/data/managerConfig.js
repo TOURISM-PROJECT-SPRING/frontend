@@ -194,6 +194,17 @@ export function flattenNav(wsKey) {
 export const UNIFIED_NAV = [
   { label: "Overview", to: "/manager", icon: "grid", view: "overview" },
   {
+    label: "Portfolio",
+    icon: "briefcase",
+    items: [
+      { label: "Revenue & P&L", to: "/manager/owner/revenue", icon: "trending-up", view: "analytics" },
+      { label: "Earnings & Payouts", to: "/manager/owner/earnings", icon: "receipt", view: "list", entity: "payments" },
+      { label: "Customers", to: "/manager/owner/customers", icon: "users", view: "list", entity: "customers" },
+      { label: "Reviews", to: "/manager/owner/reviews", icon: "star", view: "list", entity: "reviews" },
+      { label: "Bookings", to: "/manager/owner/bookings", icon: "calendar", view: "list", entity: "all-bookings" },
+    ],
+  },
+  {
     label: "Tours",
     icon: "compass",
     items: [

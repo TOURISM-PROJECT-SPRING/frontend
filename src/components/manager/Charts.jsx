@@ -128,3 +128,37 @@ export function Donut({ segments = [], size = 160, thickness = 22, centerLabel, 
     </div>
   );
 }
+
+export function ProgressRing({ value = 0, color = "#02462e", label = "", sub = "", size = 96 }) {
+  const thickness = 9;
+  const r = (size - thickness) / 2;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, value));
+  return (
+    <div className="flex flex-col items-center gap-2 text-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef2ef" strokeWidth={thickness} />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={thickness}
+            strokeDasharray={c}
+            strokeDashoffset={c - (clamped / 100) * c}
+            strokeLinecap="round"
+          />
+        </svg>
+        <span className="absolute inset-0 grid place-items-center font-display text-lg font-bold text-brand-800">
+          {clamped}%
+        </span>
+      </div>
+      <div>
+        <p className="text-sm font-bold text-brand-800">{label}</p>
+        {sub && <p className="mt-0.5 text-[11px] text-muted">{sub}</p>}
+      </div>
+    </div>
+  );
+}

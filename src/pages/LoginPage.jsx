@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import Logo from "../components/ui/Logo";
 import Icon from "../components/ui/Icon";
 import { useAuth } from "../context/AuthContext";
+import { ROLES } from "../utils/rbac";
 import { img } from "../data/site";
 
 const SIDE_IMG = img("Angkor Wat, reflejo 1.jpg", 1400);
@@ -185,26 +186,48 @@ export default function LoginPage({ mode = "login" }) {
             </button>
           </form>
 
-          <button
-            type="button"
-            disabled={loading}
-            onClick={async () => {
-              setError(null);
-              setLoading(true);
-              try {
-                await login({ username: "demo", password: "demo" });
-                navigate(redirectTo, { replace: true });
-              } catch (err) {
-                setError(err.message || "Could not start the demo.");
-              } finally {
-                setLoading(false);
-              }
-            }}
-            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-brand-300 bg-brand-50/60 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
-          >
-            <Icon name="compass" size={17} />
-            Explore with a demo account
-          </button>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                setError(null);
+                setLoading(true);
+                try {
+                  await login({ username: "demo", password: "demo", role: ROLES.OWNER });
+                  navigate(redirectTo, { replace: true });
+                } catch (err) {
+                  setError(err.message || "Could not start the demo.");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-brand-300 bg-brand-50/60 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
+            >
+              <Icon name="briefcase" size={17} />
+              Owner demo
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                setError(null);
+                setLoading(true);
+                try {
+                  await login({ username: "demo", password: "demo", role: ROLES.ADMIN });
+                  navigate(redirectTo, { replace: true });
+                } catch (err) {
+                  setError(err.message || "Could not start the demo.");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-brand-300 bg-brand-50/60 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
+            >
+              <Icon name="shield" size={17} />
+              Admin demo
+            </button>
+          </div>
 
           <div className="my-6 flex items-center gap-4">
             <span className="h-px flex-1 bg-line" />
