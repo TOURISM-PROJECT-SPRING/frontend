@@ -1,45 +1,36 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 import HomePage from "./pages/HomePage";
-import DestinationsPage from "./pages/DestinationsPage";
-import StaysPage from "./pages/StaysPage";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
 import ToursPage from "./pages/ToursPage";
-import DiningPage from "./pages/DiningPage";
+import TourDetailPage from "./pages/TourDetailPage";
+import HotelsPage from "./pages/HotelsPage";
 import HotelDetailPage from "./pages/HotelDetailPage";
-import TourPlaceDetailPage from "./pages/TourPlaceDetailPage";
+import RestaurantsPage from "./pages/RestaurantsPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
-import FeaturedExperiencesPage from "./pages/FeaturedExperiencesPage";
-import AboutCambodiaPage from "./pages/AboutCambodiaPage";
-import AboutPage from "./pages/AboutPage";
-import OffersPage from "./pages/OffersPage";
-import AuthPage from "./pages/AuthPage";
-import ContactPage from "./pages/ContactPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import OwnerDashboard from "./pages/OwnerDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+import DestinationsPage from "./pages/DestinationsPage";
+import DestinationDetailPage from "./pages/DestinationDetailPage";
+import ManagerArea from "./pages/manager/ManagerArea";
 
 function PublicLayout() {
   return (
-    <div className="min-h-screen w-full bg-white dark:bg-gray-950 font-sans overflow-x-hidden">
+    <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-canvas font-sans text-ink">
       <Navbar />
-      <main className="w-full">
+      <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/destinations" element={<DestinationsPage />} />
-          <Route path="/destinations/:id" element={<DestinationsPage />} />
-          <Route path="/stays" element={<StaysPage />} />
-          <Route path="/stays/:id" element={<HotelDetailPage />} />
           <Route path="/tours" element={<ToursPage />} />
-          <Route path="/tours/:id" element={<TourPlaceDetailPage />} />
-          <Route path="/dining" element={<DiningPage />} />
-          <Route path="/dining/:id" element={<RestaurantDetailPage />} />
-          <Route path="/experiences" element={<FeaturedExperiencesPage />} />
-          <Route path="/about-cambodia" element={<AboutCambodiaPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/offers" element={<OffersPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="/tours/:id" element={<TourDetailPage />} />
+          <Route path="/hotels" element={<HotelsPage />} />
+          <Route path="/hotels/:id" element={<HotelDetailPage />} />
+          <Route path="/restaurants" element={<RestaurantsPage />} />
+          <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
+          <Route path="/destinations" element={<DestinationsPage />} />
+          <Route path="/destinations/:id" element={<DestinationDetailPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <Footer />
@@ -49,15 +40,27 @@ function PublicLayout() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/admin/*" element={<AdminDashboard />} />
-        <Route path="/owner/*" element={<OwnerDashboard />} />
-        <Route path="/login" element={<AuthPage initialMode="login" />} />
-        <Route path="/register" element={<AuthPage initialMode="register" />} />
-        <Route path="*" element={<PublicLayout />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/login" element={<LoginPage mode="login" />} />
+      <Route path="/register" element={<LoginPage mode="register" />} />
+      <Route
+        path="/manager/*"
+        element={
+          <ProtectedRoute>
+            <ManagerArea />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/*"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/*" element={<PublicLayout />} />
+    </Routes>
   );
 }
 

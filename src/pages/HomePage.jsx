@@ -1,23 +1,25 @@
-import HeroSection from "../components/home/HeroSection";
-import BookingWidget from "../components/home/BookingWidget";
-import TrustBar from "../components/home/TrustBar";
+import Hero from "../components/home/Hero";
+import Services from "../components/home/Services";
 import PopularDestinations from "../components/home/PopularDestinations";
-import HowItWorks from "../components/home/HowItWorks";
-import WhyChooseUs from "../components/home/WhyChooseUs";
-import PopularTours from "../components/home/PopularTours";
-import Newsletter from "../components/home/Newsletter";
+import PopularExperiences from "../components/home/PopularExperiences";
+import FeaturedHotels from "../components/home/FeaturedHotels";
+import FeaturedRestaurants from "../components/home/FeaturedRestaurants";
+import KhmerFood from "../components/home/KhmerFood";
+import CulturalSection from "../components/home/CulturalSection";
+import FinalCta from "../components/home/FinalCta";
 
 export default function HomePage() {
   return (
     <>
-      <HeroSection />
-      <BookingWidget />
-      <TrustBar />
+      <Hero />
+      <Services />
       <PopularDestinations />
-      <HowItWorks />
-      <PopularTours />
-      <WhyChooseUs />
-      <Newsletter />
+      <PopularExperiences />
+      <FeaturedHotels />
+      <FeaturedRestaurants />
+      <KhmerFood />
+      <CulturalSection />
+      <FinalCta />
     </>
   );
 }

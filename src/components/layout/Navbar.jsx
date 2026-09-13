@@ -1,207 +1,139 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { useTheme } from "../../context/ThemeContext";
-import { Globe, Menu, X, Landmark, Sun, Moon } from "lucide-react";
-
-const navKeys = [
-  { key: "nav.home", href: "/" },
-  { key: "nav.destinations", href: "/destinations" },
-  { key: "nav.stays", href: "/stays" },
-  { key: "nav.tours", href: "/tours" },
-  { key: "nav.dining", href: "/dining" },
-  { key: "nav.about", href: "/about-cambodia" },
-  { key: "nav.offers", href: "/offers" },
-];
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import Logo from "../ui/Logo";
+import Icon from "../ui/Icon";
+import Button from "../ui/Button";
+import { navLinks } from "../../data/site";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Navbar() {
-  const { t, i18n } = useTranslation();
-  const { dark, toggle } = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
+  const isActive = (href) =>
+    href === "/" ? location.pathname === "/" : location.pathname.startsWith(href);
 
-  const toggleLang = (lng) => {
-    i18n.changeLanguage(lng);
-    setLangOpen(false);
-  };
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => setOpen(false), [location.pathname]);
+
+  const linkClass = (active) =>
+    `relative py-1.5 text-sm font-semibold transition-colors ${
+      active ? "text-brand-700" : "text-ink/70 hover:text-brand-700"
+    }`;
 
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 w-full">
-      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16">
-          <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-primary rounded-lg flex items-center justify-center">
-              <Landmark className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <div className="hidden sm:block leading-none">
-              <span className="block text-[14px] sm:text-[15px] font-bold text-primary">
-                Smart Tourism
+    <header
+      className={`sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur ${
+        scrolled ? "border-line shadow-[0_4px_20px_rgba(20,32,26,0.06)]" : "border-transparent"
+      }`}
+    >
+      <nav className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <Link to="/" aria-label="SovannDomNour home">
+          <Logo />
+        </Link>
+
+        {/* Desktop nav */}
+        <ul className="hidden items-center gap-8 lg:flex">
+          {navLinks.map((l) => {
+            const active = isActive(l.href);
+            return (
+              <li key={l.label}>
+                <Link to={l.href} className={linkClass(active)}>
+                  {l.label}
+                  {active && (
+                    <span className="absolute -bottom-0.5 left-0 h-0.5 w-full rounded-full bg-gold-400" />
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Right actions */}
+        <div className="hidden items-center gap-2 lg:flex">
+          <button
+            aria-label="Search"
+            className="grid h-10 w-10 place-items-center rounded-xl text-ink/70 hover:bg-brand-50 hover:text-brand-700"
+          >
+            <Icon name="search" size={19} />
+          </button>
+          <button className="flex h-10 items-center gap-1 rounded-xl px-2.5 text-sm font-semibold text-ink/70 hover:bg-brand-50 hover:text-brand-700">
+            EN <Icon name="chevron-down" size={15} />
+          </button>
+          {isAuthenticated ? (
+            <div className="ml-1 flex items-center gap-2">
+              <Link to="/dashboard">
+                <Button variant="primary" size="sm" icon="grid">Dashboard</Button>
+              </Link>
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-700 text-xs font-bold text-gold-400" title={user?.fullname || "Traveler"}>
+                {(user?.fullname || user?.username || "SD").slice(0, 2).toUpperCase()}
               </span>
-              <span className="block text-[9px] sm:text-[10px] font-semibold text-gray-500 dark:text-gray-400 tracking-wide uppercase mt-0.5">
-                Cambodia
-              </span>
             </div>
-          </Link>
-
-          <div className="hidden xl:flex items-center gap-0.5">
-            {navKeys.map(({ key, href }) => (
-              <NavLink
-                key={href}
-                to={href}
-                end={href === "/"}
-                className={({ isActive }) =>
-                  `px-2.5 xl:px-3 py-2 rounded-lg text-[12px] xl:text-[13px] font-medium transition-colors ${
-                    isActive
-                      ? "text-primary bg-primary/10"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`
-                }
-              >
-                {t(key)}
-              </NavLink>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-0.5 sm:gap-1">
-            {/* Theme toggle */}
-            <button
-              onClick={toggle}
-              className="hidden sm:flex p-2 rounded-full text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              title={dark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {dark ? <Sun className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px]" /> : <Moon className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px]" />}
-            </button>
-
-            <div className="hidden md:block relative">
-              <button
-                onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                {i18n.language === "km" ? "KM" : "EN"}
-              </button>
-              {langOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 z-50 min-w-[100px]">
-                    <button
-                      onClick={() => toggleLang("en")}
-                      className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
-                        i18n.language === "en"
-                          ? "text-primary bg-primary/5"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      English
-                    </button>
-                    <button
-                      onClick={() => toggleLang("km")}
-                      className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
-                        i18n.language === "km"
-                          ? "text-primary bg-primary/5"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      ខ្មែរ
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5 sm:mx-1" />
-
-            <Link
-              to="/login"
-              className="hidden sm:inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-primary text-white text-[12px] sm:text-[13px] font-semibold rounded-lg hover:bg-primary-dark transition-colors"
-            >
-              {t("nav.signIn")}
-            </Link>
-
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="xl:hidden p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="secondary" size="sm" className="ml-1">Login</Button>
+              </Link>
+              <Link to="/register">
+                <Button variant="primary" size="sm">Register</Button>
+              </Link>
+            </>
+          )}
         </div>
-      </div>
 
-      {mobileOpen && (
-        <div className="xl:hidden bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 shadow-lg max-h-[80vh] overflow-y-auto">
-          <div className="px-4 py-3 space-y-1">
-            {navKeys.map(({ key, href }) => (
-              <NavLink
-                key={href}
-                to={href}
-                end={href === "/"}
-                onClick={() => setMobileOpen(false)}
-                className={({ isActive }) =>
-                  `block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "text-primary bg-primary/10"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`
-                }
-              >
-                {t(key)}
-              </NavLink>
+        {/* Mobile toggle */}
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Menu"
+          className="grid h-11 w-11 place-items-center rounded-xl border border-line text-brand-800 lg:hidden"
+        >
+          <Icon name={open ? "x" : "menu"} size={22} />
+        </button>
+      </nav>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div className="border-t border-line bg-white px-4 pb-6 pt-2 lg:hidden">
+          <ul className="flex flex-col">
+            {navLinks.map((l) => (
+              <li key={l.label}>
+                <Link
+                  to={l.href}
+                  className={`flex items-center justify-between rounded-xl px-3 py-3 text-base font-semibold ${
+                    isActive(l.href) ? "bg-brand-50 text-brand-700" : "text-ink/80"
+                  }`}
+                >
+                  {l.label}
+                  <Icon name="chevron-right" size={18} className="text-muted" />
+                </Link>
+              </li>
             ))}
-
-            <div className="pt-3 mt-2 border-t border-gray-100 dark:border-gray-800 space-y-1">
-              <Link
-                to="/contact"
-                onClick={() => setMobileOpen(false)}
-                className="block px-3 py-2.5 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                {t("nav.contactUs")}
+          </ul>
+          <div className="mt-4 flex gap-3">
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="flex-1">
+                <Button variant="primary" className="w-full" icon="grid">Dashboard</Button>
               </Link>
-
-              <div className="flex items-center gap-2 px-3 py-2.5">
-                <Globe className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <button
-                  onClick={() => i18n.changeLanguage("en")}
-                  className={`text-sm font-medium px-2 py-0.5 rounded ${
-                    i18n.language === "en"
-                      ? "text-primary bg-primary/10"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => i18n.changeLanguage("km")}
-                  className={`text-sm font-medium px-2 py-0.5 rounded ${
-                    i18n.language === "km"
-                      ? "text-primary bg-primary/10"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  KM
-                </button>
-              </div>
-
-              {/* Mobile theme toggle */}
-              <button
-                onClick={toggle}
-                className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                {dark ? "Light Mode" : "Dark Mode"}
-              </button>
-
-              <Link
-                to="/login"
-                onClick={() => setMobileOpen(false)}
-                className="block w-full text-center px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark transition-colors mt-2"
-              >
-                {t("nav.signIn")}
-              </Link>
-            </div>
+            ) : (
+              <>
+                <Link to="/login" className="flex-1">
+                  <Button variant="secondary" className="w-full">Login</Button>
+                </Link>
+                <Link to="/register" className="flex-1">
+                  <Button variant="primary" className="w-full">Register</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

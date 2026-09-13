@@ -1,142 +1,90 @@
-import { Link, useLocation } from "react-router-dom";
-import {
-  Landmark,
-  LayoutDashboard,
-  Building2,
-  CalendarCheck,
-  Package,
-  DollarSign,
-  Star,
-  Tag,
-  BarChart3,
-  Lightbulb,
-  Wallet,
-  UserCog,
-  Users,
-  HelpCircle,
-  ChevronLeft,
-  ChevronRight,
-  UserCircle,
-} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import Logo from "../ui/Logo";
+import Icon from "../ui/Icon";
+import { dashboardNav } from "../../data/site";
+import { useAuth } from "../../context/AuthContext";
 
-const sections = [
-  {
-    label: "Overview",
-    items: [
-      { icon: LayoutDashboard, text: "Dashboard", path: "/owner" },
-    ],
-  },
-  {
-    label: "Manage",
-    items: [
-      { icon: Building2, text: "Properties", path: "/owner/properties" },
-      { icon: CalendarCheck, text: "Bookings", path: "/owner/bookings" },
-      { icon: Package, text: "Packages", path: "/owner/packages" },
-      { icon: DollarSign, text: "Pricing & Availability", path: "/owner/pricing" },
-      { icon: Star, text: "Reviews", path: "/owner/reviews" },
-      { icon: Tag, text: "Promotions", path: "/owner/promotions" },
-    ],
-  },
-  {
-    label: "Analytics",
-    items: [
-      { icon: BarChart3, text: "Reports", path: "/owner/reports" },
-      { icon: Lightbulb, text: "Insights", path: "/owner/insights" },
-    ],
-  },
-  {
-    label: "Account",
-    items: [
-      { icon: Wallet, text: "Payouts", path: "/owner/payouts" },
-      { icon: UserCircle, text: "My Profile", path: "/owner/profile" },
-      { icon: UserCog, text: "Profile & Settings", path: "/owner/settings" },
-      { icon: Users, text: "Team Members", path: "/owner/team" },
-    ],
-  },
-];
+export default function Sidebar({ open, onClose }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
-export default function Sidebar({ collapsed, onToggle }) {
-  const location = useLocation();
+  const handleLogout = () => {
+    logout();
+    navigate("/", { replace: true });
+  };
 
   return (
-    <aside
-      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800 flex flex-col z-40 transition-all duration-300 ${
-        collapsed ? "w-[72px]" : "w-64"
-      }`}
-    >
-      {/* Branding */}
-      <div className="flex items-center gap-3 px-5 h-14 border-b border-gray-100 dark:border-gray-800 shrink-0">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-          <Landmark className="w-4 h-4 text-white" />
+    <>
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-brand-950/50 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-brand-700 text-white transition-transform duration-300 lg:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="px-5 py-5">
+          <Link to="/">
+            <Logo tone="light" />
+          </Link>
         </div>
-        {!collapsed && (
-          <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">
-            Smart Tourism
-          </span>
-        )}
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2.5">
-        {sections.map((section) => (
-          <div key={section.label} className="mb-4">
-            {!collapsed && (
-              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-2.5 mb-1.5">
-                {section.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all ${
-                      isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200"
-                    } ${collapsed ? "justify-center" : ""}`}
-                    title={collapsed ? item.text : undefined}
-                  >
-                    <item.icon className="w-[18px] h-[18px] shrink-0" />
-                    {!collapsed && <span>{item.text}</span>}
-                  </Link>
-                );
-              })}
-            </div>
+        <nav className="mt-2 flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+          {dashboardNav.map((item) => (
+            <a
+              key={item.label}
+              href="#dashboard"
+              className={`group relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+                item.active
+                  ? "bg-brand-600 text-white"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              {item.active && (
+                <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gold-400" />
+              )}
+              <Icon
+                name={item.icon}
+                size={19}
+                className={item.active ? "text-gold-400" : "text-white/60 group-hover:text-gold-300"}
+              />
+              <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold-400 px-1.5 text-[11px] font-bold text-brand-900">
+                  {item.badge}
+                </span>
+              )}
+            </a>
+          ))}
+        </nav>
+
+        <div className="border-t border-white/10 p-3">
+          <div className="mb-2 rounded-xl bg-brand-600/60 p-3">
+            <p className="text-xs text-white/60">Cambodia</p>
+            <p className="font-display text-sm font-bold text-gold-300">Always a good idea</p>
           </div>
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div className="border-t border-gray-100 dark:border-gray-800 px-2.5 py-2.5 space-y-0.5">
-        <Link
-          to="/owner/help"
-          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition ${
-            collapsed ? "justify-center" : ""
-          }`}
-          title={collapsed ? "Help Center" : undefined}
-        >
-          <HelpCircle className="w-[18px] h-[18px] shrink-0" />
-          {!collapsed && <span>Help Center</span>}
-        </Link>
-        <button
-          onClick={onToggle}
-          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition w-full ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
-          {collapsed ? (
-            <ChevronRight className="w-[18px] h-[18px] shrink-0" />
-          ) : (
-            <>
-              <ChevronLeft className="w-[18px] h-[18px] shrink-0" />
-              <span>Collapse</span>
-            </>
-          )}
-        </button>
-      </div>
-    </aside>
+          <Link
+            to="/manager"
+            onClick={onClose}
+            className="mb-1 flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <Icon name="grid" size={19} />
+            Management console
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <Icon name="logout" size={19} />
+            Logout
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
