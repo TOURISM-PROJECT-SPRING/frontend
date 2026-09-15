@@ -58,7 +58,9 @@ async function ticketPriceByPlace() {
       const pid = t.tourismPlaceId;
       const price = toNumber(t.price);
       if (pid == null || price == null) continue;
-      if (map[pid] == null || price < map[pid]) map[pid] = price;
+      if (map[pid] == null || price < map[pid].price) {
+        map[pid] = { price, ticketId: t.id };
+      }
     }
   } catch {
     /* ignore — prices optional */
@@ -74,7 +76,9 @@ async function hotelPriceByHotel() {
       const hid = r.hotelId;
       const price = toNumber(r.pricePerNight);
       if (hid == null || price == null) continue;
-      if (map[hid] == null || price < map[hid]) map[hid] = price;
+      if (map[hid] == null || price < map[hid].price) {
+        map[hid] = { price, roomId: r.id, roomType: r.roomType };
+      }
     }
   } catch {
     /* ignore */

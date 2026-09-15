@@ -3,7 +3,7 @@ import HotelCard from "./HotelCard";
 import ListingCard from "../cards/ListingCard";
 import { EmptyState } from "../ui/feedback";
 
-export default function RecommendationSection({ tour, hotels, restaurants, loading, onSelectHotel, onAddHotel }) {
+export default function RecommendationSection({ tour, hotels, restaurants, loading, onAddHotel }) {
   if (!tour) return null;
 
   const province = tour.province || tour.location || "your destination";
@@ -38,7 +38,7 @@ export default function RecommendationSection({ tour, hotels, restaurants, loadi
         ) : hotels.length ? (
           <div className="mt-3 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {hotels.map((h) => (
-              <HotelCard key={h.id} hotel={h} labelled onSelect={onSelectHotel} onAdd={onAddHotel} />
+              <HotelCard key={h.id} hotel={h} labelled onAdd={onAddHotel} />
             ))}
           </div>
         ) : (

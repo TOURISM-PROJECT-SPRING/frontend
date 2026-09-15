@@ -1,129 +1,320 @@
-import { useMemo } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Icon from "../components/ui/Icon";
 import SmartImage from "../components/ui/SmartImage";
 import Rating from "../components/ui/Rating";
-import { OpenBadge } from "../components/ui/StatusBadge";
 import { Skeleton, EmptyState, DemoNote } from "../components/ui/feedback";
-import { useRestaurant } from "../hooks/useResource";
-import { money } from "../lib/format";
+import { useToast } from "../components/ui/Toast";
+import { useRestaurants } from "../hooks/useResource";
 
 export default function RestaurantDetailPage() {
   const { id } = useParams();
-  const { items, loading, source } = useRestaurant(id);
-  const r = items[0];
+  const { items: restaurants, loading, source } = useRestaurants();
+  const toast = useToast();
 
-  const grouped = useMemo(() => {
-    const map = {};
-    for (const f of r?.menu || []) {
-      const key = f.category || "Menu";
-      (map[key] ||= []).push(f);
-    }
-    return map;
-  }, [r]);
+  const [showReservePrompt, setShowReservePrompt] = useState(false);
+  const [reserveDate, setReserveDate] = useState("");
+  const [reserveTime, setReserveTime] = useState("");
+  const [reserveGuests, setReserveGuests] = useState(2);
+
+  const restaurant = restaurants.find((r) => String(r.id) === String(id));
+
+  const handleReserve = () => {
+    setShowReservePrompt(true);
+  };
 
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="mt-4 aspect-[16/9] w-full" />
-        <Skeleton className="mt-6 h-10 w-2/3" />
+        <Skeleton className="aspect-[3/1] w-full" />
+        <Skeleton className="mt-6 h-10 w-1/3" />
+        <Skeleton className="mt-4 h-6 w-2/3" />
       </div>
     );
   }
 
-  if (!r) {
+  if (!restaurant) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
-        <EmptyState title="Restaurant not found" message="This place may no longer be listed." icon="utensils" />
-        <div className="mt-6 text-center"><Link to="/restaurants" className="font-bold text-brand-700 hover:text-brand-800">← Back to restaurants</Link></div>
+        <EmptyState title="Restaurant not found" message="This restaurant may have been removed or is unavailable." icon="utensils" />
+        <div className="mt-6 text-center">
+          <Link to="/restaurant" className="font-bold text-brand-700 hover:text-brand-800">
+            ← Back to restaurants
+          </Link>
+        </div>
       </div>
     );
   }
 
-  const gallery = r.images?.length ? r.images : [r.image].filter(Boolean);
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <nav className="mb-5 flex items-center gap-1.5 text-sm text-muted">
-        <Link to="/" className="hover:text-brand-700">Home</Link>
-        <Icon name="chevron-right" size={14} />
-        <Link to="/restaurants" className="hover:text-brand-700">Restaurants</Link>
-        <Icon name="chevron-right" size={14} />
-        <span className="font-semibold text-brand-700">{r.title}</span>
-      </nav>
-
-      <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        <div>
-          <div className="overflow-hidden rounded-[24px] border border-line shadow-soft">
-            <SmartImage src={gallery[0]} alt={r.title} className="aspect-[16/10] w-full" />
+    <div className="min-h-screen bg-canvas">
+      {/* Hero */}
+      <div className="relative isolate">
+        {restaurant.image ? (
+          <div className="relative h-[50vh] min-h-[360px] w-full overflow-hidden">
+            <SmartImage src={restaurant.image} alt={restaurant.title} className="h-full w-full" />
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-950/80 via-brand-950/20 to-transparent" />
           </div>
+        ) : (
+          <div className="relative h-[50vh] min-h-[360px] w-full bg-gradient-to-br from-brand-700 to-brand-500" />
+        )}
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <OpenBadge open={r.open} label={r.openLabel} />
-            {r.rating != null && <Rating value={r.rating} reviews={r.reviews} />}
-          </div>
-          <h1 className="mt-3 font-display text-3xl font-bold text-brand-800 sm:text-4xl">{r.title}</h1>
-          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-            <Icon name="map-pin" size={16} className="text-brand-400" /> {r.location || "Cambodia"}
-          </p>
-          {r.description && <p className="mt-4 leading-relaxed text-muted">{r.description}</p>}
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+            <nav className="mb-3 flex items-center gap-1.5 text-sm text-white/70">
+              <Link to="/" className="hover:text-white">Home</Link>
+              <Icon name="chevron-right" size={14} />
+              <Link to="/restaurant" className="hover:text-white">Restaurants</Link>
+              <Icon name="chevron-right" size={14} />
+              <span className="font-semibold text-white">{restaurant.title}</span>
+            </nav>
 
-          <div className="mt-8">
-            <h2 className="font-display text-xl font-bold text-brand-800">Menu</h2>
-            {Object.keys(grouped).length ? (
-              <div className="mt-4 space-y-6">
-                {Object.entries(grouped).map(([cat, foods]) => (
-                  <div key={cat}>
-                    <h3 className="text-sm font-bold uppercase tracking-wide text-gold-600">{cat}</h3>
-                    <div className="mt-2 divide-y divide-line rounded-xl border border-line bg-white">
-                      {foods.map((f) => (
-                        <div key={f.id} className="flex items-center gap-4 p-3">
-                          <SmartImage src={f.image} alt={f.title} className="h-14 w-14 shrink-0 rounded-lg" />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-brand-800">{f.title}</p>
-                            {!f.available && <p className="text-xs text-danger">Sold out</p>}
-                          </div>
-                          <span className="text-sm font-bold text-brand-700">{money(f.price)}</span>
-                          <button
-                            disabled={!f.available}
-                            className="grid h-8 w-8 place-items-center rounded-lg bg-brand-700 text-white disabled:opacity-40 hover:bg-brand-800"
-                            aria-label={`Add ${f.title}`}
-                          >
-                            <Icon name="arrow-right" size={16} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 rounded-xl border border-dashed border-line py-8 text-center text-sm text-muted">
-                Menu coming soon.
-              </p>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {restaurant.open != null && (
+                <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  restaurant.open
+                    ? "bg-success/90 text-white"
+                    : "bg-white/15 text-white/80 backdrop-blur ring-1 ring-white/20"
+                }`}>
+                  {restaurant.open ? "Open Now" : "Closed"}
+                </span>
+              )}
+              {restaurant.category && (
+                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur ring-1 ring-white/20">
+                  {restaurant.category}
+                </span>
+              )}
+            </div>
+
+            <h1 className="mt-3 font-display text-4xl font-bold text-white sm:text-5xl">{restaurant.title}</h1>
+
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-white/80">
+              {restaurant.rating != null && <Rating value={restaurant.rating} reviews={restaurant.reviews} light />}
+              {restaurant.location && (
+                <span className="flex items-center gap-1.5">
+                  <Icon name="map-pin" size={15} className="text-gold-300" />
+                  {restaurant.location}
+                </span>
+              )}
+              {restaurant.openLabel && (
+                <span className="flex items-center gap-1.5">
+                  <Icon name="clock" size={15} className="text-gold-300" />
+                  {restaurant.openLabel}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-[22px] border border-line bg-white p-6 shadow-soft">
-            <h3 className="font-display text-lg font-bold text-brand-800">Visit {r.title}</h3>
-            <div className="mt-4 space-y-3 text-sm text-muted">
-              {r.openLabel && <p className="flex items-center gap-2"><Icon name="clock" size={16} className="text-brand-400" /> {r.openLabel}</p>}
-              {r.location && <p className="flex items-center gap-2"><Icon name="map-pin" size={16} className="text-brand-400" /> {r.location}</p>}
-              {r.category && <p className="flex items-center gap-2"><Icon name="utensils" size={16} className="text-brand-400" /> {r.category}</p>}
-            </div>
-            <button className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold-400 text-sm font-bold text-brand-900 hover:bg-gold-300">
-              <Icon name="ticket" size={18} /> Book a Table
-            </button>
-            <button className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-line text-sm font-bold text-brand-700 hover:bg-brand-50">
-              <Icon name="heart" size={17} /> Save
-            </button>
-          </div>
-          {source === "demo" && <div className="mt-4"><DemoNote /></div>}
-        </aside>
       </div>
+
+      {/* Content */}
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+          <div className="space-y-8">
+            {/* Description */}
+            {restaurant.description && (
+              <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+                <h2 className="font-display text-xl font-bold text-brand-800">About this restaurant</h2>
+                <p className="mt-3 leading-relaxed text-muted">{restaurant.description}</p>
+              </section>
+            )}
+
+            {/* Quick Info */}
+            <div className="flex flex-wrap gap-3">
+              {restaurant.category && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Icon name="utensils" size={16} /> {restaurant.category}
+                </span>
+              )}
+              {restaurant.location && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Icon name="map-pin" size={16} /> {restaurant.location}
+                </span>
+              )}
+              {restaurant.openLabel && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Icon name="clock" size={16} /> {restaurant.openLabel}
+                </span>
+              )}
+            </div>
+
+            {/* Contact Info */}
+            <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+              <h2 className="font-display text-xl font-bold text-brand-800">Contact information</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {restaurant.phone && (
+                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
+                    <Icon name="phone" size={17} className="text-brand-500" />
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Phone</p>
+                      <p className="text-sm font-semibold text-brand-800">{restaurant.phone}</p>
+                    </div>
+                  </div>
+                )}
+                {restaurant.email && (
+                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
+                    <Icon name="mail" size={17} className="text-brand-500" />
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Email</p>
+                      <p className="text-sm font-semibold text-brand-800">{restaurant.email}</p>
+                    </div>
+                  </div>
+                )}
+                {restaurant.location && (
+                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
+                    <Icon name="map-pin" size={17} className="text-brand-500" />
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Location</p>
+                      <p className="text-sm font-semibold text-brand-800">{restaurant.location}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {source === "demo" && <DemoNote />}
+          </div>
+
+          {/* Reservation Sidebar */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-2xl border border-gold-300 bg-white p-6 shadow-lift">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Reserve a table</p>
+                  <p className="font-display text-xl font-bold text-brand-800">
+                    {restaurant.open != null ? (restaurant.open ? "Open now" : "Currently closed") : "Reserve"}
+                  </p>
+                </div>
+                {restaurant.rating != null && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1.5">
+                    <Icon name="star" size={14} className="text-gold-500" fill="currentColor" stroke="none" />
+                    <span className="text-sm font-bold text-brand-800">{Number(restaurant.rating).toFixed(1)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+                    <Icon name="calendar" size={14} className="text-brand-500" /> Date
+                  </span>
+                  <input
+                    type="date"
+                    value={reserveDate}
+                    onChange={(e) => setReserveDate(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+                    <Icon name="clock" size={14} className="text-brand-500" /> Time
+                  </span>
+                  <select
+                    value={reserveTime}
+                    onChange={(e) => setReserveTime(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10"
+                  >
+                    <option value="">Select time</option>
+                    {["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"].map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+                    <Icon name="users" size={14} className="text-brand-500" /> Guests
+                  </span>
+                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-3">
+                    <button
+                      type="button"
+                      onClick={() => setReserveGuests((g) => Math.max(1, g - 1))}
+                      className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 hover:bg-brand-50"
+                    >
+                      <Icon name="minus" size={16} />
+                    </button>
+                    <span className="min-w-[3ch] text-center text-lg font-bold text-brand-800">{reserveGuests}</span>
+                    <button
+                      type="button"
+                      onClick={() => setReserveGuests((g) => Math.min(20, g + 1))}
+                      className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800"
+                    >
+                      <Icon name="plus" size={16} />
+                    </button>
+                  </div>
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleReserve}
+                className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md"
+              >
+                <Icon name="utensils" size={18} />
+                Reserve Table
+              </button>
+
+              <div className="mt-4 space-y-1.5 text-[11px] font-medium text-muted">
+                <p className="flex items-center gap-1.5">
+                  <Icon name="check-circle" size={13} className="text-success" /> Instant confirmation
+                </p>
+                <p className="flex items-center gap-1.5">
+                  <Icon name="check-circle" size={13} className="text-success" /> No pre-payment required
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reservation Prompt Modal */}
+      {showReservePrompt && (
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm"
+          onClick={() => setShowReservePrompt(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-lift animate-scalein"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+              <Icon name="utensils" size={22} />
+            </span>
+            <h3 className="mt-4 font-display text-xl font-bold text-brand-800">Reserve a table?</h3>
+            <p className="mt-2 text-sm text-muted">
+              You&apos;re reserving a table at <strong>{restaurant.title}</strong> for {reserveGuests} guest{reserveGuests > 1 ? "s" : ""}
+              {reserveDate ? ` on ${new Date(reserveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : ""}
+              {reserveTime ? ` at ${reserveTime}` : ""}.
+            </p>
+            <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm text-brand-800">
+                <Icon name="check-circle" size={16} className="text-success" />
+                <span className="font-semibold">Reservation is free — no payment required</span>
+              </div>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowReservePrompt(false)}
+                className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReservePrompt(false);
+                  toast.success(`Table reserved at ${restaurant.title}!`);
+                }}
+                className="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800"
+              >
+                Confirm Reservation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

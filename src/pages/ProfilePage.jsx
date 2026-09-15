@@ -13,19 +13,18 @@ const TABS = [
   { key: "account", label: "Account Info", icon: "settings" },
 ];
 
-const TOAST = {
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/15 text-warning",
-  neutral: "bg-brand-50 text-brand-700",
-};
-
 function initials(name) {
-  return (name || "Traveler").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return (name || "Traveler")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
-function SectorChip({ className = TOAST.neutral, children }) {
+function SectorChip({ className = "", children }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${className}`}>
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide transition-all ${className}`}>
       {children}
     </span>
   );
@@ -86,355 +85,417 @@ export default function ProfilePage() {
   };
 
   const emptyState = (title, copy) => (
-    <div className="grid place-items-center rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-400">
-        <Icon name="luggage" size={26} />
+    <div className="group grid place-items-center rounded-3xl border border-dashed border-emerald-900/15 bg-emerald-50/30 px-6 py-16 text-center transition-all duration-300 hover:border-emerald-900/30 hover:bg-emerald-50/50">
+      <span className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-100/80 text-[#02462E] shadow-sm transition-transform duration-300 group-hover:scale-110">
+        <Icon name="luggage" size={30} />
       </span>
-      <h3 className="mt-4 font-display text-lg font-bold text-brand-800">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm text-muted">{copy}</p>
+      <h3 className="mt-5 font-display text-lg font-bold text-[#02462E]">{title}</h3>
+      <p className="mt-1.5 max-w-xs text-sm text-slate-500 leading-relaxed">{copy}</p>
     </div>
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      {/* Hero */}
-      <section className="relative isolate overflow-hidden rounded-[26px] bg-brand-800 text-white shadow-soft">
-        <div className="khmer-motif absolute inset-0 -z-10 opacity-40" />
-        <div className="flex flex-col gap-6 p-7 sm:flex-row sm:items-center sm:p-9">
-          <div className="relative">
-            <span className="grid h-20 w-20 place-items-center rounded-3xl bg-gold-400 font-display text-2xl font-bold text-brand-900 shadow-md ring-4 ring-white/10">
-              {initials(user?.fullname || user?.username)}
-            </span>
-            {isDemo && (
-              <span className="absolute -bottom-1.5 -right-1.5 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-brand-800 shadow-md ring-2 ring-brand-800">
-                DEMO
+    <div className="min-h-screen bg-[#F8FAF9] font-sans antialiased text-slate-800">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        
+        {/* Hero Section */}
+        <section className="relative isolate overflow-hidden rounded bg-[#02462E] text-white shadow-xl shadow-emerald-950/10">
+          {/* Subtle Khmer-inspired Decorative Motif Overlay */}
+          <div className="absolute inset-0 -z-10 opacity-15 bg-[radial-gradient(#FEC700_1px,transparent_1px)] [background-size:20px_20px]" />
+          <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#FEC700]/10 blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col gap-6 p-6 sm:p-10 sm:flex-row sm:items-center">
+            {/* Avatar */}
+            <div className="relative shrink-0">
+              <span className="grid h-20 w-20 sm:h-24 sm:w-24 place-items-center rounded-full bg-gradient-to-br from-[#FEC700] to-amber-500 font-bold text-2xl sm:text-3xl font-extrabold text-[#02462E] ">
+                {initials(user?.fullname || user?.username)}
               </span>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gold-300">My Travel Profile</p>
-            <h1 className="mt-1 font-display text-2xl font-bold sm:text-3xl">
-              {user?.fullname || user?.username || "Traveler"}
-            </h1>
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/75">
-              <span className="inline-flex items-center gap-1.5">
-                <Icon name="mail" size={14} /> {user?.email || "—"}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Icon name="calendar" size={14} /> Member since 2025
-              </span>
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 rounded-2xl bg-white/10 px-5 py-3 ring-1 ring-white/15 backdrop-blur">
-            <SectorChip className="font-bold text-white">{stats.total} Trips</SectorChip>
-            <span className="h-7 w-px bg-white/15" />
-            <SectorChip className="bg-gold-400 font-bold text-brand-900">{stats.upcoming} Upcoming</SectorChip>
-          </div>
-        </div>
-      </section>
+              
+            </div>
 
-      {/* Mobile tab chips */}
-      <div className="mt-6 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold transition-colors ${
-              tab === t.key
-                ? "border-brand-700 bg-brand-700 text-white"
-                : "border-line bg-white text-brand-800 hover:bg-brand-50"
-            }`}
-          >
-            <Icon name={t.icon} size={15} />
-            {t.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-danger/30 bg-danger/5 px-4 py-2 text-sm font-bold text-danger hover:bg-danger/10"
-        >
-          <Icon name="logout" size={15} />
-          Sign Out
-        </button>
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
-        {/* Sidebar */}
-        <aside className="hidden self-start lg:block">
-          <nav className="flex flex-col gap-1 rounded-2xl border border-line bg-white p-3 shadow-soft">
-            {TABS.map((t) => {
-              const active = tab === t.key;
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors ${
-                    active
-                      ? "bg-brand-700 text-white"
-                      : "text-brand-800 hover:bg-brand-50"
-                  }`}
-                >
-                  <Icon name={t.icon} size={18} className={active ? "text-gold-400" : "text-brand-500"} />
-                  {t.label}
-                  {active && <Icon name="chevron-right" size={15} className="ml-auto text-gold-400" />}
-                </button>
-              );
-            })}
-            <div className="my-1 h-px bg-line" />
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-danger transition-colors hover:bg-danger/10"
-            >
-              <Icon name="logout" size={18} />
-              Sign Out
-            </button>
-          </nav>
-
-          <div className="mt-4 rounded-2xl border border-line bg-white p-4 shadow-soft">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold-600">Activity</p>
-            <div className="mt-3 space-y-2.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-muted">
-                  <Icon name="luggage" size={15} className="text-brand-500" /> Tour trips
+            {/* Profile Info */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#FEC700]">
+                  Kingdom of Wonder
                 </span>
-                <span className="font-bold text-brand-800">{stats.byKind.tour}</span>
+                <span className="h-1 w-1 rounded-full bg-[#FEC700]/60" />
+                <span className="text-xs font-medium text-emerald-200/80">Traveler Profile</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-muted">
-                  <Icon name="bed" size={15} className="text-brand-500" /> Hotel stays
+              <h1 className="mt-1 from-neutral-700 text-2xl sm:text-3xl font- tracking-tight text-white">
+                {user?.fullname || user?.username || "Traveler"}
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-emerald-100/80">
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="mail" size={14} className="text-[#FEC700]" /> {user?.email || "—"}
                 </span>
-                <span className="font-bold text-brand-800">{stats.byKind.hotel}</span>
+                <span className="hidden sm:inline text-emerald-500">•</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="calendar" size={14} className="text-[#FEC700]" /> Member since 2025
+                </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-muted">
-                  <Icon name="utensils" size={15} className="text-brand-500" /> Food orders
-                </span>
-                <span className="font-bold text-brand-800">{stats.byKind.restaurant}</span>
+            </div>
+
+            {/* Quick Stats Pill */}
+            <div className="flex shrink-0 items-center gap-3 rounded-2xl bg-white/10 p-2.5 px-4 ring-1 ring-white/15 backdrop-blur-md">
+              <div className="text-center px-2">
+                <p className="text-[10px] uppercase tracking-wider text-emerald-200/80 font-medium">Total</p>
+                <p className="text-lg font-bold text-white">{stats.total} Trips</p>
+              </div>
+              <span className="h-8 w-px bg-white/15" />
+              <div className="text-center px-2">
+                <p className="text-[10px] uppercase tracking-wider text-[#FEC700] font-semibold">Upcoming</p>
+                <p className="text-lg font-bold text-[#FEC700]">{stats.upcoming}</p>
               </div>
             </div>
           </div>
-        </aside>
-
-        {/* Content */}
-        <section className="min-w-0">
-          {/* ---- MY TRIPS ---- */}
-          {tab === "trips" && (
-            <div className="space-y-8">
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-display text-lg font-bold text-brand-800">
-                    Upcoming Trips
-                    {source === "demo" && (
-                      <span className="ml-2 align-middle text-[11px] font-bold uppercase tracking-wide text-gold-600">Demo</span>
-                    )}
-                  </h2>
-                  <span className="text-sm font-bold text-muted">{upcomingTrips.length}</span>
-                </div>
-                {upcomingTrips.length ? (
-                  <div className="space-y-3">
-                    {upcomingTrips.map((b) => (
-                      <TripCard key={b.key} trip={b} />
-                    ))}
-                  </div>
-                ) : (
-                  emptyState("No upcoming trips", "Book a tour, hotel or restaurant to see your next adventures here.")
-                )}
-              </div>
-
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-display text-lg font-bold text-brand-800">Trip History</h2>
-                  <span className="text-sm font-bold text-muted">{pastTrips.length}</span>
-                </div>
-                {pastTrips.length ? (
-                  <div className="space-y-3">
-                    {pastTrips.map((b) => (
-                      <TripCard key={b.key} trip={b} />
-                    ))}
-                  </div>
-                ) : (
-                  emptyState("No past trips yet", "Completed and cancelled bookings will appear here.")
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ---- PROFILE ---- */}
-          {tab === "profile" && (
-            <div className="space-y-6">
-              <div className="rounded-2xl border border-line bg-white p-6 shadow-soft sm:p-7">
-                <div className="flex flex-wrap items-center gap-5">
-                  <span className="grid h-20 w-20 place-items-center rounded-3xl bg-brand-700 font-display text-2xl font-bold text-gold-400">
-                    {initials(user?.fullname || user?.username)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-xl font-bold text-brand-800">
-                      {user?.fullname || user?.username || "Traveler"}
-                    </h2>
-                    <p className="text-sm text-muted">@{user?.username || "traveler"}</p>
-                  </div>
-                  <SectorChip className="bg-gold-100 text-gold-700">
-                    {Array.isArray(user?.roles) ? user.roles.join(", ") : user?.roles || "Member"}
-                  </SectorChip>
-                </div>
-
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {[
-                    { label: "Total Trips", value: stats.total, icon: "luggage" },
-                    { label: "Upcoming", value: stats.upcoming, icon: "calendar" },
-                    { label: "Tour Places", value: stats.byKind.tour, icon: "landmark" },
-                    { label: "Spent", value: `$${stats.spent}`, icon: "trending-up" },
-                  ].map((s) => (
-                    <div key={s.label} className="rounded-xl border border-line bg-canvas p-3.5">
-                      <Icon name={s.icon} size={16} className="text-gold-600" />
-                      <p className="mt-2 font-display text-xl font-bold text-brand-800">{s.value}</p>
-                      <p className="text-xs font-medium text-muted">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-line bg-white p-6 shadow-soft sm:p-7">
-                <h3 className="font-display text-lg font-bold text-brand-800">Personal details</h3>
-                <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {[
-                    { label: "Full name", value: user?.fullname || "—", icon: "user" },
-                    { label: "Email", value: user?.email || "—", icon: "mail" },
-                    { label: "Username", value: `@${user?.username || "—"}`, icon: "at-sign" },
-                    { label: "Member since", value: "2025", icon: "calendar" },
-                  ].map((row) => (
-                    <div key={row.label} className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
-                      <Icon name={row.icon} size={17} className="text-brand-500" />
-                      <div className="min-w-0">
-                        <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">{row.label}</dt>
-                        <dd className="truncate text-sm font-bold text-brand-800">{row.value}</dd>
-                      </div>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            </div>
-          )}
-
-          {/* ---- BOOKINGS ---- */}
-          {tab === "bookings" && (
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-display text-lg font-bold text-brand-800">All Bookings</h2>
-                <span className="text-sm font-bold text-muted">{bookings.length}</span>
-              </div>
-              {bookings.length ? (
-                <div className="space-y-3">
-                  {bookings.map((b) => (
-                    <TripCard key={b.key} trip={b} />
-                  ))}
-                </div>
-              ) : (
-                emptyState("No bookings", "Your tours, hotels and restaurant orders will appear here.")
-              )}
-            </div>
-          )}
-
-          {/* ---- ACCOUNT INFO ---- */}
-          {tab === "account" && (
-            <div className="rounded-2xl border border-line bg-white p-6 shadow-soft sm:p-7">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-display text-lg font-bold text-brand-800">Account information</h2>
-                  <p className="text-sm text-muted">Manage the details used across your account.</p>
-                </div>
-                {isDemo && (
-                  <SectorChip className="bg-warning/15 text-warning">Demo mode</SectorChip>
-                )}
-              </div>
-
-              <form
-                className="mt-6 space-y-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  saveAccount();
-                }}
-              >
-                <div className="grid gap-5 sm:grid-cols-2">
-                  {[
-                    { key: "fullname", label: "Full name", type: "text", placeholder: "Your full name" },
-                    { key: "username", label: "Username", type: "text", placeholder: "username" },
-                    { key: "email", label: "Email address", type: "email", placeholder: "you@example.com" },
-                    { key: "phone", label: "Phone number", type: "tel", placeholder: "+855 ..." },
-                  ].map((field) => (
-                    <label key={field.key} className="block">
-                      <span className="mb-1.5 block text-sm font-bold text-brand-800">{field.label}</span>
-                      <input
-                        type={field.type}
-                        value={form[field.key]}
-                        onChange={set(field.key)}
-                        placeholder={field.placeholder}
-                        className="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-sm font-medium text-ink outline-none transition-colors focus:border-brand-400 focus:bg-white"
-                      />
-                    </label>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between gap-3 border-t border-line pt-5">
-                  <p className="text-xs text-muted">Last updated: just now</p>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-bold text-white transition-colors duration-300 hover:bg-brand-800"
-                  >
-                    <Icon name="check" size={16} />
-                    Save changes
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
         </section>
-      </div>
 
-      {/* Sign out confirm */}
-      {confirming && (
-        <div
-          className="fixed inset-0 z-[120] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm"
-          onClick={() => setConfirming(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl border border-line bg-white p-6 shadow-lift"
-            onClick={(e) => e.stopPropagation()}
+        {/* Mobile Tab Nav */}
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-2 lg:hidden no-scrollbar">
+          {TABS.map((t) => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
+                  active
+                    ? "bg-[#02462E] text-[#FEC700] shadow-md shadow-emerald-950/10"
+                    : "bg-white text-slate-600 border border-slate-200/80 hover:bg-emerald-50/50"
+                }`}
+              >
+                <Icon name={t.icon} size={15} />
+                {t.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-rose-200/60 bg-rose-50/50 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-100/80 transition-all"
           >
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-danger/10 text-danger">
-              <Icon name="logout" size={22} />
-            </span>
-            <h3 className="mt-4 font-display text-lg font-bold text-brand-800">Sign out?</h3>
-            <p className="mt-1 text-sm text-muted">
-              You'll need to sign in again to view your trips and bookings.
-            </p>
-            <div className="mt-6 flex gap-3">
+            <Icon name="logout" size={15} />
+            Sign Out
+          </button>
+        </div>
+
+        {/* Main Layout Grid */}
+        <div className="mt-6 grid gap-8 lg:grid-cols-[260px_1fr]">
+          
+          {/* Desktop Sidebar Nav */}
+          <aside className="hidden self-start lg:block space-y-4">
+            <nav className="flex flex-col gap-1.5 rounded border border-slate-200/80 bg-white p-3 shadow-sm">
+              {TABS.map((t) => {
+                const active = tab === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    className={`group flex items-center gap-3 rounded px-4 py-3 text-sm font-bold transition-all duration-200 ${
+                      active
+                        ? "bg-[#02462E] text-white shadow-md shadow-emerald-950/10"
+                        : "text-slate-600 hover:bg-emerald-50/60 hover:text-[#02462E]"
+                    }`}
+                  >
+                    <Icon
+                      name={t.icon}
+                      size={18}
+                      className={`transition-transform duration-200 group-hover:scale-110 ${
+                        active ? "text-[#FEC700]" : "text-slate-400 group-hover:text-[#02462E]"
+                      }`}
+                    />
+                    {t.label}
+                    {active && <Icon name="chevron-right" size={16} className="ml-auto text-[#FEC700]" />}
+                  </button>
+                );
+              })}
+              
+              <div className="my-1 h-px bg-slate-100" />
+              
               <button
                 type="button"
-                onClick={() => setConfirming(false)}
-                className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+                onClick={() => setConfirming(true)}
+                className="flex items-center gap-3 rounded px-4 py-3 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-50"
               >
-                Cancel
+                <Icon name="logout" size={18} />
+                Sign Out
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirming(false);
-                  logout();
-                  navigate("/");
-                }}
-                className="flex-1 rounded-xl bg-danger px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-danger/90"
-              >
-                Sign out
-              </button>
+            </nav>
+
+            {/* Sidebar Activity Breakdown */}
+            <div className="rounded border border-slate-200/80 bg-white p-5 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#02462E]/70">
+                Activity Breakdown
+              </p>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2.5 text-slate-500 font-medium">
+                    <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-[#02462E]">
+                      <Icon name="luggage" size={14} />
+                    </span>
+                    Tours
+                  </span>
+                  <span className="font-bold text-slate-800">{stats.byKind.tour}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2.5 text-slate-500 font-medium">
+                    <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-50 text-amber-600">
+                      <Icon name="bed" size={14} />
+                    </span>
+                    Hotels
+                  </span>
+                  <span className="font-bold text-slate-800">{stats.byKind.hotel}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2.5 text-slate-500 font-medium">
+                    <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-50 text-[#02462E]">
+                      <Icon name="utensils" size={14} />
+                    </span>
+                    Dining
+                  </span>
+                  <span className="font-bold text-slate-800">{stats.byKind.restaurant}</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content Area */}
+          <section className="min-w-0">
+            
+            {/* ---- TAB: TRIPS ---- */}
+            {tab === "trips" && (
+              <div className="space-y-8">
+                {/* Upcoming Trips */}
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h2 className="from-neutral-600 text-xl font-bold text-[#02462E]">Upcoming Trips</h2>
+                      {source === "demo" && (
+                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-800">
+                          Demo Data
+                        </span>
+                      )}
+                    </div>
+                    <span className="rounded-full bg-emerald-100/60 px-3 py-0.5 text-xs font-bold text-[#02462E]">
+                      {upcomingTrips.length}
+                    </span>
+                  </div>
+                  {upcomingTrips.length ? (
+                    <div className="space-y-3">
+                      {upcomingTrips.map((b) => (
+                        <TripCard key={b.key} trip={b} />
+                      ))}
+                    </div>
+                  ) : (
+                    emptyState("No upcoming adventures", "Book a tour, hotel stay, or restaurant reservation to start your Cambodian journey.")
+                  )}
+                </div>
+
+                {/* Past Trips */}
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="from-neutral-600 text-xl font-bold text-[#02462E]">Trip History</h2>
+                    <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs font-bold text-slate-600">
+                      {pastTrips.length}
+                    </span>
+                  </div>
+                  {pastTrips.length ? (
+                    <div className="space-y-3">
+                      {pastTrips.map((b) => (
+                        <TripCard key={b.key} trip={b} />
+                      ))}
+                    </div>
+                  ) : (
+                    emptyState("No trip history yet", "Completed and canceled bookings will be safely stored here for your reference.")
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ---- TAB: PROFILE ---- */}
+            {tab === "profile" && (
+              <div className="space-y-6">
+                {/* Summary Card */}
+                <div className="rounded border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
+                  <div className="flex flex-wrap items-center gap-5">
+                    <span className="grid h-20 w-20 place-items-center rounded-2xl bg-[#02462E] from-neutral-600 text-2xl font-black text-[#FEC700] shadow-md">
+                      {initials(user?.fullname || user?.username)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="from-neutral-600 text-2xl font-bold text-[#02462E]">
+                        {user?.fullname || user?.username || "Traveler"}
+                      </h2>
+                      <p className="text-sm font-medium text-slate-400">@{user?.username || "traveler"}</p>
+                    </div>
+                    <SectorChip className="bg-amber-50 text-amber-700 ring-1 ring-amber-200/60">
+                      {Array.isArray(user?.roles) ? user.roles.join(", ") : user?.roles || "Explorer Member"}
+                    </SectorChip>
+                  </div>
+
+                  <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    {[
+                      { label: "Total Trips", value: stats.total, icon: "luggage" },
+                      { label: "Upcoming", value: stats.upcoming, icon: "calendar" },
+                      { label: "Tours Booked", value: stats.byKind.tour, icon: "landmark" },
+                      { label: "Total Spent", value: `$${stats.spent}`, icon: "trending-up" },
+                    ].map((s) => (
+                      <div key={s.label} className="rounded border border-slate-100 bg-slate-50/60 p-4 transition-all hover:bg-emerald-50/30">
+                        <Icon name={s.icon} size={18} className="text-[#02462E]" />
+                        <p className="mt-3 from-neutral-600 text-2xl font-bold text-slate-800">{s.value}</p>
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Personal Details Grid */}
+                <div className="rounded border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
+                  <h3 className="from-neutral-600 text-lg font-bold text-[#02462E]">Personal Details</h3>
+                  <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {[
+                      { label: "Full Name", value: user?.fullname || "—", icon: "user" },
+                      { label: "Email Address", value: user?.email || "—", icon: "mail" },
+                      { label: "Username", value: `@${user?.username || "—"}`, icon: "at-sign" },
+                      { label: "Member Since", value: "2025", icon: "calendar" },
+                    ].map((row) => (
+                      <div key={row.label} className="flex items-center gap-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-100/60 text-[#02462E]">
+                          <Icon name={row.icon} size={18} />
+                        </span>
+                        <div className="min-w-0">
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{row.label}</dt>
+                          <dd className="truncate text-sm font-bold text-slate-800">{row.value}</dd>
+                        </div>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            )}
+
+            {/* ---- TAB: BOOKINGS ---- */}
+            {tab === "bookings" && (
+              <div>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="from-neutral-600 text-xl font-bold text-[#02462E]">All Bookings</h2>
+                  <span className="rounded-full bg-emerald-100/60 px-3 py-0.5 text-xs font-bold text-[#02462E]">
+                    {bookings.length}
+                  </span>
+                </div>
+                {bookings.length ? (
+                  <div className="space-y-3">
+                    {bookings.map((b) => (
+                      <TripCard key={b.key} trip={b} />
+                    ))}
+                  </div>
+                ) : (
+                  emptyState("No bookings found", "Your tour reservations, hotel stays, and food orders will show up here.")
+                )}
+              </div>
+            )}
+
+            {/* ---- TAB: ACCOUNT INFO ---- */}
+            {tab === "account" && (
+              <div className="rounded border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="from-neutral-600 text-xl font-bold text-[#02462E]">Account Settings</h2>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Manage your personal credentials and contact preferences.</p>
+                  </div>
+                  {isDemo && (
+                    <SectorChip className="bg-amber-100 text-amber-800 font-bold">Demo Mode Active</SectorChip>
+                  )}
+                </div>
+
+                <form
+                  className="mt-8 space-y-6"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    saveAccount();
+                  }}
+                >
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    {[
+                      { key: "fullname", label: "Full Name", type: "text", placeholder: "Your full name" },
+                      { key: "username", label: "Username", type: "text", placeholder: "username" },
+                      { key: "email", label: "Email Address", type: "email", placeholder: "you@example.com" },
+                      { key: "phone", label: "Phone Number", type: "tel", placeholder: "+855 ..." },
+                    ].map((field) => (
+                      <label key={field.key} className="block">
+                        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-600">
+                          {field.label}
+                        </span>
+                        <input
+                          type={field.type}
+                          value={form[field.key]}
+                          onChange={set(field.key)}
+                          placeholder={field.placeholder}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all duration-200 focus:border-[#02462E] focus:bg-white focus:ring-2 focus:ring-[#02462E]/10"
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-6">
+                    <p className="text-xs text-slate-400">Updates sync in real-time across devices.</p>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#02462E] px-6 py-3 text-sm font-bold text-white shadow-md shadow-emerald-950/10 transition-all hover:bg-[#013523] active:scale-95"
+                    >
+                      <Icon name="check" size={16} className="text-[#FEC700]" />
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Modal: Sign Out Confirmation */}
+        {confirming && (
+          <div
+            className="fixed inset-0 z-[120] grid place-items-center bg-slate-900/60 p-4 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setConfirming(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl transition-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-100 text-rose-600">
+                <Icon name="logout" size={24} />
+              </span>
+              <h3 className="mt-4 from-neutral-600 text-xl font-bold text-slate-800">Sign out of profile?</h3>
+              <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">
+                You will need to sign in again to manage your trips and view travel vouchers.
+              </p>
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConfirming(false)}
+                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirming(false);
+                    logout();
+                    navigate("/");
+                  }}
+                  className="flex-1 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-rose-600/20 transition-all hover:bg-rose-700 active:scale-95"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -1,101 +1,86 @@
+import { Link } from "react-router-dom";
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
-import Rating from "../ui/Rating";
-import GuideInfo, { GuideFallbackNote } from "./GuideInfo";
 import { money } from "../../lib/format";
 
-export default function TourCard({ tour, onSelect, onAdd, guide }) {
+export default function TourCard({ tour, onFavorite }) {
   const price = tour.price != null ? money(tour.price) : null;
+  const originalPrice = tour.originalPrice != null ? money(tour.originalPrice) : null;
+  const href = tour.href || `/tours/${tour.id}`;
+  
+  // Render star ratings as small inline yellow stars
+  const starCount = tour.stars || 4;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-white shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1.5 hover:border-brand-300/50 hover:shadow-lift">
-      <button
-        type="button"
-        onClick={() => onSelect(tour)}
-        className="relative block w-full text-left"
-        aria-label={`View ${tour.title}`}
-      >
-        <div className="relative aspect-[16/9] overflow-hidden">
+    <article className="group flex flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+      {/* Top Image Section */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+        <Link to={href} className="block h-full w-full">
           <SmartImage
             src={tour.image}
             alt={tour.title}
             className="h-full w-full"
-            imgClassName="transition-transform duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
+            imgClassName="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-950/30 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-          {tour.category && (
-            <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-brand-700 backdrop-blur">
-              {tour.category}
-            </span>
-          )}
-          {tour.duration && (
-            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-gold-400 px-2.5 py-1 text-[11px] font-bold text-brand-900">
-              <Icon name="clock" size={12} />
-              {tour.duration}
-            </span>
-          )}
-        </div>
-      </button>
+        </Link>
 
-      <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="font-display text-lg font-bold leading-snug text-brand-800">
-            {tour.title}
-          </h3>
-          {tour.rating != null && (
-            <Rating value={tour.rating} size="sm" />
-          )}
-        </div>
+        {/* Floating Heart / Favorite Button */}
+        <button
+          type="button"
+          onClick={() => onFavorite && onFavorite(tour)}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow transition-transform hover:scale-110 active:scale-95"
+          aria-label="Add to wishlist"
+        >
+          <Icon name="heart" size={16} />
+        </button>
+      </div>
 
-        <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-muted">
-          <Icon name="map-pin" size={14} className="shrink-0 text-brand-400" />
-          {tour.province || tour.location || "Cambodia"}
-          {tour.location && tour.province && tour.location !== tour.province ? ` · ${tour.location}` : ""}
+      {/* Content Section */}
+      <div className="flex flex-1 flex-col p-3.5">
+        {/* Destination Sub-header */}
+        <p className="text-[11px] text-slate-500">
+          {tour.province || tour.location || "Siem Reap"}
         </p>
 
-        {tour.subtitle && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted">{tour.subtitle}</p>
+        {/* Title & Star Rating */}
+        <Link to={href} className="mt-0.5">
+          <h3 className="inline font-bold text-slate-900 text-sm leading-snug hover:underline">
+            {tour.title}{" "}
+          </h3>
+          <span className="inline-flex items-center gap-0.5 align-middle">
+            {Array.from({ length: starCount }).map((_, i) => (
+              <span key={i} className="text-amber-400 text-xs">★</span>
+            ))}
+          </span>
+        </Link>
+
+        {/* Rating Score Badge & Review Count */}
+        {tour.rating != null && (
+          <div className="mt-2 flex items-center gap-1.5 text-xs">
+            <span className="rounded bg-blue-700 px-1.5 py-0.5 font-bold text-white text-[11px]">
+              {tour.rating}/10
+            </span>
+            <span className="text-[11px] text-slate-500">
+              {tour.reviewsCount || "139"} reviews
+            </span>
+          </div>
         )}
 
-        <div className="mt-4 border-t border-line pt-4">
-          {tour.guide || guide ? (
-            <GuideInfo guide={tour.guide || guide} compact />
+        {/* Pricing Info Footer */}
+        <div className="mt-auto pt-4">
+          {price ? (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs font-semibold text-slate-900">From</span>
+              <span className="text-sm font-bold text-slate-900">{price}</span>
+              {originalPrice && (
+                <span className="text-xs text-slate-400 line-through">
+                  {originalPrice}
+                </span>
+              )}
+            </div>
           ) : (
-            <GuideFallbackNote />
+            <span className="text-xs font-bold text-slate-900">Price on request</span>
           )}
-        </div>
-
-        <div className="mt-4 flex items-end justify-between gap-3 border-t border-line pt-4">
-          <div>
-            {price ? (
-              <>
-                <p className="text-[11px] font-semibold uppercase text-muted">From</p>
-                <p className="font-display text-xl font-bold text-brand-700">
-                  {price}
-                  <span className="text-xs font-medium text-muted"> {tour.priceUnit}</span>
-                </p>
-              </>
-            ) : (
-              <p className="text-sm font-semibold text-brand-700">Price on request</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onSelect(tour)}
-              className="rounded-lg border border-line px-3 py-2 text-xs font-bold text-brand-700 transition-colors duration-500 ease-out hover:bg-brand-50"
-            >
-              Details
-            </button>
-            <button
-              type="button"
-              onClick={() => onAdd(tour)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gold-400 px-3 py-2 text-xs font-bold text-brand-900 transition-colors duration-500 ease-out hover:bg-gold-300"
-            >
-              <Icon name="plus" size={14} />
-              Add to cart
-            </button>
-          </div>
         </div>
       </div>
     </article>

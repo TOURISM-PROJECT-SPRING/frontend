@@ -4,7 +4,7 @@ import StatusBadge from "../manager/StatusBadge";
 import { money } from "../../lib/format";
 
 const KIND = {
-  tour: { icon: "luggage", domain: "Tour" },
+  tour: { icon: "binoculars", domain: "Tour" },
   hotel: { icon: "bed", domain: "Hotel" },
   restaurant: { icon: "utensils", domain: "Restaurant" },
 };
@@ -23,8 +23,8 @@ export default function TripCard({ trip }) {
   const amount = money(trip.amount);
 
   return (
-    <article className="group flex items-center gap-4 rounded-2xl border border-line bg-white p-4 shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-brand-300/50 hover:shadow-lift sm:p-5">
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl sm:h-24 sm:w-24">
+    <article className="group flex items-center gap-4 border rounded border-line bg-white p-4 shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-brand-300/50 hover:shadow-lift sm:p-5">
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded sm:h-24 sm:w-24">
         {trip.image ? (
           <SmartImage
             src={trip.image}
@@ -41,7 +41,7 @@ export default function TripCard({ trip }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className="truncate font-display text-base font-bold text-brand-800 sm:text-lg">
+        <h3 className="truncate from-neutral-600 text-base font-bold text-brand-800 sm:text-lg">
           {trip.title}
         </h3>
         {trip.location && (
@@ -58,7 +58,7 @@ export default function TripCard({ trip }) {
 
       <div className="flex shrink-0 flex-col items-end gap-2">
         {amount != null && (
-          <span className="font-display text-lg font-bold text-brand-700">{amount}</span>
+          <span className="from-neutral-600  text-lg font-bold text-brand-700">{amount}</span>
         )}
         <StatusBadge status={trip.status} />
       </div>

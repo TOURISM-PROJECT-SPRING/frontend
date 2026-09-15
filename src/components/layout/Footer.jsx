@@ -5,12 +5,13 @@ import { footerColumns } from "../../data/site";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-line bg-cream-soft">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <footer className="relative overflow-hidden border-t border-line bg-brand-950 text-white">
+      <div className="khmer-motif absolute inset-0 opacity-10" />
+      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
-            <Logo />
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
+            <Logo tone="light" />
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
               A modern Cambodian travel platform. Explore temples and islands, book
               beautiful stays and taste authentic Khmer flavours — all in one place.
             </p>
@@ -18,7 +19,7 @@ export default function Footer() {
               {["globe", "mail", "phone"].map((n) => (
                 <span
                   key={n}
-                  className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-white text-brand-700"
+                  className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-white/5 text-gold-400"
                 >
                   <Icon name={n} size={17} />
                 </span>
@@ -28,11 +29,11 @@ export default function Footer() {
 
           {footerColumns.map((col) => (
             <div key={col.title}>
-              <h4 className="text-sm font-bold text-brand-800">{col.title}</h4>
+              <h4 className="text-sm font-bold text-gold-400">{col.title}</h4>
               <ul className="mt-4 space-y-2.5">
                 {col.links.map((l) => (
                   <li key={l}>
-                    <Link to="/" className="text-sm text-muted hover:text-brand-700">
+                    <Link to="/" className="text-sm text-white/60 transition-colors hover:text-white">
                       {l}
                     </Link>
                   </li>
@@ -42,10 +43,10 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-line pt-6 text-sm text-muted sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-sm text-white/50 sm:flex-row">
           <p>© {new Date().getFullYear()} SovannDomNour. Discover Cambodia.</p>
           <p className="flex items-center gap-1.5">
-            Crafted with <Icon name="heart" size={14} className="text-gold-500" fill="currentColor" stroke="none" /> in Cambodia
+            Crafted with <Icon name="heart" size={14} className="text-gold-400" fill="currentColor" stroke="none" /> in Cambodia
           </p>
         </div>
       </div>

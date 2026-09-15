@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import SectionHeading from "./SectionHeading";
 import Icon from "../ui/Icon";
 import DestinationCard from "../cards/DestinationCard";
@@ -14,9 +15,9 @@ export default function PopularDestinations() {
           eyebrow="Where to go"
           title="Popular Destinations"
           action={
-            <a href="/destinations" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
+            <Link to="/destinations" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
               View All <Icon name="arrow-right" size={16} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
-            </a>
+            </Link>
           }
         />
 

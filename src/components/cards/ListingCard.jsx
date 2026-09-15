@@ -8,7 +8,7 @@ import { money } from "../../lib/format";
 const CTA = {
   tour: "View Tour",
   hotel: "View",
-  restaurant: "Book a Table",
+  restaurant: "Reserve",
 };
 
 export default function ListingCard({ item }) {
@@ -24,7 +24,13 @@ export default function ListingCard({ item }) {
           className="h-full w-full"
           imgClassName="transition-transform duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-950/25 to-transparent opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-950/40 via-transparent to-transparent" />
+        {/* Hover overlay prompt */}
+        <div className="absolute inset-0 flex items-end justify-end bg-brand-950/0 opacity-0 transition-all duration-500 ease-out group-hover:bg-brand-950/20 group-hover:opacity-100">
+          <span className="m-4 inline-flex translate-y-2 items-center gap-1.5 rounded-xl bg-gold-400 px-4 py-2 text-xs font-bold text-brand-900 opacity-0 shadow-lg transition-all duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100">
+            <Icon name="eye" size={14} /> View Details
+          </span>
+        </div>
         {isRestaurant ? (
           <span className="absolute left-3 top-3">
             <OpenBadge open={item.open} />
@@ -52,7 +58,7 @@ export default function ListingCard({ item }) {
 
       <div className="flex flex-1 flex-col p-5">
         <Link to={item.href}>
-          <h3 className="font-display text-lg font-bold leading-snug text-brand-800 hover:text-brand-600">
+          <h3 className="group-hover:text-brand-600 font-display text-lg font-bold leading-snug text-brand-800">
             {item.title}
           </h3>
         </Link>
@@ -97,13 +103,10 @@ export default function ListingCard({ item }) {
           </p>
           <Link
             to={item.href}
-            className={
-              item.kind === "hotel"
-                ? "rounded-lg border border-line px-3.5 py-2 text-xs font-bold text-brand-700 transition-colors duration-500 ease-out hover:bg-brand-50"
-                : "rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-bold text-white transition-colors duration-500 ease-out hover:bg-brand-800"
-            }
+            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-700/15 bg-brand-50 px-3.5 py-2 text-xs font-bold text-brand-700 transition-colors duration-500 ease-out hover:bg-brand-700 hover:text-white"
           >
             {CTA[item.kind] || "View"}
+            <Icon name="arrow-right" size={13} className="transition-transform duration-300 group-hover:translate-x-0.5" />
           </Link>
         </div>
       </div>

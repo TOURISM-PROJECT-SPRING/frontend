@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
 
 /* Light-only brand: neutralise dark variant so nothing can accidentally go dark. */
 @custom-variant dark (&:where(.never-dark, .never-dark *));
@@ -41,8 +42,10 @@
   --color-danger: #d1483b;
   --color-info: #2f6d9e;
 
-  --font-display: "Playfair Display", ui-serif, Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "DM Sans", "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-sans: "DM Sans", "Kantumruy Pro", "Noto Sans Khmer", system-ui, sans-serif;
+  /* Force Khmer type on a specific element: className="font-khmer" */
+  --font-khmer: "Kantumruy Pro", "Noto Serif Khmer", "Noto Sans Khmer", sans-serif;
 
   --shadow-soft: 0 1px 2px rgba(20, 32, 26, 0.04), 0 10px 30px rgba(20, 32, 26, 0.06);
   --shadow-lift: 0 16px 44px rgba(2, 70, 46, 0.16);
@@ -58,7 +61,7 @@ body {
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -69,6 +72,19 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+}
+
+/* Khmer subscripts (coeng) stack below the baseline and get clipped by the
+   tight utility leading used elsewhere — give Khmer copy room to breathe.
+   .font-khmer is declared here (not just as a --font-* token) because Tailwind
+   v4 tree-shakes utilities that no component uses yet. */
+.font-khmer {
+  font-family: var(--font-khmer);
+  line-height: 1.9;
+}
+
+[lang="km"] {
+  line-height: 1.9;
 }
 
 *,
@@ -129,8 +145,15 @@ body {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+@keyframes navbarfly {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .animate-rise { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* Spring landing; no fill-mode so the end transform (translateY(0)) isn't kept,
+   which would break position:fixed overlays inside the navbar. */
+.animate-navbarfly { animation: navbarfly 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 .animate-fade { animation: fade 0.9s ease both; }
 .animate-slowzoom { animation: slowzoom 24s ease-in-out infinite alternate; }
 .animate-scalein { animation: scalein 0.28s ease-out both; }

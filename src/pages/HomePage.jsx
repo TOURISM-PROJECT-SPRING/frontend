@@ -1,24 +1,23 @@
+import { useState } from "react";
 import Hero from "../components/home/Hero";
-import Services from "../components/home/Services";
-import PopularDestinations from "../components/home/PopularDestinations";
-import PopularExperiences from "../components/home/PopularExperiences";
-import FeaturedHotels from "../components/home/FeaturedHotels";
-import FeaturedRestaurants from "../components/home/FeaturedRestaurants";
-import KhmerFood from "../components/home/KhmerFood";
-import CulturalSection from "../components/home/CulturalSection";
+import EssentialCambodia from "../components/home/EssentialCambodia";
+import ThingsToDoSection from "../components/home/ThingsToDoSection";
+import GreatForSection from "../components/home/GreatForSection";
+import RelatedStories from "../components/home/RelatedStories";
 import FinalCta from "../components/home/FinalCta";
 
 export default function HomePage() {
+  const [activeCategory, setActiveCategory] = useState("Essentials");
+
   return (
     <>
       <Hero />
-      <Services />
-      <PopularDestinations />
-      <PopularExperiences />
-      <FeaturedHotels />
-      <FeaturedRestaurants />
-      <KhmerFood />
-      <CulturalSection />
+      <section className="bg-cream">
+        <EssentialCambodia active={activeCategory} onChange={setActiveCategory} />
+        <ThingsToDoSection category={activeCategory} />
+      </section>
+      <GreatForSection />
+      <RelatedStories />
       <FinalCta />
     </>
   );

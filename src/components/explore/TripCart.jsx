@@ -9,9 +9,10 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../ui/Toast";
 import { ticketBookingService } from "../../services/ticketBookingService";
 import { roomBookingService } from "../../services/roomBookingService";
+import { buildTicketBookingPayload, buildRoomBookingPayload, cartItemBlockers } from "../../lib/cartBooking";
 import { money } from "../../lib/format";
 
-const KIND_ICON = { tour: "luggage", hotel: "bed", restaurant: "utensils" };
+const KIND_ICON = { tour: "binoculars", hotel: "bed", restaurant: "utensils" };
 
 function ItemRow({ item, onQty, onRemove }) {
   return (
@@ -38,7 +39,7 @@ function ItemRow({ item, onQty, onRemove }) {
         {item.kind === "tour" && item.meta?.date && (
           <p className="mt-0.5 text-xs font-medium text-muted">Trip date {item.meta.date}</p>
         )}
-        {item.price != null && (
+        {Number(item.price) > 0 && (
           <p className="mt-1 text-sm font-bold text-brand-700">{money((item.price || 0) * item.qty)} <span className="text-[11px] font-medium text-muted">({money(item.price)}{item.priceUnit})</span></p>
         )}
       </div>
@@ -68,9 +69,9 @@ export function CartButton() {
       type="button"
       onClick={openCart}
       aria-label={`Open trip cart, ${count} items`}
-      className="relative grid h-10 w-10 place-items-center rounded-xl text-ink/70 transition-colors hover:bg-brand-50 hover:text-brand-700"
+      className="relative grid h-10 w-10 place-items-center rounded-xl text-ink/70 transition-colors hover:bg-brand-100 hover:text-brand-700"
     >
-      <Icon name="luggage" size={19} />
+      <Icon name="shopping-cart" size={19} />
       {count > 0 && (
         <span
           key={`badge-${count}-${flashed ? 1 : 0}`}
@@ -91,41 +92,37 @@ export default function TripCart() {
   const [checkout, setCheckout] = useState(false);
   const [placing, setPlacing] = useState(false);
 
-  const tours = items.filter((i) => i.kind === "tour");
-  const hotels = items.filter((i) => i.kind === "hotel");
+  const GROUP_DEFS = [
+    { kind: "tour", label: "Tours", icon: "binoculars" },
+    { kind: "hotel", label: "Hotels", icon: "bed" },
+    { kind: "restaurant", label: "Restaurants", icon: "utensils" },
+  ];
+  const groups = GROUP_DEFS.map((g) => ({ ...g, items: items.filter((i) => i.kind === g.kind) })).filter((g) => g.items.length > 0);
 
   const placeBooking = async () => {
     setPlacing(true);
     const results = { ok: [], fail: [] };
 
     for (const item of items) {
+      const blockers = cartItemBlockers(item);
+      if (blockers.length > 0) {
+        results.fail.push({ key: item.key, reason: blockers.join(" and ") });
+        continue;
+      }
       try {
         if (item.kind === "tour") {
-          const res = await ticketBookingService.createTicketBooking({
-            userId,
-            ticketId: Number(item.ticketId) || item.ticketId,
-            quantity: item.qty,
-            visitDate: item.meta?.date || new Date().toISOString().slice(0, 10),
-            paymentMethod: "Card",
-          });
+          const res = await ticketBookingService.createTicketBooking(buildTicketBookingPayload(item, userId));
           if (res) results.ok.push(item.key);
-          else results.fail.push(item.key);
+          else results.fail.push({ key: item.key, reason: "booking was rejected" });
         } else if (item.kind === "hotel") {
-          const res = await roomBookingService.createRoomBooking({
-            userId,
-            roomId: Number(item.meta?.roomId) || item.meta?.roomId,
-            numGuest: item.meta?.guests || 2,
-            checkIn: item.meta?.checkIn,
-            checkOut: item.meta?.checkOut,
-            paymentMethod: "Card",
-          });
+          const res = await roomBookingService.createRoomBooking(buildRoomBookingPayload(item, userId));
           if (res) results.ok.push(item.key);
-          else results.fail.push(item.key);
+          else results.fail.push({ key: item.key, reason: "booking was rejected" });
         } else {
-          results.fail.push(item.key);
+          results.fail.push({ key: item.key, reason: "this item isn't bookable here" });
         }
       } catch {
-        results.fail.push(item.key);
+        results.fail.push({ key: item.key, reason: "backend is unreachable" });
       }
     }
 
@@ -134,18 +131,20 @@ export default function TripCart() {
 
     const failed = results.fail.length;
     if (failed === 0 && results.ok.length > 0) {
-      toast.success(`Booking confirmed — ${results.ok.length} item${results.ok.length > 1 ? "s" : ""} on your trip.`);
+      toast.success(`Booking confirmed — ${items.length} item${items.length > 1 ? "s" : ""} on your trip.`);
       clear();
       closeCart();
+      navigate("/profile");
     } else if (results.ok.length > 0) {
       toast.success(`${results.ok.length} booking confirmed.`);
-      removeFailed(results.fail);
+      results.fail.forEach((f) => removeItem(f.key));
+      const missing = results.fail.map((f) => f.reason).join("; ");
+      toast.error(`Some items couldn't be booked (${missing}).`);
     } else {
-      toast.error("Booking couldn't be placed right now — the backend is offline. Please try again shortly.");
+      const missing = results.fail.map((f) => f.reason).join("; ");
+      toast.error(`Booking couldn't be placed — ${missing}.`);
     }
   };
-
-  const removeFailed = (keys) => keys.forEach((k) => removeItem(k));
 
   return (
     <Drawer open={isOpen} onClose={closeCart} title="Your trip" width="max-w-md">
@@ -169,25 +168,19 @@ export default function TripCart() {
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line px-6 py-16 text-center">
           <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-400">
-            <Icon name="luggage" size={26} />
+            <Icon name="shopping-cart" size={26} />
           </span>
           <h3 className="mt-4 font-display text-lg font-bold text-brand-800">Your trip is empty</h3>
-          <p className="mt-1 max-w-xs text-sm text-muted">Add a tour or a hotel to start planning your journey.</p>
+          <p className="mt-1 max-w-xs text-sm text-muted">Add a tour, hotel or restaurant to start planning your journey.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {tours.length > 0 && (
-            <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted"><Icon name="luggage" size={14} className="text-brand-500" /> Tours</p>
-              <div className="space-y-2">{tours.map((i) => <ItemRow key={i.key} item={i} onQty={setQty} onRemove={removeItem} />)}</div>
+          {groups.map((g) => (
+            <div key={g.kind}>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted"><Icon name={g.icon} size={14} className="text-brand-500" /> {g.label}</p>
+              <div className="space-y-2">{g.items.map((i) => <ItemRow key={i.key} item={i} onQty={setQty} onRemove={removeItem} />)}</div>
             </div>
-          )}
-          {hotels.length > 0 && (
-            <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted"><Icon name="bed" size={14} className="text-brand-500" /> Hotels</p>
-              <div className="space-y-2">{hotels.map((i) => <ItemRow key={i.key} item={i} onQty={setQty} onRemove={removeItem} />)}</div>
-            </div>
-          )}
+          ))}
         </div>
       )}
 

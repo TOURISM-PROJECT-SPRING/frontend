@@ -12,7 +12,8 @@ import { toNumber, money, isOpenNow, timeLabel, pickPlaceImage, joinImages } fro
 
 export function normalizeTourPlace(t, priceByPlace = {}) {
   const images = joinImages(t.placeImages);
-  const price = toNumber(priceByPlace[t.id]) ?? null;
+  const priceInfo = priceByPlace[t.id] || {};
+  const price = toNumber(priceInfo.price) ?? null;
   const category = t.placeCategory?.name || null;
   const province = t.district?.province?.name || t.district?.name || null;
   return {
@@ -35,12 +36,14 @@ export function normalizeTourPlace(t, priceByPlace = {}) {
     priceUnit: "/person",
     duration: null,
     status: t.status || null,
+    ticketId: priceInfo.ticketId ?? null,
     href: `/tours/${t.id}`,
   };
 }
 
 export function normalizeHotel(h, priceByHotel = {}) {
-  const price = toNumber(priceByHotel[h.id]) ?? null;
+  const roomInfo = priceByHotel[h.id] || {};
+  const price = toNumber(roomInfo.price) ?? null;
   return {
     id: h.id,
     kind: "hotel",
@@ -61,6 +64,8 @@ export function normalizeHotel(h, priceByHotel = {}) {
     status: h.status || null,
     phone: h.phoneContact || null,
     email: h.emailContact || null,
+    roomId: roomInfo.roomId ?? null,
+    roomType: roomInfo.roomType ?? null,
     href: `/hotels/${h.id}`,
   };
 }

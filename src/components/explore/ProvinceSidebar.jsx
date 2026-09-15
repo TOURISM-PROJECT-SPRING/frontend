@@ -3,7 +3,7 @@ import SmartImage from "../ui/SmartImage";
 import { SECTION_META, DURATION_OPTIONS, RATING_OPTIONS, PRICE_MAX } from "../../lib/explore";
 
 const SECTIONS = [
-  { id: "tours", icon: "compass" },
+  { id: "tours", icon: "binoculars" },
   { id: "hotels", icon: "bed" },
   { id: "restaurants", icon: "utensils" },
   { id: "all", icon: "layers" },
@@ -23,7 +23,7 @@ function Chip({ active, onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors duration-300 ${
+      className={`rounded px-3 py-1.5 text-xs font-bold transition-colors duration-300 ${
         active ? "bg-brand-700 text-white" : "bg-brand-50 text-brand-800 hover:bg-brand-100"
       }`}
     >
@@ -33,7 +33,7 @@ function Chip({ active, onClick, children }) {
 }
 
 const priceInputClass =
-  "h-10 w-full rounded-lg border border-line bg-white px-2.5 text-sm outline-none focus:border-brand-400";
+  "h-10 w-full rounded border border-line bg-white px-2.5 text-sm outline-none focus:border-brand-400";
 
 export function SidebarContent({ provinces, section, setSection, filters, setFilter, categories, counts, onReset }) {
   const selected = provinces.find((p) => String(p.id) === String(filters.provinceId));
@@ -53,7 +53,7 @@ export function SidebarContent({ provinces, section, setSection, filters, setFil
                 key={s.id}
                 type="button"
                 onClick={() => setSection(s.id)}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors duration-300 ${
+                className={`flex items-center gap-2 rounded border px-3 py-2.5 text-sm font-bold transition-colors duration-300 ${
                   active
                     ? "border-brand-700 bg-brand-700 text-white"
                     : "border-line bg-white text-brand-800 hover:border-brand-300/60"
@@ -69,18 +69,18 @@ export function SidebarContent({ provinces, section, setSection, filters, setFil
 
       {/* Province */}
       <div>
-        <GroupTitle icon="map-pin">Destination</GroupTitle>
+        <GroupTitle icon="map-pin-house">Destination</GroupTitle>
         <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto pr-1 hide-scrollbar">
           <button
             type="button"
             onClick={() => setFilter("provinceId", "all")}
-            className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 transition-colors duration-300 ${
+            className={`flex w-full items-center gap-3 rounded border px-3 py-2 transition-colors duration-300 ${
               filters.provinceId === "all"
                 ? "border-brand-600 bg-brand-50 ring-2 ring-brand-500/15"
                 : "border-line bg-white hover:border-brand-300/60"
             }`}
           >
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-gold-400">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-gradient-to-br from-brand-600 to-brand-800 text-gold-400">
               <Icon name="globe" size={16} />
             </span>
             <span className="flex-1 text-left text-sm font-bold text-brand-800">All provinces</span>
@@ -95,13 +95,13 @@ export function SidebarContent({ provinces, section, setSection, filters, setFil
                 key={p.id}
                 type="button"
                 onClick={() => setFilter("provinceId", String(p.id))}
-                className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors duration-300 ${
+                className={`flex w-full items-center gap-3 rounded border px-3 py-2 text-left transition-colors duration-300 ${
                   active
                     ? "border-brand-600 bg-brand-50 ring-2 ring-brand-500/15"
                     : "border-line bg-white hover:border-brand-300/60"
                 }`}
               >
-                <span className="h-9 w-9 shrink-0 overflow-hidden rounded-lg">
+                <span className="h-9 w-9 shrink-0 overflow-hidden rounded">
                   {p.image ? (
                     <SmartImage src={p.image} alt={p.title} className="h-full w-full" imgClassName="object-cover" />
                   ) : (
@@ -200,7 +200,7 @@ export function SidebarContent({ provinces, section, setSection, filters, setFil
       <button
         type="button"
         onClick={onReset}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-line px-4 py-3 text-sm font-bold text-brand-700 transition-colors duration-300 hover:bg-brand-50"
+        className="flex w-full items-center justify-center gap-2 rounded border border-line px-4 py-3 text-sm font-bold text-brand-700 transition-colors duration-300 hover:bg-brand-50"
       >
         <Icon name="x" size={16} /> Reset filters
       </button>
@@ -210,7 +210,7 @@ export function SidebarContent({ provinces, section, setSection, filters, setFil
 
 export default function ProvinceSidebar(props) {
   return (
-    <aside className="rounded-2xl border border-line bg-white p-5 shadow-soft">
+    <aside className="rounded border border-line bg-white p-5 shadow-soft">
       <SidebarContent {...props} />
     </aside>
   );

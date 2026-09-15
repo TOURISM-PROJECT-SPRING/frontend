@@ -10,7 +10,7 @@ export const WORKSPACES = {
     name: "Tour Management",
     title: "Tour Manager",
     subtitle: "Manage your destinations, experiences, and tour bookings.",
-    icon: "compass",
+    icon: "binoculars",
     image: img("Bayon temple 02.jpg", 1000),
     base: "/manager/tour",
     nav: [
@@ -145,7 +145,7 @@ export const WORKSPACES = {
       { label: "Dashboard", to: "/manager/admin", icon: "grid", view: "superadmin" },
       { label: "Users", to: "/manager/admin/users", icon: "users", view: "list", entity: "users" },
       { label: "Roles & Permissions", to: "/manager/admin/roles", icon: "shield", view: "list", entity: "roles" },
-      { label: "Tour Management", to: "/manager/tour", icon: "compass", view: "switch", switchTo: "tour" },
+      { label: "Tour Management", to: "/manager/tour", icon: "binoculars", view: "switch", switchTo: "tour" },
       { label: "Hotel Management", to: "/manager/hotel", icon: "bed", view: "switch", switchTo: "hotel" },
       { label: "Restaurant Management", to: "/manager/restaurant", icon: "utensils", view: "switch", switchTo: "restaurant" },
       { label: "Bookings", to: "/manager/admin/bookings", icon: "calendar", view: "list", entity: "all-bookings" },
@@ -158,7 +158,7 @@ export const WORKSPACES = {
 export const WORKSPACE_ORDER = ["tour", "hotel", "restaurant", "admin"];
 
 export const PICKER = {
-  tour: { eyebrow: "Tours", title: "Tour Management", description: "Explore and manage tour packages and travel experiences.", icon: "compass", cta: "Open Tour Manager", to: "/manager/tour", image: WORKSPACES.tour.image },
+  tour: { eyebrow: "Tours", title: "Tour Management", description: "Explore and manage tour packages and travel experiences.", icon: "binoculars", cta: "Open Tour Manager", to: "/manager/tour", image: WORKSPACES.tour.image },
   hotel: { eyebrow: "Hotels", title: "Hotel Management", description: "Manage rooms, reservations, and hotel operations.", icon: "bed", cta: "Open Hotel Manager", to: "/manager/hotel", image: WORKSPACES.hotel.image },
   restaurant: { eyebrow: "Restaurants", title: "Restaurant Management", description: "Manage menus, food orders, and restaurant operations.", icon: "utensils", cta: "Open Restaurant Manager", to: "/manager/restaurant", image: WORKSPACES.restaurant.image },
   admin: { eyebrow: "Platform", title: "Super Admin", description: "Full platform oversight across every business line.", icon: "shield", cta: "Open Admin Console", to: "/manager/admin", image: WORKSPACES.admin.image },
@@ -206,9 +206,9 @@ export const UNIFIED_NAV = [
   },
   {
     label: "Tours",
-    icon: "compass",
+    icon: "binoculars",
     items: [
-      { label: "Tour Overview", to: "/manager/tour", icon: "compass", view: "dashboard", ws: "tour" },
+      { label: "Tour Overview", to: "/manager/tour", icon: "binoculars", view: "dashboard", ws: "tour" },
       { label: "Tour Places", to: "/manager/tour/places", icon: "landmark", view: "list", entity: "tour-places", ws: "tour" },
       { label: "Tour Packages", to: "/manager/tour/packages", icon: "ticket", view: "list", entity: "tour-packages", ws: "tour" },
       { label: "Tour Bookings", to: "/manager/tour/bookings", icon: "calendar", view: "list", entity: "tour-bookings", ws: "tour" },

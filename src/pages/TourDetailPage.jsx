@@ -1,28 +1,66 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Icon from "../components/ui/Icon";
 import SmartImage from "../components/ui/SmartImage";
 import Rating from "../components/ui/Rating";
-import ListingCard from "../components/cards/ListingCard";
-import { Pill } from "../components/ui/StatusBadge";
 import { Skeleton, EmptyState, DemoNote } from "../components/ui/feedback";
-import { useTour, useTourRecommendations } from "../hooks/useResource";
+import { useToast } from "../components/ui/Toast";
+import { useTours } from "../hooks/useResource";
+import { useTripCart } from "../context/TripCartContext";
+import { useAuth } from "../context/AuthContext";
 import { money } from "../lib/format";
+import GuideInfo from "../components/explore/GuideInfo";
 
 export default function TourDetailPage() {
   const { id } = useParams();
-  const { items, loading, source } = useTour(id);
-  const tour = items[0];
-  const [active, setActive] = useState(0);
-  const rec = useTourRecommendations(tour);
+  const navigate = useNavigate();
+  const { items: tours, loading, source } = useTours();
+  const { addItem } = useTripCart();
+  const toast = useToast();
+  const { isAuthenticated } = useAuth();
+
+  const [guests, setGuests] = useState(2);
+  const [date, setDate] = useState("");
+  const [showBookingPrompt, setShowBookingPrompt] = useState(false);
+
+  const tour = tours.find((t) => String(t.id) === String(id));
+  const price = tour?.price != null ? money(tour.price) : null;
+  const total = tour?.price != null ? tour.price * guests : 0;
+  const gallery = tour?.images?.length ? tour.images : [tour?.image].filter(Boolean);
+
+  const handleBookNow = () => {
+    if (!isAuthenticated) {
+      toast.info("Please sign in to book this tour.");
+      navigate("/login", { state: { from: `/tours/${id}` } });
+      return;
+    }
+    setShowBookingPrompt(true);
+  };
+
+  const handleAddToTrip = () => {
+    if (!tour) return;
+    addItem({
+      kind: "tour",
+      id: tour.id,
+      ticketId: tour.ticketId || null,
+      title: tour.title,
+      image: tour.image,
+      location: tour.location,
+      province: tour.province,
+      price: tour.price,
+      priceUnit: tour.priceUnit,
+      qty: guests,
+      meta: { date, guests },
+    });
+    toast.success(`"${tour.title}" added to your trip.`);
+  };
 
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="mt-4 aspect-[16/9] w-full" />
-        <Skeleton className="mt-6 h-10 w-2/3" />
-        <Skeleton className="mt-4 h-4 w-1/2" />
+        <Skeleton className="aspect-[3/1] w-full" />
+        <Skeleton className="mt-6 h-10 w-1/3" />
+        <Skeleton className="mt-4 h-6 w-2/3" />
       </div>
     );
   }
@@ -30,168 +68,305 @@ export default function TourDetailPage() {
   if (!tour) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
-        <EmptyState title="Tour not found" message="This experience may no longer be available." icon="compass" />
+        <EmptyState title="Tour not found" message="This tour may have been removed or is unavailable." icon="compass" />
         <div className="mt-6 text-center">
-          <Link to="/tours" className="font-bold text-brand-700 hover:text-brand-800">← Back to all tours</Link>
+          <Link to="/tour" className="font-bold text-brand-700 hover:text-brand-800">
+            ← Back to tours
+          </Link>
         </div>
       </div>
     );
   }
 
-  const gallery = tour.images?.length ? tour.images : [tour.image].filter(Boolean);
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <nav className="mb-5 flex items-center gap-1.5 text-sm text-muted">
-        <Link to="/" className="hover:text-brand-700">Home</Link>
-        <Icon name="chevron-right" size={14} />
-        <Link to="/tours" className="hover:text-brand-700">Tours</Link>
-        <Icon name="chevron-right" size={14} />
-        <span className="font-semibold text-brand-700">{tour.title}</span>
-      </nav>
-
-      <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        <div>
-          <div className="overflow-hidden rounded-[24px] border border-line shadow-soft">
-            <SmartImage src={gallery[active] || gallery[0]} alt={tour.title} className="aspect-[16/10] w-full" />
+    <div className="min-h-screen bg-canvas">
+      {/* Hero Image Gallery */}
+      <div className="relative isolate">
+        {gallery.length > 0 ? (
+          <div className="relative h-[50vh] min-h-[360px] w-full overflow-hidden">
+            <SmartImage src={gallery[0]} alt={tour.title} className="h-full w-full" />
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-950/80 via-brand-950/20 to-transparent" />
           </div>
-          {gallery.length > 1 && (
-            <div className="mt-3 flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
-              {gallery.map((g, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActive(i)}
-                  className={`h-16 w-24 shrink-0 overflow-hidden rounded-xl border-2 ${i === active ? "border-brand-600" : "border-transparent opacity-80 hover:opacity-100"}`}
-                >
-                  <SmartImage src={g} alt="" className="h-full w-full" />
-                </button>
-              ))}
-            </div>
-          )}
+        ) : (
+          <div className="relative h-[50vh] min-h-[360px] w-full bg-gradient-to-br from-brand-700 to-brand-500" />
+        )}
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {tour.category && <Pill tone="neutral">{tour.category}</Pill>}
-            {tour.status && <Pill tone="success">{tour.status}</Pill>}
-            {tour.rating != null && <Rating value={tour.rating} reviews={tour.reviews} />}
+        {/* Breadcrumb */}
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+            <nav className="mb-3 flex items-center gap-1.5 text-sm text-white/70">
+              <Link to="/" className="hover:text-white">Home</Link>
+              <Icon name="chevron-right" size={14} />
+              <Link to="/tour" className="hover:text-white">Tours</Link>
+              <Icon name="chevron-right" size={14} />
+              <span className="font-semibold text-white">{tour.title}</span>
+            </nav>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {tour.category && (
+                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur ring-1 ring-white/20">
+                  {tour.category}
+                </span>
+              )}
+              {tour.badge && (
+                <span className="rounded-full bg-gold-400 px-3 py-1 text-xs font-bold text-brand-900">
+                  {tour.badge}
+                </span>
+              )}
+            </div>
+
+            <h1 className="mt-3 font-display text-4xl font-bold text-white sm:text-5xl">{tour.title}</h1>
+
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-white/80">
+              {tour.rating != null && <Rating value={tour.rating} reviews={tour.reviews} light />}
+              {tour.location && (
+                <span className="flex items-center gap-1.5">
+                  <Icon name="map-pin" size={15} className="text-gold-300" />
+                  {tour.location}
+                </span>
+              )}
+              {tour.duration && (
+                <span className="flex items-center gap-1.5">
+                  <Icon name="clock" size={15} className="text-gold-300" />
+                  {tour.duration}
+                </span>
+              )}
+            </div>
           </div>
-
-          <h1 className="mt-3 font-display text-3xl font-bold text-brand-800 sm:text-4xl">{tour.title}</h1>
-          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-            <Icon name="map-pin" size={16} className="text-brand-400" /> {tour.location || tour.address || "Cambodia"}
-          </p>
-
-          {tour.description && (
-            <div className="mt-6">
-              <h2 className="font-display text-xl font-bold text-brand-800">About this experience</h2>
-              <p className="mt-2 leading-relaxed text-muted">{tour.description}</p>
-            </div>
-          )}
-
-          {tour.tickets?.length > 0 && (
-            <div className="mt-8">
-              <h2 className="font-display text-xl font-bold text-brand-800">Tickets & pricing</h2>
-              <div className="mt-3 space-y-3">
-                {tour.tickets.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between rounded-xl border border-line bg-white p-4">
-                    <div>
-                      <p className="text-sm font-bold text-brand-800">{t.name}</p>
-                      {t.description && <p className="text-xs text-muted">{t.description}</p>}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-lg font-bold text-brand-700">{money(t.price)}</span>
-                      <button className="rounded-lg bg-brand-700 px-4 py-2 text-xs font-bold text-white hover:bg-brand-800">Book</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* Booking sidebar */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-[22px] border border-line bg-white p-6 shadow-soft">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-xs text-muted">From</p>
-                <p className="font-display text-3xl font-bold text-brand-700">
-                  {tour.price != null ? money(tour.price) : "—"}
-                  {tour.price != null && <span className="text-sm font-medium text-muted"> {tour.priceUnit}</span>}
-                </p>
-              </div>
-              {tour.rating != null && <Rating value={tour.rating} />}
-            </div>
-
-            <div className="mt-5 space-y-3">
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">Date</span>
-                <input type="date" className="h-11 w-full rounded-xl border border-line px-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/15" />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">Guests</span>
-                <select className="h-11 w-full rounded-xl border border-line bg-white px-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/15">
-                  <option>1 Adult</option><option>2 Adults</option><option>3 Adults</option><option>Family (2+2)</option>
-                </select>
-              </label>
-            </div>
-
-            <button className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold-400 text-sm font-bold text-brand-900 transition-colors hover:bg-gold-300">
-              <Icon name="ticket" size={18} /> Reserve now
-            </button>
-            <button className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-line text-sm font-bold text-brand-700 hover:bg-brand-50">
-              <Icon name="heart" size={17} /> Save
-            </button>
-
-            <ul className="mt-5 space-y-2 border-t border-line pt-5 text-sm text-muted">
-              <li className="flex items-center gap-2"><Icon name="check" size={16} className="text-success" /> Free cancellation up to 24h</li>
-              <li className="flex items-center gap-2"><Icon name="check" size={16} className="text-success" /> Licensed local guides</li>
-              <li className="flex items-center gap-2"><Icon name="shield" size={16} className="text-success" /> Secure payment</li>
-            </ul>
-          </div>
-          {source === "demo" && <div className="mt-4"><DemoNote /></div>}
-        </aside>
       </div>
 
-      {/* Same-province recommendations */}
-      <section className="mt-14 border-t border-line pt-10">
-        <div className="flex items-center gap-2">
-          <span className="h-px w-8 bg-gold-400" />
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold-600">
-            Complete your {tour.location || tour.province || "trip"} trip
-          </span>
-        </div>
-        <h2 className="mt-3 font-display text-2xl font-bold text-brand-800 sm:text-3xl">
-          Stay &amp; eat near this experience
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-muted">
-          Handpicked hotels and restaurants in {tour.province || tour.location || "the same province"},
-          so everything in your journey is close by.
-        </p>
+      {/* Content */}
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+          {/* Main Content */}
+          <div className="space-y-8">
+            {/* Description */}
+            {tour.description && (
+              <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+                <h2 className="font-display text-xl font-bold text-brand-800">About this experience</h2>
+                <p className="mt-3 leading-relaxed text-muted">{tour.description}</p>
+              </section>
+            )}
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-2">
-          <div>
-            <h3 className="flex items-center gap-2 font-display text-lg font-bold text-brand-800">
-              <Icon name="bed" size={20} className="text-brand-500" /> Hotels nearby
-            </h3>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2">
-              {rec.loading
-                ? Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)
-                : rec.hotels.map((h) => <ListingCard key={h.id} item={h} />)}
+            {/* Quick Info */}
+            <div className="flex flex-wrap gap-3">
+              {tour.duration && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Icon name="clock" size={16} /> {tour.duration}
+                </span>
+              )}
+              {tour.location && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Icon name="map-pin" size={16} /> {tour.location}
+                </span>
+              )}
+              {tour.address && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                  <Icon name="landmark" size={16} /> {tour.address}
+                </span>
+              )}
             </div>
+
+            {/* Itinerary */}
+            {tour.itinerary?.length > 0 && (
+              <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+                <h2 className="font-display text-xl font-bold text-brand-800">Itinerary</h2>
+                <ol className="mt-4 space-y-0">
+                  {tour.itinerary.map((step, i) => (
+                    <li key={i} className="relative flex gap-4 pb-6 pl-1 last:pb-0">
+                      {i < tour.itinerary.length - 1 && (
+                        <span className="absolute left-[15px] top-8 h-[calc(100%-2rem)] w-px bg-brand-200" />
+                      )}
+                      <span className="z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-700 font-display text-xs font-bold text-gold-400">
+                        {i + 1}
+                      </span>
+                      <p className="pt-1 text-sm leading-relaxed text-muted">{step}</p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+
+            {/* What's included */}
+            {tour.includes?.length > 0 && (
+              <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+                <h2 className="font-display text-xl font-bold text-brand-800">What&apos;s included</h2>
+                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {tour.includes.map((inc) => (
+                    <li key={inc} className="flex items-center gap-2.5 text-sm text-muted">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-success/10">
+                        <Icon name="check" size={14} className="text-success" />
+                      </span>
+                      {inc}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Guide */}
+            {tour.guide && (
+              <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+                <h2 className="font-display text-xl font-bold text-brand-800">Meet your guide</h2>
+                <div className="mt-4">
+                  <GuideInfo guide={tour.guide} />
+                </div>
+              </section>
+            )}
+
+            {source === "demo" && <DemoNote />}
           </div>
-          <div>
-            <h3 className="flex items-center gap-2 font-display text-lg font-bold text-brand-800">
-              <Icon name="utensils" size={20} className="text-brand-500" /> Restaurants nearby
-            </h3>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2">
-              {rec.loading
-                ? Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)
-                : rec.restaurants.map((r) => <ListingCard key={r.id} item={r} />)}
+
+          {/* Booking Sidebar */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-2xl border border-gold-300 bg-white p-6 shadow-lift">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Price per person</p>
+                  <p className="font-display text-3xl font-bold text-brand-800">
+                    {price || "On request"}
+                    {price && <span className="text-sm font-medium text-muted"> {tour.priceUnit}</span>}
+                  </p>
+                </div>
+                {tour.rating != null && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1.5">
+                    <Icon name="star" size={14} className="text-gold-500" fill="currentColor" stroke="none" />
+                    <span className="text-sm font-bold text-brand-800">{Number(tour.rating).toFixed(1)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+                    <Icon name="calendar" size={14} className="text-brand-500" /> Visit date
+                  </span>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+                    <Icon name="users" size={14} className="text-brand-500" /> Guests
+                  </span>
+                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-3">
+                    <button
+                      type="button"
+                      onClick={() => setGuests((g) => Math.max(1, g - 1))}
+                      className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 hover:bg-brand-50"
+                    >
+                      <Icon name="minus" size={16} />
+                    </button>
+                    <span className="min-w-[3ch] text-center text-lg font-bold text-brand-800">{guests}</span>
+                    <button
+                      type="button"
+                      onClick={() => setGuests((g) => Math.min(20, g + 1))}
+                      className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800"
+                    >
+                      <Icon name="plus" size={16} />
+                    </button>
+                  </div>
+                </label>
+              </div>
+
+              {price && (
+                <div className="mt-4 flex items-center justify-between rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
+                  <span className="text-sm font-semibold text-brand-800">Total</span>
+                  <span className="font-display text-xl font-bold text-brand-800">
+                    {money(total)}
+                    <span className="text-xs font-medium text-muted"> for {guests}</span>
+                  </span>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleBookNow}
+                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md"
+              >
+                <Icon name="ticket" size={18} />
+                Book Now
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAddToTrip}
+                className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-gold-300 bg-gold-50 text-sm font-bold text-brand-800 transition-colors hover:bg-gold-100"
+              >
+                <Icon name="plus" size={17} />
+                Add to Trip
+              </button>
+
+              <div className="mt-4 space-y-1.5 text-[11px] font-medium text-muted">
+                <p className="flex items-center gap-1.5">
+                  <Icon name="check-circle" size={13} className="text-success" /> Free cancellation up to 24h
+                </p>
+                <p className="flex items-center gap-1.5">
+                  <Icon name="check-circle" size={13} className="text-success" /> Secure payment
+                </p>
+                <p className="flex items-center gap-1.5">
+                  <Icon name="check-circle" size={13} className="text-success" /> Licensed local guides
+                </p>
+              </div>
             </div>
           </div>
         </div>
-        {rec.source === "demo" && !rec.loading && <div className="mt-6"><DemoNote /></div>}
-      </section>
+      </div>
+
+      {/* Booking Prompt Modal */}
+      {showBookingPrompt && (
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm"
+          onClick={() => setShowBookingPrompt(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-lift animate-scalein"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+              <Icon name="ticket" size={22} />
+            </span>
+            <h3 className="mt-4 font-display text-xl font-bold text-brand-800">Ready to book?</h3>
+            <p className="mt-2 text-sm text-muted">
+              You&apos;re about to book <strong>{tour.title}</strong> for {guests} guest{guests > 1 ? "s" : ""}
+              {date ? ` on ${new Date(date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : ""}.
+            </p>
+            {price && (
+              <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-brand-800">Total</span>
+                  <span className="font-display text-xl font-bold text-brand-800">{money(total)}</span>
+                </div>
+              </div>
+            )}
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowBookingPrompt(false)}
+                className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBookingPrompt(false);
+                  handleAddToTrip();
+                  toast.success("Tour added to your trip! View your cart to complete booking.");
+                }}
+                className="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800"
+              >
+                Confirm & Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
