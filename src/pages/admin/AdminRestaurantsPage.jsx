@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { Search, Plus, Star, MapPin, Eye, Edit3, Trash2 } from "lucide-react";
 import { restaurantService } from "../../services/restaurantService";
+import { restaurantAttachmentService } from "../../services/restaurantAttachmentService";
+import AdminImageField from "../../components/admin/AdminImageField";
+import { RESTAURANT_IMAGES, pickImage } from "../../utils/helpers";
 
 const statusColors = { 
   Active: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400", 
   Inactive: "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400" 
 };
+
+const FALLBACK_IMG = RESTAURANT_IMAGES[0];
 
 export default function AdminRestaurantsPage() {
   const [restaurants, setRestaurants] = useState([]);
@@ -14,13 +19,14 @@ export default function AdminRestaurantsPage() {
   const [filter, setFilter] = useState("All");
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
 
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const data = await restaurantService.getAllRestaurants();
+        const data = await restaurantService.getAllRestaurantsWithImages();
         setRestaurants(data);
         setLoading(false);
       } catch (error) {
@@ -41,20 +47,30 @@ export default function AdminRestaurantsPage() {
 
   const handleSave = async (data) => {
     try {
+      let saved;
       if (editItem) {
-        const updated = await restaurantService.updateRestaurant(editItem.id, data);
-        setRestaurants((prev) => prev.map((r) => (r.id === editItem.id ? updated : r)));
+        saved = await restaurantService.updateRestaurant(editItem.id, data);
       } else {
-        const created = await restaurantService.createRestaurant({
+        saved = await restaurantService.createRestaurant({
           ...data,
           rating: 0,
           reviews: 0,
-          image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop"
+          image: imageFile ? "" : FALLBACK_IMG,
         });
-        setRestaurants((prev) => [created, ...prev]);
       }
+      if (imageFile) {
+        const attachment = await restaurantAttachmentService.uploadRestaurantAttachment(saved.id, imageFile);
+        const first = Array.isArray(attachment) ? attachment[0] : attachment;
+        saved = { ...saved, imageUrl: first?.cloudinaryUrl || URL.createObjectURL(imageFile) };
+      }
+      setRestaurants((prev) =>
+        editItem
+          ? prev.map((r) => (r.id === editItem.id ? { ...r, ...saved } : r))
+          : [saved, ...prev]
+      );
       setFormOpen(false);
       setEditItem(null);
+      setImageFile(null);
     } catch (error) {
       console.error("Error saving restaurant:", error);
     }
@@ -82,7 +98,7 @@ export default function AdminRestaurantsPage() {
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Manage all restaurants and dining partners</p>
         </div>
         <button
-          onClick={() => { setEditItem(null); setFormOpen(true); }}
+          onClick={() => { setEditItem(null); setImageFile(null); setFormOpen(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition"
         >
           <Plus className="w-4 h-4" /> Add Restaurant
@@ -105,7 +121,7 @@ export default function AdminRestaurantsPage() {
         {filtered.map((r) => (
           <div key={r.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md transition">
             <div className="relative h-40">
-              <img src={r.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop"} alt={r.name} className="w-full h-full object-cover" />
+              <img src={r.imageUrl || r.image || pickImage(RESTAURANT_IMAGES, r.id)} alt={r.name} className="w-full h-full object-cover" />
               <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold ${statusColors[r.status || "Active"]}`}>{r.status || "Active"}</span>
             </div>
             <div className="p-4">
@@ -136,7 +152,7 @@ export default function AdminRestaurantsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewTarget(null)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <img src={viewTarget.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop"} alt={viewTarget.name} className="w-full h-48 object-cover" />
+            <img src={viewTarget.imageUrl || viewTarget.image || pickImage(RESTAURANT_IMAGES, viewTarget.id)} alt={viewTarget.name} className="w-full h-48 object-cover" />
             <div className="p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{viewTarget.name}</h3>
@@ -163,13 +179,18 @@ export default function AdminRestaurantsPage() {
 
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); }} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editItem ? "Edit Restaurant" : "Add Restaurant"}</h2>
-              <button onClick={() => { setFormOpen(false); setEditItem(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
+              <button onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target)); handleSave(d); }} className="p-6 space-y-4">
+              <AdminImageField
+                value={editItem?.imageUrl || editItem?.image}
+                label="Restaurant Photo"
+                onChange={setImageFile}
+              />
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
                 <input name="name" required defaultValue={editItem?.name || ""} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
@@ -207,7 +228,7 @@ export default function AdminRestaurantsPage() {
                 </select>
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+                <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
                 <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">{editItem ? "Save Changes" : "Add Restaurant"}</button>
               </div>
             </form>

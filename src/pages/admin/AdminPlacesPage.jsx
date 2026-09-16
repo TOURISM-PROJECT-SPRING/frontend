@@ -4,6 +4,7 @@ import { tourPlaceService } from "../../services/tourPlaceService";
 import { placeCategoryService } from "../../services/placeCategoryService";
 import { districtService } from "../../services/districtService";
 import { useAuth } from "../../context/AuthContext";
+import AdminImageField from "../../components/admin/AdminImageField";
 import { primaryPlaceImage, pickImage, TRAVEL_IMAGES } from "../../utils/helpers";
 
 const norm = (s) => String(s || "").toUpperCase();
@@ -25,6 +26,7 @@ export default function AdminPlacesPage() {
   const [districts, setDistricts] = useState([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
 
@@ -69,14 +71,15 @@ export default function AdminPlacesPage() {
         userId: user?.id || 1,
       };
       if (editItem) {
-        const updated = await tourPlaceService.updateTourPlace(editItem.id, payload);
+        const updated = await tourPlaceService.updateTourPlace(editItem.id, payload, imageFile ? [imageFile] : undefined);
         setPlaces((prev) => prev.map((p) => (p.id === editItem.id ? updated : p)));
       } else {
-        const created = await tourPlaceService.createTourPlace(payload);
+        const created = await tourPlaceService.createTourPlace(payload, imageFile ? [imageFile] : undefined);
         setPlaces((prev) => [created, ...prev]);
       }
       setFormOpen(false);
       setEditItem(null);
+      setImageFile(null);
     } catch (error) {
       console.error("Error saving place:", error);
     }
@@ -104,7 +107,7 @@ export default function AdminPlacesPage() {
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Manage all tourist destinations and attractions</p>
         </div>
         <button
-          onClick={() => { setEditItem(null); setFormOpen(true); }}
+          onClick={() => { setEditItem(null); setImageFile(null); setFormOpen(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition"
         >
           <Plus className="w-4 h-4" /> Add Place
@@ -188,13 +191,18 @@ export default function AdminPlacesPage() {
 
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); }} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editItem ? "Edit Place" : "Add Place"}</h2>
-              <button onClick={() => { setFormOpen(false); setEditItem(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
+              <button onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target)); handleSave(d); }} className="p-6 space-y-4">
+              <AdminImageField
+                value={editItem?.placeImages?.[0]?.imageUrl}
+                label="Place Photo"
+                onChange={setImageFile}
+              />
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
                 <input name="name" required defaultValue={editItem?.name || ""} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
@@ -231,7 +239,7 @@ export default function AdminPlacesPage() {
                 </select>
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+                <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
                 <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">{editItem ? "Save Changes" : "Add Place"}</button>
               </div>
             </form>

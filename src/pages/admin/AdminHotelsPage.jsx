@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { Search, Plus, MapPin, Eye, Edit3, Trash2 } from "lucide-react";
 import { hotelService } from "../../services/hotelService";
+import { hotelAttachmentService } from "../../services/hotelAttachmentService";
 import { districtService } from "../../services/districtService";
 import { useAuth } from "../../context/AuthContext";
+import AdminImageField from "../../components/admin/AdminImageField";
+import { HOTEL_IMAGES, pickImage } from "../../utils/helpers";
 
 export default function AdminHotelsPage() {
   const { user } = useAuth();
@@ -12,6 +15,7 @@ export default function AdminHotelsPage() {
   const [districts, setDistricts] = useState([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
 
@@ -19,7 +23,7 @@ export default function AdminHotelsPage() {
     const fetchData = async () => {
       try {
         const [hotelData, districtData] = await Promise.all([
-          hotelService.getAllHotels(),
+          hotelService.getAllHotelsWithImages(),
           districtService.getAllDistricts(),
         ]);
         setHotels(hotelData);
@@ -49,15 +53,25 @@ export default function AdminHotelsPage() {
         emailContact: data.emailContact || "",
         phoneContact: data.phoneContact || "",
       };
+      let saved;
       if (editItem) {
-        const updated = await hotelService.updateHotel(editItem.id, payload);
-        setHotels((prev) => prev.map((h) => (h.id === editItem.id ? updated : h)));
+        saved = await hotelService.updateHotel(editItem.id, payload);
       } else {
-        const created = await hotelService.createHotel(payload);
-        setHotels((prev) => [created, ...prev]);
+        saved = await hotelService.createHotel(payload);
       }
+      if (imageFile) {
+        const attachment = await hotelAttachmentService.uploadHotelAttachment(saved.id, imageFile);
+        const first = Array.isArray(attachment) ? attachment[0] : attachment;
+        saved = { ...saved, imageUrl: first?.cloudinaryUrl || URL.createObjectURL(imageFile) };
+      }
+      setHotels((prev) =>
+        editItem
+          ? prev.map((h) => (h.id === editItem.id ? { ...h, ...saved } : h))
+          : [saved, ...prev]
+      );
       setFormOpen(false);
       setEditItem(null);
+      setImageFile(null);
     } catch (error) {
       console.error("Error saving hotel:", error);
     }
@@ -85,7 +99,7 @@ export default function AdminHotelsPage() {
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Manage hotel listings, details, and availability</p>
         </div>
         <button
-          onClick={() => { setEditItem(null); setFormOpen(true); }}
+          onClick={() => { setEditItem(null); setImageFile(null); setFormOpen(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition"
         >
           <Plus className="w-4 h-4" /> Add Hotel
@@ -102,6 +116,9 @@ export default function AdminHotelsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((h) => (
           <div key={h.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md transition">
+            <div className="relative h-36">
+              <img src={h.imageUrl || pickImage(HOTEL_IMAGES, h.id)} alt={h.hotelName} className="w-full h-full object-cover" />
+            </div>
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{h.hotelName}</h3>
@@ -131,6 +148,7 @@ export default function AdminHotelsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewTarget(null)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            {viewTarget.imageUrl && <img src={viewTarget.imageUrl} alt={viewTarget.hotelName} className="w-full h-48 object-cover" />}
             <div className="p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{viewTarget.hotelName}</h3>
@@ -152,13 +170,18 @@ export default function AdminHotelsPage() {
 
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); }} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editItem ? "Edit Hotel" : "Add Hotel"}</h2>
-              <button onClick={() => { setFormOpen(false); setEditItem(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
+              <button onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target)); handleSave(d); }} className="p-6 space-y-4">
+              <AdminImageField
+                value={editItem?.imageUrl}
+                label="Hotel Photo"
+                onChange={setImageFile}
+              />
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hotel Name *</label>
                 <input name="hotelName" required defaultValue={editItem?.hotelName || ""} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
@@ -181,7 +204,7 @@ export default function AdminHotelsPage() {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
+                <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
                 <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">{editItem ? "Save Changes" : "Add Hotel"}</button>
               </div>
             </form>
