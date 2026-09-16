@@ -215,7 +215,7 @@ export default function LoginPage({ mode = "login" }) {
                 setLoading(true);
                 try {
                   await login({ username: "demo", password: "demo", role: ROLES.ADMIN });
-                  navigate(redirectTo, { replace: true });
+                  navigate(location.state?.from || "/admin", { replace: true });
                 } catch (err) {
                   setError(err.message || "Could not start the demo.");
                 } finally {

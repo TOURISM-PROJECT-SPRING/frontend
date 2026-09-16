@@ -14,6 +14,7 @@ import DestinationsPage from "./pages/DestinationsPage";
 import DestinationDetailPage from "./pages/DestinationDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import ManagerArea from "./pages/manager/ManagerArea";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function PublicLayout() {
   return (
@@ -56,6 +57,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ManagerArea />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />
