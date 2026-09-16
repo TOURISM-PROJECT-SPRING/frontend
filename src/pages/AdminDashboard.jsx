@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminTopbar from "../components/admin/AdminTopbar";
 import AdminKPICards from "../components/admin/AdminKPICards";
@@ -12,6 +13,8 @@ import AdminRecentActivities from "../components/admin/AdminRecentActivities";
 
 import AdminUsersPage from "./admin/AdminUsersPage";
 import AdminOwnersPage from "./admin/AdminOwnersPage";
+import AdminPlaceholderPage from "./admin/AdminPlaceholderPage";
+import useDashboardData from "../hooks/useDashboardData";
 import AdminPlacesPage from "./admin/AdminPlacesPage";
 import AdminHotelsPage from "./admin/AdminHotelsPage";
 import AdminRoomsPage from "./admin/AdminRoomsPage";
@@ -31,11 +34,20 @@ import AdminProfilePage from "./admin/AdminProfilePage";
 import AdminContactMessagesPage from "./admin/AdminContactMessagesPage";
 
 function AdminOverview() {
+  const { error } = useDashboardData();
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Welcome back, Admin!</h1>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Here's what's happening with your system.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Welcome back, Admin!</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Here's what's happening with your system.</p>
+        </div>
+        {error && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg text-xs text-amber-700 dark:text-amber-400">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>Some data failed to load. Check the backend connection and refresh.</span>
+          </div>
+        )}
       </div>
       <AdminKPICards />
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -96,6 +108,7 @@ export default function AdminDashboard() {
             <Route path="notifications" element={<AdminNotificationsPage />} />
             <Route path="contact-messages" element={<AdminContactMessagesPage />} />
             <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="help" element={<AdminPlaceholderPage title="Help Center" description="Search help articles and documentation here (coming soon)." />} />
             <Route path="logs" element={<AdminLogsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="profile" element={<AdminProfilePage />} />

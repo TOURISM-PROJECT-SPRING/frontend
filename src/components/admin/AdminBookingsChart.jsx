@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function AdminBookingsChart() {
   const { data } = useDashboardData();
-  const [timeframe, setTimeframe] = useState("This Week");
+  const [timeframe, setTimeframe] = useState("All Time");
 
   const chartData = data?.bookingsByWeekday || [];
 
@@ -38,7 +38,7 @@ export default function AdminBookingsChart() {
             onChange={(e) => setTimeframe(e.target.value)}
             className="appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 pr-8 text-xs font-medium text-gray-600 dark:text-gray-300 focus:outline-none focus:border-primary cursor-pointer"
           >
-            <option>This Week</option>
+            <option>All Time</option>
           </select>
           <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
         </div>

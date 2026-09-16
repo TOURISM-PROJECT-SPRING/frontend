@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import { ROLES } from "./utils/rbac";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ToursPage from "./pages/ToursPage";
@@ -63,7 +64,7 @@ function App() {
       <Route
         path="/admin/*"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <AdminDashboard />
           </ProtectedRoute>
         }

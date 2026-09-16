@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Search,
   Bell,
@@ -30,6 +31,8 @@ const pageTitles = {
   "/admin/reviews": "Reviews & Ratings",
   "/admin/promotions": "Promotions",
   "/admin/notifications": "Notifications",
+  "/admin/contact-messages": "Contact Messages",
+  "/admin/help": "Help Center",
   "/admin/reports": "Reports",
   "/admin/logs": "System Logs",
   "/admin/settings": "Settings",
@@ -37,12 +40,19 @@ const pageTitles = {
 
 export default function AdminTopbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const pageTitle = pageTitles[location.pathname] || "Dashboard";
   const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  const handleSignOut = () => {
+    logout();
+    navigate("/login");
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -105,11 +115,11 @@ export default function AdminTopbar() {
             className="flex items-center gap-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-2 py-1 transition"
           >
             <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">AU</span>
+              <span className="text-xs font-bold text-primary">{(user?.fullname || "AU").slice(0, 2).toUpperCase()}</span>
             </div>
             <div className="hidden md:block leading-none text-left">
-              <p className="text-[13px] font-semibold text-gray-900 dark:text-white">Admin User</p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500">Super Admin</p>
+              <p className="text-[13px] font-semibold text-gray-900 dark:text-white">{user?.fullname || "Admin User"}</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500">{user?.email || "Super Admin"}</p>
             </div>
           </button>
 
@@ -118,8 +128,8 @@ export default function AdminTopbar() {
               <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
               <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 shadow-xl py-2 z-50 animate-scale-in">
                 <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-800">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Admin User</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">admin@smarttourism.com</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.fullname || "Admin User"}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{user?.email || "admin@smarttourism.com"}</p>
                 </div>
                 <Link
                   to="/admin/profile"
@@ -136,7 +146,7 @@ export default function AdminTopbar() {
                   <Settings className="w-4 h-4 text-gray-400 dark:text-gray-500" /> Settings
                 </Link>
                 <div className="border-t border-gray-50 dark:border-gray-800 my-1" />
-                <button className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition w-full text-left">
+                <button onClick={handleSignOut} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition w-full text-left">
                   <LogOut className="w-4 h-4" /> Sign Out
                 </button>
               </div>

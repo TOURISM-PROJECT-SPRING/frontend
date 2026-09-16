@@ -11,6 +11,7 @@ import { foodService } from "../services/foodService";
 
 let sharedPromise = null;
 let sharedData = null;
+let sharedError = null;
 
 const money = (v) =>
   `$${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -235,15 +236,18 @@ async function fetchAll() {
   ])
     .then((results) => {
       sharedData = computeDashboard(results);
+      sharedError = null;
       setTimeout(() => {
         sharedPromise = null;
         sharedData = null;
+        sharedError = null;
       }, 120000);
       return sharedData;
     })
     .catch((err) => {
       console.error("Failed to load dashboard data:", err);
       sharedPromise = null;
+      sharedError = err;
       throw err;
     });
   return sharedPromise;
@@ -252,6 +256,7 @@ async function fetchAll() {
 export default function useDashboardData() {
   const [data, setData] = useState(sharedData);
   const [loading, setLoading] = useState(!sharedData);
+  const [error, setError] = useState(sharedError);
 
   useEffect(() => {
     if (sharedData) {
@@ -266,13 +271,16 @@ export default function useDashboardData() {
           setLoading(false);
         }
       })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
+      .catch((e) => {
+        if (!cancelled) {
+          setError(e);
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return { data, loading };
+  return { data, loading, error };
 }
