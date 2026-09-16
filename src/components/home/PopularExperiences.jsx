@@ -4,29 +4,25 @@ import Icon from "../ui/Icon";
 import TourCard from "../explore/TourCard";
 import { CardGridSkeleton, DemoNote } from "../ui/feedback";
 import { useTours } from "../../hooks/useResource";
-import { useTripCart } from "../../context/TripCartContext";
+import { useFavorites } from "../../context/FavoritesContext";
 import { useToast } from "../ui/Toast";
 
 export default function PopularExperiences() {
   const { items, loading, source } = useTours();
-  const { addItem } = useTripCart();
+  const { isSaved, toggle } = useFavorites();
   const toast = useToast();
   const featured = items.slice(0, 4);
 
-  const addTour = (tour) => {
-    addItem({
+  const onFavorite = (tour) => {
+    const saved = toggle({
       kind: "tour",
       id: tour.id,
-      ticketId: tour.ticketId || null,
       title: tour.title,
       image: tour.image,
-      location: tour.location,
-      province: tour.province,
-      price: tour.price ?? 0,
-      priceUnit: tour.priceUnit,
-      qty: 1,
+      location: tour.location || tour.province,
+      href: tour.href || `/tours/${tour.id}`,
     });
-    toast.success(`"${tour.title}" added to your trip.`);
+    toast[saved ? "success" : "info"](saved ? `Saved "${tour.title}" to My trips.` : `Removed "${tour.title}" from My trips.`);
   };
 
   return (
@@ -48,7 +44,7 @@ export default function PopularExperiences() {
         <>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {featured.map((t) => (
-              <TourCard key={t.id} tour={t} onAdd={addTour} />
+              <TourCard key={t.id} tour={t} favorite={isSaved("tour", t.id)} onFavorite={onFavorite} />
             ))}
           </div>
           {source === "demo" && <div className="mt-6"><DemoNote /></div>}

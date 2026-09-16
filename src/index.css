@@ -149,6 +149,10 @@ body {
   from { opacity: 0; transform: translateY(-100%); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes slidein {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
 
 .animate-rise { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
 /* Spring landing; no fill-mode so the end transform (translateY(0)) isn't kept,
@@ -157,6 +161,7 @@ body {
 .animate-fade { animation: fade 0.9s ease both; }
 .animate-slowzoom { animation: slowzoom 24s ease-in-out infinite alternate; }
 .animate-scalein { animation: scalein 0.28s ease-out both; }
+.animate-slidein { animation: slidein 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }

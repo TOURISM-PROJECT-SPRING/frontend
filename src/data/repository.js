@@ -30,6 +30,7 @@ import {
   fallbackRooms,
   fallbackBookings,
 } from "./fallbacks";
+import { demoExtraHotels } from "./hotels";
 import { toNumber } from "../lib/format";
 
 // Each fetcher returns { items, source } where source is "api" or "demo".
@@ -132,7 +133,7 @@ export const repository = {
         card.priceUnit = "/night";
       }
       return [card];
-    }, fallbackHotels.filter((x) => String(x.id) === String(id)));
+    }, [...fallbackHotels, ...demoExtraHotels].filter((x) => String(x.id) === String(id)));
     if (res.source === "demo" && res.items[0] && !res.items[0].rooms) res.items[0].rooms = fallbackRooms;
     return res;
   },

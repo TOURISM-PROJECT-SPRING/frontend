@@ -33,7 +33,7 @@ export default function HotelListingCard({ hotel: h, rank, favorite, onToggleFav
             e.preventDefault();
             onToggleFavorite?.(h);
           }}
-          aria-label={favorite ? `Remove ${h.title} from favorites` : `Save ${h.title} to favorites`}
+          aria-label={favorite ? "Remove from My trips" : "Save to My trips"}
           aria-pressed={favorite}
           className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full shadow-sm backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95 ${
             favorite ? "bg-danger text-white" : "bg-white/90 text-brand-700 hover:bg-white"

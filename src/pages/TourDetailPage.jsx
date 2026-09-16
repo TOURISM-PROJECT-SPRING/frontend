@@ -6,7 +6,7 @@ import Rating from "../components/ui/Rating";
 import { Skeleton, EmptyState, DemoNote } from "../components/ui/feedback";
 import { useToast } from "../components/ui/Toast";
 import { useTours } from "../hooks/useResource";
-import { useTripCart } from "../context/TripCartContext";
+import { useFavorites } from "../context/FavoritesContext";
 import { useAuth } from "../context/AuthContext";
 import { money } from "../lib/format";
 import GuideInfo from "../components/explore/GuideInfo";
@@ -15,44 +15,60 @@ export default function TourDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { items: tours, loading, source } = useTours();
-  const { addItem } = useTripCart();
+  const { isSaved, toggle } = useFavorites();
   const toast = useToast();
   const { isAuthenticated } = useAuth();
 
   const [guests, setGuests] = useState(2);
   const [date, setDate] = useState("");
-  const [showBookingPrompt, setShowBookingPrompt] = useState(false);
 
   const tour = tours.find((t) => String(t.id) === String(id));
   const price = tour?.price != null ? money(tour.price) : null;
   const total = tour?.price != null ? tour.price * guests : 0;
   const gallery = tour?.images?.length ? tour.images : [tour?.image].filter(Boolean);
+  const saved = tour ? isSaved("tour", tour.id) : false;
+
+  const handleToggleSave = () => {
+    if (!tour) return;
+    const nowSaved = toggle({
+      kind: "tour",
+      id: tour.id,
+      title: tour.title,
+      image: tour.image,
+      location: tour.location || tour.province,
+      href: `/tours/${id}`,
+    });
+    toast[nowSaved ? "success" : "info"](nowSaved ? `Saved "${tour.title}" to My trips.` : `Removed "${tour.title}" from My trips.`);
+  };
 
   const handleBookNow = () => {
+    if (!tour) return;
     if (!isAuthenticated) {
       toast.info("Please sign in to book this tour.");
       navigate("/login", { state: { from: `/tours/${id}` } });
       return;
     }
-    setShowBookingPrompt(true);
-  };
-
-  const handleAddToTrip = () => {
-    if (!tour) return;
-    addItem({
-      kind: "tour",
-      id: tour.id,
-      ticketId: tour.ticketId || null,
-      title: tour.title,
-      image: tour.image,
-      location: tour.location,
-      province: tour.province,
-      price: tour.price,
-      priceUnit: tour.priceUnit,
-      qty: guests,
-      meta: { date, guests },
+    const isoPlus = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+    navigate("/checkout", {
+      state: {
+        kind: "tour",
+        id: tour.id,
+        title: tour.title,
+        subtitle: tour.category || "Guided tour",
+        image: tour.image,
+        operator: tour.operator || "SovannDomNour partner",
+        rating: tour.rating ?? 4.8,
+        reviews: tour.reviewsCount ?? tour.reviews ?? 0,
+        date: date || isoPlus(7),
+        time: "9:00 AM",
+        guests,
+        price: Number(tour.price) || 0,
+        priceUnit: tour.priceUnit || "/adult",
+        language: "English - Guide",
+        pickup: "I live locally / I'm staying with friends, relatives",
+        cancelCutoff: "24 hours before the tour start",
+      },
     });
-    toast.success(`"${tour.title}" added to your trip.`);
   };
 
   if (loading) {
@@ -295,11 +311,16 @@ export default function TourDetailPage() {
 
               <button
                 type="button"
-                onClick={handleAddToTrip}
-                className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-gold-300 bg-gold-50 text-sm font-bold text-brand-800 transition-colors hover:bg-gold-100"
+                onClick={handleToggleSave}
+                aria-pressed={saved}
+                className={`mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-sm font-bold transition-colors ${
+                  saved
+                    ? "border-danger/40 bg-danger/5 text-danger"
+                    : "border-gold-300 bg-gold-50 text-brand-800 hover:bg-gold-100"
+                }`}
               >
-                <Icon name="plus" size={17} />
-                Add to Trip
+                <Icon name="heart" size={17} fill={saved ? "currentColor" : "none"} />
+                {saved ? "Saved to My trips" : "Save to My trips"}
               </button>
 
               <div className="mt-4 space-y-1.5 text-[11px] font-medium text-muted">
@@ -317,56 +338,6 @@ export default function TourDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Booking Prompt Modal */}
-      {showBookingPrompt && (
-        <div
-          className="fixed inset-0 z-[100] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm"
-          onClick={() => setShowBookingPrompt(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-lift animate-scalein"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600">
-              <Icon name="ticket" size={22} />
-            </span>
-            <h3 className="mt-4 font-display text-xl font-bold text-brand-800">Ready to book?</h3>
-            <p className="mt-2 text-sm text-muted">
-              You&apos;re about to book <strong>{tour.title}</strong> for {guests} guest{guests > 1 ? "s" : ""}
-              {date ? ` on ${new Date(date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : ""}.
-            </p>
-            {price && (
-              <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-brand-800">Total</span>
-                  <span className="font-display text-xl font-bold text-brand-800">{money(total)}</span>
-                </div>
-              </div>
-            )}
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowBookingPrompt(false)}
-                className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowBookingPrompt(false);
-                  handleAddToTrip();
-                  toast.success("Tour added to your trip! View your cart to complete booking.");
-                }}
-                className="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800"
-              >
-                Confirm & Add
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

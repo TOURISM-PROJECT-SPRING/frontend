@@ -1,7 +1,7 @@
-// Build backend-ready booking payloads from trip-cart items.
-// The API requires ticketId / roomId and real dates (@NotNull on the DTOs), so
-// this normalises the cart's flexible shape into what createTicketBooking /
-// createRoomBooking expect, and tells the caller *why* an item isn't bookable.
+// Build backend-ready booking payloads for direct purchases from the
+// tour/hotel detail pages. The API requires ticketId / roomId and real dates
+// (@NotNull on the DTOs), so this normalises the page's selection into what
+// createTicketBooking / createRoomBooking expect.
 
 function toIsoDate(v) {
   if (!v) return null;
@@ -51,16 +51,4 @@ export function buildRoomBookingPayload(item, userId) {
     checkOut,
     paymentMethod: "Card",
   };
-}
-
-// Why an item can't be submitted to the backend right now (null => bookable).
-export function cartItemBlockers(item) {
-  const missing = [];
-  if (item.kind === "tour" && !(Number(item.ticketId) || item.ticketId)) {
-    missing.push("choose a ticket on its page");
-  }
-  if (item.kind === "hotel" && !(Number(item.meta?.roomId) || item.meta?.roomId)) {
-    missing.push("pick a room on its page");
-  }
-  return missing;
 }

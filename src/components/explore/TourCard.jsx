@@ -3,7 +3,7 @@ import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
 import { money } from "../../lib/format";
 
-export default function TourCard({ tour, onFavorite }) {
+export default function TourCard({ tour, onFavorite, favorite }) {
   const price = tour.price != null ? money(tour.price) : null;
   const originalPrice = tour.originalPrice != null ? money(tour.originalPrice) : null;
   const href = tour.href || `/tours/${tour.id}`;
@@ -27,11 +27,18 @@ export default function TourCard({ tour, onFavorite }) {
         {/* Floating Heart / Favorite Button */}
         <button
           type="button"
-          onClick={() => onFavorite && onFavorite(tour)}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow transition-transform hover:scale-110 active:scale-95"
-          aria-label="Add to wishlist"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onFavorite?.(tour);
+          }}
+          aria-label={favorite ? "Remove from My trips" : "Save to My trips"}
+          aria-pressed={favorite}
+          className={`absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full shadow transition-all duration-200 hover:scale-110 active:scale-95 ${
+            favorite ? "bg-white text-danger" : "bg-white/90 text-slate-700 hover:bg-white"
+          }`}
         >
-          <Icon name="heart" size={16} />
+          <Icon name="heart" size={16} fill={favorite ? "currentColor" : "none"} />
         </button>
       </div>
 

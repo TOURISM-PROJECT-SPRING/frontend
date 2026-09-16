@@ -1,33 +1,30 @@
 import { useState } from "react";
 import SmartImage from "../ui/SmartImage";
 import Icon from "../ui/Icon";
-import { useTripCart } from "../../context/TripCartContext";
+import { useFavorites } from "../../context/FavoritesContext";
 import { useToast } from "../ui/Toast";
 
 // Rich TripAdvisor-style card: image carousel, save-to-trip (heart),
-// rating bubbles and a category type. Reuses the trip cart as the
-// "saved trip" store, toggled by the heart.
+// rating bubbles and a category type. The heart toggles the item in the
+// shared favorites list shown by the "My trips" panel.
 export default function InfoCard({ item, kind = "tour", fill = false }) {
-  const { items, addItem, removeItem } = useTripCart();
+  const { isSaved, toggle } = useFavorites();
   const toast = useToast();
   const images = item.images?.length ? item.images : [item.image];
   const [idx, setIdx] = useState(0);
-  const key = `${kind}-${item.id}`;
-  const saved = items.some((i) => i.key === key);
+  const saved = isSaved(kind, item.id);
 
   const go = (d) => setIdx((n) => (n + d + images.length) % images.length);
 
-  const toggle = () => {
-    if (saved) {
-      removeItem(key);
-      toast.info(`Removed "${item.name}" from your trip.`);
-    } else {
-      addItem(
-        { kind, id: item.id, key, title: item.name, image: images[0], location: item.location || item.category, price: 0, priceUnit: "" },
-        1
-      );
-      toast.success(`Saved "${item.name}" to your trip.`);
-    }
+  const onToggle = () => {
+    const nowSaved = toggle({
+      kind,
+      id: item.id,
+      title: item.name,
+      image: images[0],
+      location: item.location || item.category,
+    });
+    toast[nowSaved ? "success" : "info"](nowSaved ? `Saved "${item.name}" to My trips.` : `Removed "${item.name}" from My trips.`);
   };
 
   const reviews = typeof item.reviews === "number" ? item.reviews.toLocaleString() : item.reviews;
@@ -47,8 +44,8 @@ export default function InfoCard({ item, kind = "tour", fill = false }) {
         {/* Save / favorite */}
         <button
           type="button"
-          onClick={toggle}
-          aria-label={saved ? "Remove from trip" : "Save to trip"}
+          onClick={onToggle}
+          aria-label={saved ? "Remove from My trips" : "Save to My trips"}
           aria-pressed={saved}
           className={`absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full shadow-sm backdrop-blur transition-colors ${
             saved ? "bg-white text-rose-500" : "bg-white/90 text-brand-700 hover:bg-white"

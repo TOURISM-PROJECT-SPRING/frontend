@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/ui/Icon";
+import { useFavorites } from "../context/FavoritesContext";
+import { useToast } from "../components/ui/Toast";
 import { useHotels, useDestinations } from "../hooks/useResource";
 import {
   decorateHotels,
@@ -34,7 +36,8 @@ export default function HotelsPage() {
   const [dates, setDates] = useState(() => ({ checkIn: isoPlus(14), checkOut: isoPlus(16) }));
   const [guests, setGuests] = useState({ rooms: 1, adults: 2, children: 0 });
   const [sort, setSort] = useState("best-value");
-  const [favorites, setFavorites] = useState(() => new Set());
+  const { isSaved, toggle } = useFavorites();
+  const toast = useToast();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mapHint, setMapHint] = useState(false);
   const resultsRef = useRef(null);
@@ -78,13 +81,17 @@ export default function HotelsPage() {
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const toggleFavorite = (h) =>
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(h.id)) next.delete(h.id);
-      else next.add(h.id);
-      return next;
+  const toggleFavorite = (h) => {
+    const saved = toggle({
+      kind: "hotel",
+      id: h.id,
+      title: h.title,
+      image: h.image,
+      location: h.location,
+      href: h.href || `/hotels/${h.id}`,
     });
+    toast[saved ? "success" : "info"](saved ? `Saved "${h.title}" to My trips.` : `Removed "${h.title}" from My trips.`);
+  };
 
   const activeCount = countActiveFilters(filters);
 
@@ -208,7 +215,7 @@ export default function HotelsPage() {
                   key={h.id}
                   hotel={h}
                   rank={i + 1}
-                  favorite={favorites.has(h.id)}
+                  favorite={isSaved("hotel", h.id)}
                   onToggleFavorite={toggleFavorite}
                 />
               ))

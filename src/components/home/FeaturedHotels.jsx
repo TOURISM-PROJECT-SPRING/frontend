@@ -4,31 +4,25 @@ import Icon from "../ui/Icon";
 import HotelCard from "../explore/HotelCard";
 import { CardGridSkeleton, DemoNote } from "../ui/feedback";
 import { useHotels } from "../../hooks/useResource";
-import { useTripCart } from "../../context/TripCartContext";
+import { useFavorites } from "../../context/FavoritesContext";
 import { useToast } from "../ui/Toast";
 
 export default function FeaturedHotels() {
   const { items, loading, source } = useHotels();
-  const { addItem } = useTripCart();
+  const { isSaved, toggle } = useFavorites();
   const toast = useToast();
   const featured = items.slice(0, 4);
 
-  const addHotel = (hotel) => {
-    const room = (hotel.rooms || [])[0];
-    const price = room ? Number(room.price) : Number(hotel.price ?? 0);
-    addItem({
+  const onFavorite = (hotel) => {
+    const saved = toggle({
       kind: "hotel",
       id: hotel.id,
       title: hotel.title,
       image: hotel.image,
-      location: hotel.location,
-      province: hotel.province,
-      price,
-      priceUnit: "/night",
-      qty: 1,
-      meta: { roomId: hotel.roomId ?? null, roomType: hotel.roomType || "Standard room", nights: 1 },
+      location: hotel.location || hotel.province,
+      href: hotel.href || `/hotels/${hotel.id}`,
     });
-    toast.success(`"${hotel.title}" added to your trip.`);
+    toast[saved ? "success" : "info"](saved ? `Saved "${hotel.title}" to My trips.` : `Removed "${hotel.title}" from My trips.`);
   };
 
   return (
@@ -51,7 +45,7 @@ action={
           <>
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {featured.map((h) => (
-                <HotelCard key={h.id} hotel={h} onAdd={addHotel} />
+                <HotelCard key={h.id} hotel={h} favorite={isSaved("hotel", h.id)} onFavorite={onFavorite} />
               ))}
             </div>
             {source === "demo" && <div className="mt-6"><DemoNote /></div>}

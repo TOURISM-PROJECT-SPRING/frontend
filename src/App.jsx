@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
-import TripCart from "./components/explore/TripCart";
+import MyTrips from "./components/explore/MyTrips";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
@@ -10,8 +10,8 @@ import HotelsPage from "./pages/HotelsPage";
 import TourDetailPage from "./pages/TourDetailPage";
 import HotelDetailPage from "./pages/HotelDetailPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
-import CartPage from "./pages/CartPage";
 import ProfilePage from "./pages/ProfilePage";
+import CheckoutPage from "./pages/CheckoutPage";
 import ManagerArea from "./pages/manager/ManagerArea";
 
 function PublicLayout() {
@@ -28,14 +28,6 @@ function PublicLayout() {
           <Route path="/hotels/:id" element={<HotelDetailPage />} />
           <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
           <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <CartPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/profile"
             element={
               <ProtectedRoute>
@@ -47,8 +39,8 @@ function PublicLayout() {
         </Routes>
       </main>
       <Footer />
-      {/* Global trip cart — mounted here so the navbar cart button works on every page. */}
-      <TripCart />
+      {/* Global "My trips" favorites panel — mounted here so the navbar heart button works on every page. */}
+      <MyTrips />
     </div>
   );
 }
@@ -58,6 +50,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage mode="login" />} />
       <Route path="/register" element={<LoginPage mode="register" />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
       <Route
         path="/manager/*"
         element={

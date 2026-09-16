@@ -4,6 +4,8 @@ import SmartImage from "../ui/SmartImage";
 import Rating from "../ui/Rating";
 import { OpenBadge } from "../ui/StatusBadge";
 import { money } from "../../lib/format";
+import { useFavorites } from "../../context/FavoritesContext";
+import { useToast } from "../ui/Toast";
 
 const CTA = {
   tour: "View Tour",
@@ -14,6 +16,23 @@ const CTA = {
 export default function ListingCard({ item }) {
   const priceLabel = item.price != null ? money(item.price) : null;
   const isRestaurant = item.kind === "restaurant";
+  const { isSaved, toggle } = useFavorites();
+  const toast = useToast();
+  const saved = isSaved(item.kind, item.id);
+
+  const onToggleFavorite = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const nowSaved = toggle({
+      kind: item.kind,
+      id: item.id,
+      title: item.title,
+      image: item.image,
+      location: item.location || item.subtitle,
+      href: item.href,
+    });
+    toast[nowSaved ? "success" : "info"](nowSaved ? `Saved "${item.title}" to My trips.` : `Removed "${item.title}" from My trips.`);
+  };
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-white shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform hover:-translate-y-1.5 hover:border-brand-300/50 hover:shadow-lift">
@@ -46,14 +65,17 @@ export default function ListingCard({ item }) {
             </span>
           )
         )}
-        {item.kind === "hotel" && (
-          <button
-            aria-label="Save to favorites"
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-brand-700 shadow-sm backdrop-blur transition-colors duration-500 ease-out hover:bg-gold-400 hover:text-brand-900"
-          >
-            <Icon name="heart" size={17} />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onToggleFavorite}
+          aria-label={saved ? "Remove from My trips" : "Save to My trips"}
+          aria-pressed={saved}
+          className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full shadow-sm backdrop-blur transition-all duration-200 hover:scale-110 active:scale-95 ${
+            saved ? "bg-white text-danger" : "bg-white/90 text-brand-700 hover:bg-white"
+          }`}
+        >
+          <Icon name="heart" size={17} fill={saved ? "currentColor" : "none"} />
+        </button>
       </Link>
 
       <div className="flex flex-1 flex-col p-5">

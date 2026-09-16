@@ -3,7 +3,7 @@ import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
 import { money } from "../../lib/format";
 
-export default function HotelCard({ hotel, onAdd }) {
+export default function HotelCard({ hotel, favorite, onFavorite }) {
   const price = hotel.price != null ? money(hotel.price) : null;
   const originalPrice = hotel.originalPrice != null ? money(hotel.originalPrice) : null;
   const href = hotel.href || `/hotels/${hotel.id}`;
@@ -28,12 +28,16 @@ export default function HotelCard({ hotel, onAdd }) {
           type="button"
           onClick={(e) => {
             e.preventDefault();
-            if (onAdd) onAdd(hotel);
+            e.stopPropagation();
+            onFavorite?.(hotel);
           }}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-700 shadow hover:bg-gray-50 transition-transform hover:scale-105 active:scale-95"
-          aria-label="Save hotel"
+          aria-label={favorite ? "Remove from My trips" : "Save to My trips"}
+          aria-pressed={favorite}
+          className={`absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full shadow transition-all duration-200 hover:scale-105 active:scale-95 ${
+            favorite ? "bg-white text-danger" : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
         >
-          <Icon name="heart" size={16} />
+          <Icon name="heart" size={16} fill={favorite ? "currentColor" : "none"} />
         </button>
       </div>
 

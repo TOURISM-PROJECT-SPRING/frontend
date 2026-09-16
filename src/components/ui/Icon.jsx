@@ -200,6 +200,119 @@ const PATHS = {
       <path d="M9 3.236v15" />
     </>
   ),
+  // ---- Hotel detail page (path data copied from lucide-style line icons) ----
+  "message-circle": <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />,
+  "arrow-left": (
+    <>
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </>
+  ),
+  play: <polygon points="6 3 20 12 6 21 6 3" />,
+  refresh: (
+    <>
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+      <path d="M3 21v-5h5" />
+    </>
+  ),
+  maximize: (
+    <>
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </>
+  ),
+  minimize: (
+    <>
+      <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+      <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+      <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+      <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+    </>
+  ),
+  coffee: (
+    <>
+      <path d="M10 2v2M14 2v2M6 2v2" />
+      <path d="M4 8h16v5a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" />
+      <path d="M18 8h1.5a2.5 2.5 0 0 1 0 5H18" />
+    </>
+  ),
+  plane: (
+    <path d="M17.8 19.2 16 11l3.5-3.5a2.12 2.12 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7l3.6 3-2 2-2.1-.6a1 1 0 0 0-.9 1.7L5 17l1.5 3.1a1 1 0 0 0 1.7-.1l2-2 3 3.6a1 1 0 0 0 1.7-.9Z" />
+  ),
+  tv: (
+    <>
+      <rect x="2" y="7" width="20" height="15" rx="2" />
+      <polyline points="17 2 12 7 7 2" />
+    </>
+  ),
+  droplet: <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 15 5 17a7 7 0 0 0 7 5Z" />,
+  snowflake: (
+    <>
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <line x1="12" y1="2" x2="12" y2="22" />
+      <path d="m20 16-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4" />
+    </>
+  ),
+  hanger: (
+    <>
+      <path d="M12 8a2.5 2.5 0 1 0-2.5-2.5" />
+      <path d="M12 8v2l8 5.5a2 2 0 0 1-1.1 3.7H5.1a2 2 0 0 1-1.1-3.7L12 10" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </>
+  ),
+  building: (
+    <>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M8 10h.01M8 14h.01M16 10h.01M16 14h.01" />
+    </>
+  ),
+  "door-closed": (
+    <>
+      <path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14" />
+      <path d="M2 20h20" />
+      <path d="M14 12h.01" />
+    </>
+  ),
+  utensils_crossed: (
+    <>
+      <path d="m16 2-2.5 6.5L18 12v10" />
+      <path d="M8 2v20M8 8H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" />
+    </>
+  ),
+  // ---- Checkout page (lucide-style line icons) ----
+  "credit-card": (
+    <>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+    </>
+  ),
+  "x-circle": (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m15 9-6 6M9 9l6 6" />
+    </>
+  ),
+  "shield-check": (
+    <>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  "smartphone": (
+    <>
+      <rect x="5" y="2" width="14" height="20" rx="2" />
+      <line x1="12" y1="18" x2="12.01" y2="18" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 20, className = "", strokeWidth = 1.8, fill = "none", ...rest }) {

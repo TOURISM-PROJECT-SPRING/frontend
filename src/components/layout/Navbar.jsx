@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
 import { useAuth } from "../../context/AuthContext";
-import { useTripCart } from "../../context/TripCartContext";
+import { useFavorites } from "../../context/FavoritesContext";
 
 const PROFILE_MENU = [
   { key: "trips", label: "My Trips", icon: "luggage", to: "/profile" },
@@ -28,7 +28,7 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, logout, canUseManager: canManager } = useAuth();
-  const { count, openCart } = useTripCart();
+  const { count, openFavorites } = useFavorites();
 
   const isTabActive = (to, end) =>
     end ? location.pathname === to : location.pathname === to || location.pathname.startsWith(to + "/");
@@ -101,14 +101,14 @@ export default function Navbar() {
             <Icon name="search" size={19} />
           </button>
 
-          {/* Cart */}
+          {/* Favorites / My trips */}
           <button
             type="button"
-            onClick={openCart}
-            aria-label={`Open trip cart, ${count} items`}
+            onClick={openFavorites}
+            aria-label={`Open My trips, ${count} saved`}
             className="relative grid h-10 w-10 place-items-center rounded-full text-ink/70 transition-all duration-200 hover:-translate-y-px hover:bg-brand-100 hover:text-brand-700 hover:shadow-sm"
           >
-            <Icon name="shopping-cart" size={19} />
+            <Icon name="heart" size={19} />
             {count > 0 && (
               <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-gold-400 px-1 text-[10px] font-bold text-brand-900 ring-2 ring-white">
                 {count}
@@ -240,11 +240,11 @@ export default function Navbar() {
             })}
             <li>
               <button
-                onClick={() => { setOpen(false); openCart(); }}
+                onClick={() => { setOpen(false); openFavorites(); }}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold text-ink/80 transition-colors hover:bg-brand-50"
               >
-                <Icon name="shopping-cart" size={18} className="text-brand-500" />
-                My Cart <span className="text-sm">{count > 0 && `(${count})`}</span>
+                <Icon name="heart" size={18} className="text-brand-500" />
+                My Trips <span className="text-sm">{count > 0 && `(${count})`}</span>
               </button>
             </li>
           </ul>
