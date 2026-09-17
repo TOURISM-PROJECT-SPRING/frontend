@@ -1,17 +1,19 @@
+import { useTranslation } from "react-i18next";
 import Icon from "../ui/Icon";
 
-export function SearchInput({ value, onChange, placeholder = "Search…" }) {
+export function SearchInput({ value, onChange, placeholder }) {
+  const { t } = useTranslation();
   return (
     <label className="flex h-12 flex-1 items-center gap-2.5 rounded-xl border border-line bg-white px-4 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/15 sm:max-w-sm">
       <Icon name="search" size={18} className="text-muted" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("common.searchPlaceholder")}
         className="w-full bg-transparent text-sm text-ink placeholder:text-muted/60 focus:outline-none"
       />
       {value && (
-        <button onClick={() => onChange("")} aria-label="Clear" className="text-muted hover:text-brand-700">
+        <button onClick={() => onChange("")} aria-label={t("common.clear")} className="text-muted hover:text-brand-700">
           <Icon name="x" size={16} />
         </button>
       )}

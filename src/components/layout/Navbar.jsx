@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
+import LanguageSwitcher from "../ui/LanguageSwitcher";
+import ThemeToggle from "../ui/ThemeToggle";
 import { useAuth } from "../../context/AuthContext";
 import { useFavorites } from "../../context/FavoritesContext";
 
@@ -13,13 +16,14 @@ const PROFILE_MENU = [
 
 // Second-row category tabs. "Cambodia" replaces the old Home link.
 const TABS = [
-  { label: "Cambodia", to: "/", icon: "map-pin-house", end: true },
-  { label: "Tour", to: "/tour", icon: "binoculars" },
-  { label: "Hotel", to: "/hotel", icon: "bed" },
-  { label: "Restaurant", to: "/restaurant", icon: "utensils" },
+  { key: "cambodia", label: "Cambodia", to: "/", icon: "map-pin-house", end: true },
+  { key: "tours", label: "Tour", to: "/tour", icon: "binoculars" },
+  { key: "hotels", label: "Hotel", to: "/hotel", icon: "bed" },
+  { key: "restaurants", label: "Restaurant", to: "/restaurant", icon: "utensils" },
 ];
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobileSearch, setMobileSearch] = useState(false);
@@ -56,15 +60,17 @@ export default function Navbar() {
 
   const tabClass = (active) =>
     `relative inline-flex items-center gap-1.5 px-3 py-3.5 text-sm font-bold transition-colors ${
-      active ? "text-brand-800" : "text-ink/60 hover:text-brand-700"
+      active
+        ? "text-brand-800 dark:text-gold-400"
+        : "text-ink/60 hover:text-brand-700 dark:text-ink/75 dark:hover:text-gold-300"
     }`;
 
   return (
     <header
       className={`sticky top-0 z-50 w-full animate-navbarfly border-b backdrop-blur-lg transition-colors duration-300 ${
         scrolled
-          ? "border-line bg-white/85 shadow-[0_4px_20px_rgba(20,32,26,0.08)]"
-          : "border-transparent bg-white/60"
+          ? "border-line bg-white/85 shadow-[0_4px_20px_rgba(20,32,26,0.08)] dark:bg-[#09120e]/95 dark:border-line"
+          : "border-transparent bg-white/60 dark:bg-[#09120e]/60"
       }`}
     >
       {/* Row 1 — logo, search, actions */}
@@ -83,12 +89,12 @@ export default function Navbar() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search tours, hotels, food…"
             aria-label="Search"
-            className="h-11 w-full rounded-full border border-line bg-white/80 pl-11 pr-4 text-sm font-medium text-ink shadow-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15"
+            className="h-11 w-full rounded-full border border-line bg-white/80 pl-11 pr-4 text-sm font-medium text-ink shadow-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15 dark:bg-card dark:text-ink"
           />
         </form>
 
         {/* Right actions */}
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           {/* Mobile search toggle */}
           <button
             type="button"
@@ -106,7 +112,7 @@ export default function Navbar() {
             type="button"
             onClick={openFavorites}
             aria-label={`Open My trips, ${count} saved`}
-            className="relative grid h-10 w-10 place-items-center rounded-full text-ink/70 transition-all duration-200 hover:-translate-y-px hover:bg-brand-100 hover:text-brand-700 hover:shadow-sm"
+            className="relative grid h-10 w-10 place-items-center rounded-full text-ink/70 transition-all duration-200 hover:-translate-y-px hover:bg-brand-100 hover:text-brand-700 hover:shadow-sm dark:hover:bg-brand-50/20 dark:hover:text-gold-300"
           >
             <Icon name="heart" size={19} />
             {count > 0 && (
@@ -115,6 +121,16 @@ export default function Navbar() {
               </span>
             )}
           </button>
+
+          {/* Theme Toggle (Light / Dark) */}
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
+
+          {/* Interactive Language Switcher */}
+          <div className="hidden sm:block">
+            <LanguageSwitcher />
+          </div>
 
           {isAuthenticated ? (
             <div className="relative ml-1 hidden items-center lg:flex">
@@ -128,22 +144,22 @@ export default function Navbar() {
               {profileOpen && (
                 <>
                   <button aria-label="Close profile menu" className="fixed inset-0 z-40 cursor-default" onClick={() => setProfileOpen(false)} />
-                  <div className="absolute right-0 top-12 z-50 w-60 animate-scalein overflow-hidden rounded-2xl border border-line bg-white/95 p-2 shadow-lift backdrop-blur-xl">
+                  <div className="absolute right-0 top-12 z-50 w-60 animate-scalein overflow-hidden rounded-2xl border border-line bg-white/95 p-2 shadow-lift backdrop-blur-xl dark:bg-card">
                     <div className="border-b border-line px-3 py-2.5">
-                      <p className="truncate text-sm font-bold text-brand-800">{user?.fullname || user?.username || "Traveler"}</p>
+                      <p className="truncate text-sm font-bold text-brand-800 dark:text-brand-200">{user?.fullname || user?.username || "Traveler"}</p>
                       <p className="truncate text-xs text-muted">{user?.email || "@" + (user?.username || "traveler")}</p>
                     </div>
                     {PROFILE_MENU.map((m) => (
-                      <Link key={m.key} to={m.to} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50">
+                      <Link key={m.key} to={m.to} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
                         <Icon name={m.icon} size={18} className="text-brand-500" />
-                        {m.label}
+                        {t(`nav.${m.key}`) || m.label}
                         <Icon name="chevron-right" size={14} className="ml-auto text-muted/50" />
                       </Link>
                     ))}
                     {canManager && (
-                      <Link to="/manager" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50">
+                      <Link to="/manager" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
                         <Icon name="grid" size={18} className="text-gold-600" />
-                        Management
+                        {t("nav.management") || "Management"}
                         <Icon name="chevron-right" size={14} className="ml-auto text-muted/50" />
                       </Link>
                     )}
@@ -151,7 +167,8 @@ export default function Navbar() {
                       onClick={() => { setProfileOpen(false); logout(); navigate("/"); }}
                       className="mt-1 flex w-full items-center gap-3 rounded-xl border-t border-line px-3 py-2.5 text-sm font-bold text-danger transition-colors hover:bg-danger/10"
                     >
-                      <Icon name="logout" size={18} /> Sign Out
+                      <Icon name="logout" size={18} />
+                      {t("nav.signOut") || "Sign Out"}
                     </button>
                   </div>
                 </>
@@ -160,26 +177,30 @@ export default function Navbar() {
           ) : (
             <div className="hidden items-center gap-2 lg:flex">
               <Link to="/login">
-                <span className="inline-flex h-10 items-center rounded-full border border-line bg-white/70 px-4 text-sm font-semibold text-brand-800 transition-all duration-200 hover:-translate-y-px hover:border-brand-300 hover:bg-white hover:shadow-sm">
-                  Login
+                <span className="inline-flex h-10 items-center rounded-full border border-line bg-white/70 px-4 text-sm font-semibold text-brand-800 transition-all duration-200 hover:-translate-y-px hover:border-brand-300 hover:bg-white hover:shadow-sm dark:bg-card dark:text-ink">
+                  {t("nav.login") || "Login"}
                 </span>
               </Link>
               <Link to="/register">
                 <span className="inline-flex h-10 items-center rounded-full bg-gradient-to-r from-brand-600 to-brand-700 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md">
-                  Register
+                  {t("nav.register") || "Register"}
                 </span>
               </Link>
             </div>
           )}
 
-          {/* Mobile menu toggle */}
-          <button
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Menu"
-            className="grid h-11 w-11 place-items-center rounded-full border border-line bg-white/70 text-brand-800 transition-colors hover:bg-brand-50 lg:hidden"
-          >
-            <Icon name={open ? "x" : "menu"} size={22} />
-          </button>
+          {/* Mobile toggle */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <ThemeToggle />
+            <LanguageSwitcher compact />
+            <button
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Menu"
+              className="grid h-11 w-11 place-items-center rounded-xl border border-line text-brand-800 dark:text-ink"
+            >
+              <Icon name={open ? "x" : "menu"} size={22} />
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -195,7 +216,7 @@ export default function Navbar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search tours, hotels, food…"
-              className="h-11 w-full rounded-full border border-line bg-white pl-11 pr-4 text-sm font-medium text-ink outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15"
+              className="h-11 w-full rounded-full border border-line bg-white pl-11 pr-4 text-sm font-medium text-ink outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15 dark:bg-card dark:text-ink"
             />
           </form>
         </div>
@@ -204,13 +225,13 @@ export default function Navbar() {
       {/* Row 2 — category sub-nav (desktop) */}
       <div className="hidden border-t border-line/60 lg:block">
         <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 sm:px-6 lg:px-8">
-          {TABS.map((t) => {
-            const active = isTabActive(t.to, t.end);
+          {TABS.map((tab) => {
+            const active = isTabActive(tab.to, tab.end);
             return (
-              <Link key={t.to} to={t.to} className={tabClass(active)}>
-                <Icon name={t.icon} size={17} className={active ? "text-brand-700" : "text-brand-500"} />
-                {t.label}
-                {active && <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-brand-700" />}
+              <Link key={tab.to} to={tab.to} className={tabClass(active)}>
+                <Icon name={tab.icon} size={17} className={active ? "text-brand-700 dark:text-gold-400" : "text-brand-500"} />
+                {t(`nav.${tab.key}`) || tab.label}
+                {active && <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-brand-700 dark:bg-gold-400" />}
               </Link>
             );
           })}
@@ -219,20 +240,20 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       {open && (
-        <div className="mx-3 mb-3 mt-1 animate-scalein rounded-2xl border border-line/80 bg-white/95 p-3 shadow-lift backdrop-blur-xl sm:mx-4 lg:hidden">
+        <div className="mx-3 mb-3 mt-1 animate-scalein rounded-2xl border border-line/80 bg-white/95 p-3 shadow-lift backdrop-blur-xl sm:mx-4 lg:hidden dark:bg-card">
           <ul className="flex flex-col">
-            {TABS.map((t) => {
-              const active = isTabActive(t.to, t.end);
+            {TABS.map((tab) => {
+              const active = isTabActive(tab.to, tab.end);
               return (
-                <li key={t.to}>
+                <li key={tab.to}>
                   <Link
-                    to={t.to}
+                    to={tab.to}
                     className={`flex items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition-colors ${
-                      active ? "bg-brand-700 text-white" : "text-ink/80 hover:bg-brand-50"
+                      active ? "bg-brand-700 text-white" : "text-ink/80 hover:bg-brand-50 dark:hover:bg-brand-50/20"
                     }`}
                   >
-                    <Icon name={t.icon} size={18} className={active ? "text-gold-400" : "text-brand-500"} />
-                    {t.label}
+                    <Icon name={tab.icon} size={18} className={active ? "text-gold-400" : "text-brand-500"} />
+                    {t(`nav.${tab.key}`) || tab.label}
                     <Icon name="chevron-right" size={18} className="ml-auto text-muted" />
                   </Link>
                 </li>
@@ -241,38 +262,42 @@ export default function Navbar() {
             <li>
               <button
                 onClick={() => { setOpen(false); openFavorites(); }}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold text-ink/80 transition-colors hover:bg-brand-50"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold text-ink/80 transition-colors hover:bg-brand-50 dark:hover:bg-brand-50/20"
               >
                 <Icon name="heart" size={18} className="text-brand-500" />
-                My Trips <span className="text-sm">{count > 0 && `(${count})`}</span>
+                {t("nav.myTrips") || "My Trips"} <span className="text-sm">{count > 0 && `(${count})`}</span>
               </button>
             </li>
           </ul>
           <div className="mt-3 border-t border-line pt-3">
             {isAuthenticated ? (
               <div className="flex flex-col gap-2">
-                <Link to="/profile" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-brand-800 hover:bg-brand-50">
-                  <Icon name="user" size={18} className="text-brand-500" /> My Profile
+                <Link to="/profile" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-brand-800 hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
+                  <Icon name="user" size={18} className="text-brand-500" /> {t("nav.profile") || "My Profile"}
                 </Link>
                 {canManager && (
-                  <Link to="/manager" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-brand-800 hover:bg-brand-50">
-                    <Icon name="grid" size={18} className="text-gold-600" /> Management
+                  <Link to="/manager" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-brand-800 hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
+                    <Icon name="grid" size={18} className="text-gold-600" /> {t("nav.management") || "Management"}
                   </Link>
                 )}
                 <button
                   onClick={() => { setOpen(false); logout(); navigate("/"); }}
                   className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-danger hover:bg-danger/10"
                 >
-                  <Icon name="logout" size={18} /> Sign Out
+                  <Icon name="logout" size={18} /> {t("nav.signOut") || "Sign Out"}
                 </button>
               </div>
             ) : (
               <div className="flex gap-3">
                 <Link to="/login" className="flex-1">
-                  <span className="flex h-11 w-full items-center justify-center rounded-full border border-line bg-white text-sm font-bold text-brand-800">Login</span>
+                  <span className="flex h-11 w-full items-center justify-center rounded-full border border-line bg-white text-sm font-bold text-brand-800 dark:bg-card dark:text-ink">
+                    {t("nav.login") || "Login"}
+                  </span>
                 </Link>
                 <Link to="/register" className="flex-1">
-                  <span className="flex h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand-600 to-brand-700 text-sm font-bold text-white">Register</span>
+                  <span className="flex h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand-600 to-brand-700 text-sm font-bold text-white">
+                    {t("nav.register") || "Register"}
+                  </span>
                 </Link>
               </div>
             )}

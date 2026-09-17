@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 const TONES = {
   success: "bg-success/10 text-success",
   warning: "bg-warning/15 text-warning",
@@ -74,6 +76,7 @@ export function StatusBadge({ status, dot = true, className = "" }) {
 
 // Open/closed indicator for restaurants.
 export function OpenBadge({ open, label }) {
+  const { t } = useTranslation();
   if (open == null) return null;
   return (
     <span
@@ -82,7 +85,7 @@ export function OpenBadge({ open, label }) {
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${open ? "bg-success" : "bg-danger"}`} />
-      {open ? "Open now" : "Closed"}
+      {open ? t("common.openNow") : t("common.closed")}
       {label && <span className="font-medium text-muted">· {label}</span>}
     </span>
   );

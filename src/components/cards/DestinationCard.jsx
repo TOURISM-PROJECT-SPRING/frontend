@@ -1,8 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
 
 export default function DestinationCard({ item }) {
+  const { t } = useTranslation();
   return (
     <Link
       to={item.href}
@@ -28,7 +30,7 @@ export default function DestinationCard({ item }) {
       <div className="absolute inset-x-0 bottom-0 flex flex-col items-center p-5 text-center translate-y-4 opacity-0 transition-all duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100">
         <h3 className="font-display text-xl font-bold text-white">{item.title}</h3>
         {item.attractions != null && (
-          <p className="mt-0.5 text-xs font-medium text-white/75">{item.attractions} attractions</p>
+          <p className="mt-0.5 text-xs font-medium text-white/75">{t("destinationsCard.attractions", { count: item.attractions })}</p>
         )}
         
         <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-bold text-brand-800 backdrop-blur">

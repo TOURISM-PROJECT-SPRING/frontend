@@ -1,8 +1,7 @@
-import axiosClient from '../api/axiosClient';
+import { promotionService } from './promotionService';
 
 export const offersService = {
   getPromotions: async () => {
-    const response = await axiosClient.get('/promotions');
-    return response.data;
+    return promotionService.getActivePromotions();
   },
 };

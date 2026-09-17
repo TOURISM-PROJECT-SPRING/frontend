@@ -13,6 +13,7 @@ import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import CheckoutPage from "./pages/CheckoutPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import OwnerDashboard from "./pages/OwnerDashboard";
 
 function PublicLayout() {
   return (
@@ -59,6 +60,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/owner/*" element={<OwnerDashboard />} />
       <Route path="/*" element={<PublicLayout />} />
     </Routes>
   );

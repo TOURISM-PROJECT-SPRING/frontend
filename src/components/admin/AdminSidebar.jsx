@@ -1,8 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Landmark,
   LayoutDashboard,
   Users,
+  ShieldCheck,
   Building2,
   MapPin,
   Hotel,
@@ -24,7 +25,9 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCircle,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const sections = [
   {
@@ -37,6 +40,7 @@ const sections = [
     label: "Management",
     items: [
       { icon: Users, text: "Users", path: "/admin/users" },
+      { icon: ShieldCheck, text: "Roles & Permissions", path: "/admin/roles" },
       { icon: Building2, text: "Owners / Businesses", path: "/admin/owners" },
       { icon: MapPin, text: "Tourist Places", path: "/admin/places" },
       { icon: Hotel, text: "Hotels", path: "/admin/hotels" },
@@ -66,6 +70,13 @@ const sections = [
 
 export default function AdminSidebar({ collapsed, onToggle }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <aside
@@ -127,6 +138,17 @@ export default function AdminSidebar({ collapsed, onToggle }) {
           <HelpCircle className="w-[18px] h-[18px] shrink-0" />
           {!collapsed && <span>Help Center</span>}
         </Link>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition w-full cursor-pointer ${
+            collapsed ? "justify-center" : ""
+          }`}
+          title={collapsed ? "Sign Out" : undefined}
+        >
+          <LogOut className="w-[18px] h-[18px] shrink-0" />
+          {!collapsed && <span>Sign Out</span>}
+        </button>
         <button
           onClick={onToggle}
           className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition w-full ${

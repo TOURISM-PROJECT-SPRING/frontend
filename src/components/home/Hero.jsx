@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Icon from "../ui/Icon";
 import { img } from "../../data/site";
 
 const HERO_IMG = img("Angkor_Wat.jpg", 2000);
 
 export default function Hero() {
+  const { t } = useTranslation();
+
   const stats = [
-    { n: "500+", l: "Curated experiences" },
-    { n: "100+", l: "Verified partners" },
-    { n: "50+", l: "Destinations" },
+    { n: "500+", l: t("hero.statExperiences") || "Curated experiences" },
+    { n: "100+", l: t("hero.statPartners") || "Verified partners" },
+    { n: "50+", l: t("hero.statDestinations") || "Destinations" },
   ];
 
   return (
@@ -28,17 +31,16 @@ export default function Hero() {
         <div className="max-w-3xl animate-rise">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-gold-200 backdrop-blur">
             <Icon name="map-pin-house" size={15} className="text-gold-400" />
-            Welcome to Cambodia
+            {t("hero.welcomeBadge") || "Welcome to Cambodia"}
           </div>
 
           <h1 className="mt-6 font-display text-5xl font-bold leading-[1.02] tracking-tight text-white sm:text-6xl lg:text-7xl">
-            Discover Cambodia
-            <span className="mt-1 block text-gold-400">Your Way.</span>
+            {t("hero.titlePart1") || "Discover Cambodia"}
+            <span className="mt-1 block text-gold-400">{t("hero.titlePart2") || "Your Way."}</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/85">
-            Explore beautiful destinations, stay in unique places and discover
-            authentic Cambodian flavors.
+            {t("hero.subtitle") || "Explore beautiful destinations, stay in unique places and discover authentic Cambodian flavors."}
           </p>
 
           {/* Stats row */}
@@ -56,14 +58,14 @@ export default function Hero() {
               href="#essentials"
               className="group inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-bold text-brand-900 shadow-lg transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:bg-gold-300"
             >
-              Start Exploring
+              {t("hero.startExploring") || "Start Exploring"}
               <Icon name="arrow-right" size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
             </a>
             <Link
               to="/tour"
               className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/15"
             >
-              Browse Tours
+              {t("hero.browseTours") || "Browse Tours"}
             </Link>
           </div>
         </div>

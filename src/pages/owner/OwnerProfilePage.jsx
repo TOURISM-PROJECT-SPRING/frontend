@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Mail,
@@ -9,45 +9,91 @@ import {
   Edit3,
   Camera,
   Lock,
-  Key,
   Smartphone,
   Clock,
   CheckCircle,
-  AlertTriangle,
   X,
   Globe,
   Wallet,
 } from "lucide-react";
-
-const activityLog = [
-  { action: "Created promotion: Golden Week Sale", time: "3 hours ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Confirmed booking #BK-2841", time: "6 hours ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Updated pricing for Angkor Wat Villa", time: "1 day ago", icon: AlertTriangle, color: "text-yellow-500" },
-  { action: "Added new property: Mekong River Lodge", time: "3 days ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Rejected review #RV-4102 (spam)", time: "4 days ago", icon: AlertTriangle, color: "text-red-500" },
-  { action: "Payout received: $2,450.00", time: "5 days ago", icon: CheckCircle, color: "text-green-500" },
-];
-
-const ownerStats = [
-  { label: "Properties Listed", value: "8" },
-  { label: "Total Bookings", value: "342" },
-  { label: "Total Revenue", value: "$68,740" },
-  { label: "Avg. Rating", value: "4.7" },
-  { label: "Team Members", value: "5" },
-  { label: "Member Since", value: "Mar 2023" },
-];
-
-const properties = [
-  { name: "Green Park Resort", type: "Resort", status: "Active" },
-  { name: "Angkor Wat Villa", type: "Villa", status: "Active" },
-  { name: "Riverside Lodge", type: "Lodge", status: "Active" },
-  { name: "Sunset Beach House", type: "Villa", status: "Maintenance" },
-];
+import { useAuth } from "../../context/AuthContext";
+import { hotelService } from "../../services/hotelService";
+import { authService } from "../../services/authService";
+import useDashboardData from "../../hooks/useDashboardData";
 
 export default function OwnerProfilePage() {
+  const { user } = useAuth();
+  const { data: dashboardData } = useDashboardData();
+  const [properties, setProperties] = useState([]);
+  const [loadingProperties, setLoadingProperties] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [twoFA, setTwoFA] = useState(true);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [submittingPassword, setSubmittingPassword] = useState(false);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const allHotels = await hotelService.getAllHotels();
+        // filter by current user's owned hotels or all if not assigned
+        const myHotels = (allHotels || []).filter((h) => !user?.id || h.ownerId === user.id);
+        setProperties(myHotels.length ? myHotels : allHotels || []);
+      } catch (err) {
+        console.error("Error loading owner properties:", err);
+      } finally {
+        setLoadingProperties(false);
+      }
+    };
+    fetchProperties();
+  }, [user]);
+
+  const displayName = user?.fullname || user?.username || "Business Owner";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "BO";
+
+  const ownerStats = [
+    { label: "Properties Listed", value: String(properties.length) },
+    { label: "Total Bookings", value: String(dashboardData?.totalBookings || 0) },
+    { label: "Total Revenue", value: dashboardData?.revenueText || "$0" },
+    { label: "Avg. Rating", value: dashboardData?.avgRating ? `${dashboardData.avgRating}/5` : "4.8" },
+    { label: "Available Rooms", value: String(dashboardData?.totalRooms || 0) },
+    { label: "Role", value: user?.roles?.[0] || "OWNER" },
+  ];
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+    const fd = new FormData(e.target);
+    const currentPassword = fd.get("currentPassword");
+    const newPassword = fd.get("newPassword");
+    const confirmPassword = fd.get("confirmPassword");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
+
+    setSubmittingPassword(true);
+    try {
+      await authService.changePassword({ currentPassword, newPassword });
+      setPasswordSuccess("Password updated successfully!");
+      setTimeout(() => {
+        setPasswordOpen(false);
+        setPasswordSuccess("");
+      }, 1500);
+    } catch (err) {
+      setPasswordError(err.response?.data?.message || "Failed to change password. Please verify current password.");
+    } finally {
+      setSubmittingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -59,20 +105,20 @@ export default function OwnerProfilePage() {
         <div className="px-6 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12">
             <div className="relative">
-              <div className="w-24 h-24 bg-white rounded-2xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
-                <span className="text-3xl font-bold text-emerald-600">SP</span>
+              <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg flex items-center justify-center overflow-hidden">
+                <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{initials}</span>
               </div>
               <button className="absolute bottom-1 right-1 w-7 h-7 bg-emerald-600 rounded-full flex items-center justify-center text-white hover:bg-emerald-700 transition shadow-md">
                 <Camera className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="flex-1 sm:pb-1">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Sokunthea Peng</h1>
-              <p className="text-sm text-gray-400 dark:text-gray-500">Property Owner</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Verified Business Owner</p>
             </div>
             <button
               onClick={() => setEditOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition shadow-sm"
             >
               <Edit3 className="w-4 h-4" /> Edit Profile
             </button>
@@ -84,65 +130,55 @@ export default function OwnerProfilePage() {
         {/* Left Column */}
         <div className="xl:col-span-2 space-y-5">
           {/* Personal Info */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 animate-fade-in-up delay-75">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Personal Information</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Account Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem icon={User} label="Full Name" value="Sokunthea Peng" />
-              <InfoItem icon={Mail} label="Email" value="sokunthea@tourism.com" />
-              <InfoItem icon={Phone} label="Phone" value="+855 98 765 432" />
-              <InfoItem icon={MapPin} label="Location" value="Siem Reap, Cambodia" />
-              <InfoItem icon={Calendar} label="Joined" value="March 10, 2023" />
-              <InfoItem icon={Building2} label="Business Name" value="Peng Tourism Group" />
-            </div>
-          </div>
-
-          {/* Social Links */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 animate-fade-in-up delay-100">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Social & Online Presence</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem icon={Globe} label="Website" value="www.pengtourism.com" />
-              <InfoItem icon={Globe} label="Facebook" value="Peng Tourism Group" />
-              <InfoItem icon={Globe} label="Instagram" value="@pengtourism" />
-              <InfoItem icon={Wallet} label="Bank Account" value="ABA Bank ••••4821" />
+              <InfoItem icon={User} label="Username" value={user?.username || "N/A"} />
+              <InfoItem icon={Mail} label="Email Address" value={user?.email || "N/A"} />
+              <InfoItem icon={Phone} label="Contact Phone" value={user?.phone || "+855 12 345 678"} />
+              <InfoItem icon={MapPin} label="Location" value={user?.address || "Siem Reap, Cambodia"} />
+              <InfoItem icon={Calendar} label="Date of Birth" value={user?.dateOfBirth || "1990-05-15"} />
+              <InfoItem icon={Building2} label="Business Entity" value={properties[0]?.hotelName ? `${properties[0].hotelName} Group` : "Tourism Hospitality"} />
             </div>
           </div>
 
           {/* Listed Properties */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 animate-fade-in-up delay-150">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">My Properties</h3>
-            <div className="space-y-3">
-              {properties.map((p, i) => (
-                <div key={p.name} className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-gray-800 last:border-0 animate-slide-right" style={{ animationDelay: `${i * 70 + 200}ms` }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center">
-                      <Building2 className="w-4 h-4 text-emerald-500" />
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">My Managed Properties</h3>
+            {loadingProperties ? (
+              <div className="py-6 text-center text-xs text-gray-400">Loading properties...</div>
+            ) : properties.length === 0 ? (
+              <div className="py-6 text-center text-xs text-gray-400">No properties registered yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {properties.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-4 h-4 text-emerald-500" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-medium text-gray-900 dark:text-white">{p.hotelName}</p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500">{p.locationName || p.emailContact || "Cambodia"}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[13px] font-medium text-gray-900 dark:text-white">{p.name}</p>
-                      <p className="text-[11px] text-gray-400 dark:text-gray-500">{p.type}</p>
-                    </div>
+                    <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400">
+                      Active
+                    </span>
                   </div>
-                  <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${p.status === "Active" ? "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400" : "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/15 dark:text-yellow-400"}`}>
-                    {p.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Activity Log */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 animate-fade-in-up delay-200">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              {activityLog.map((a, i) => (
-                <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-800 last:border-0 animate-slide-right" style={{ animationDelay: `${i * 80 + 300}ms` }}>
-                  <a.icon className={`w-4 h-4 ${a.color} shrink-0`} />
-                  <span className="text-[13px] text-gray-600 dark:text-gray-300 flex-1">{a.action}</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1 shrink-0">
-                    <Clock className="w-3 h-3" /> {a.time}
-                  </span>
-                </div>
-              ))}
+          {/* Social Links */}
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Payment & Business Profile</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoItem icon={Globe} label="Official Portal" value="https://smarttourism.cambodia.gov.kh" />
+              <InfoItem icon={Wallet} label="Settlement Bank" value="ABA Bank ••••4821" />
+              <InfoItem icon={Globe} label="Primary Language" value="Khmer / English" />
+              <InfoItem icon={Clock} label="Account Status" value={user?.status || "ACTIVE"} />
             </div>
           </div>
         </div>
@@ -150,11 +186,11 @@ export default function OwnerProfilePage() {
         {/* Right Column */}
         <div className="space-y-5">
           {/* Stats */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 animate-fade-in-up delay-100">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Statistics</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Performance Metrics</h3>
             <div className="space-y-3">
-              {ownerStats.map((s, i) => (
-                <div key={s.label} className="flex items-center justify-between py-1.5 animate-slide-left" style={{ animationDelay: `${i * 60 + 300}ms` }}>
+              {ownerStats.map((s) => (
+                <div key={s.label} className="flex items-center justify-between py-1.5">
                   <span className="text-[13px] text-gray-500 dark:text-gray-400">{s.label}</span>
                   <span className="text-sm font-bold text-gray-900 dark:text-white">{s.value}</span>
                 </div>
@@ -163,8 +199,8 @@ export default function OwnerProfilePage() {
           </div>
 
           {/* Security */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 animate-fade-in-up delay-200">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Security</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Security & Authentication</h3>
             <div className="space-y-3">
               <button
                 onClick={() => setPasswordOpen(true)}
@@ -173,7 +209,7 @@ export default function OwnerProfilePage() {
                 <Lock className="w-4 h-4 text-gray-400" />
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">Change Password</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">Last changed 15 days ago</p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500">Update your security credentials</p>
                 </div>
               </button>
               <div className="flex items-center justify-between px-3 py-2.5">
@@ -181,43 +217,13 @@ export default function OwnerProfilePage() {
                   <Smartphone className="w-4 h-4 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">Two-Factor Auth</p>
-                    <p className="text-[11px] text-gray-400 dark:text-gray-500">Extra security layer</p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500">Enhanced login protection</p>
                   </div>
                 </div>
                 <label className="relative inline-flex cursor-pointer">
                   <input type="checkbox" checked={twoFA} onChange={() => setTwoFA(!twoFA)} className="sr-only peer" />
                   <div className="w-10 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-emerald-500/20 rounded-full peer peer-checked:after:translate-x-[18px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500" />
                 </label>
-              </div>
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 dark:text-gray-300">
-                <Key className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">API Keys</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">1 active key</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Payout Info */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 animate-fade-in-up delay-250">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Payout Details</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-1.5">
-                <span className="text-[13px] text-gray-500">Bank</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">ABA Bank</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5">
-                <span className="text-[13px] text-gray-500">Account</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">••••4821</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5">
-                <span className="text-[13px] text-gray-500">Next Payout</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">Aug 31, 2026</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5">
-                <span className="text-[13px] text-gray-500">Pending</span>
-                <span className="text-sm font-bold text-emerald-600">$2,450.00</span>
               </div>
             </div>
           </div>
@@ -228,65 +234,45 @@ export default function OwnerProfilePage() {
       {editOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditOpen(false)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-800">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Profile</h2>
-              <button onClick={() => setEditOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400 dark:text-gray-500"><X className="w-5 h-5" /></button>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Owner Profile</h2>
+              <button onClick={() => setEditOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-400">
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); setEditOpen(false); }} className="p-6 space-y-4">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center">
-                  <span className="text-xl font-bold text-emerald-600">SP</span>
-                </div>
-                <button type="button" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition">Change Photo</button>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                  <input type="text" defaultValue="Sokunthea" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                  <input type="text" defaultValue="Peng" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  defaultValue={user?.fullname || ""}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                <input type="email" defaultValue="sokunthea@tourism.com" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
+                <input
+                  type="email"
+                  defaultValue={user?.email || ""}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
-                <input type="tel" defaultValue="+855 98 765 432" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Business Name</label>
-                <input type="text" defaultValue="Peng Tourism Group" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-                <input type="text" defaultValue="Siem Reap, Cambodia" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
-                <input type="url" defaultValue="www.pengtourism.com" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Facebook</label>
-                  <input type="text" defaultValue="Peng Tourism Group" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Instagram</label>
-                  <input type="text" defaultValue="@pengtourism" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
-                <textarea rows={3} defaultValue="Experienced property owner with 4 properties across Siem Reap and Phnom Penh. Specializing in eco-tourism and cultural heritage stays." className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition resize-none" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address / Location</label>
+                <input
+                  type="text"
+                  defaultValue={user?.address || "Siem Reap, Cambodia"}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition"
+                />
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <button type="button" onClick={() => setEditOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition">Save Changes</button>
+                <button type="button" onClick={() => setEditOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                  Cancel
+                </button>
+                <button type="submit" className="px-5 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition">
+                  Save Changes
+                </button>
               </div>
             </form>
           </div>
@@ -297,27 +283,69 @@ export default function OwnerProfilePage() {
       {passwordOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setPasswordOpen(false)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Change Password</h2>
-              <button onClick={() => setPasswordOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400 dark:text-gray-500"><X className="w-5 h-5" /></button>
+              <button onClick={() => setPasswordOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-400">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); setPasswordOpen(false); }} className="p-6 space-y-4">
+            <form onSubmit={handlePasswordSubmit} className="p-6 space-y-4">
+              {passwordError && (
+                <div className="p-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs rounded-lg">
+                  {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div className="p-3 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 text-xs rounded-lg flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4" /> {passwordSuccess}
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
-                <input type="password" required className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
+                <input
+                  name="currentPassword"
+                  type="password"
+                  required
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
-                <input type="password" required className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
+                <input
+                  name="newPassword"
+                  type="password"
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm New Password</label>
-                <input type="password" required className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-emerald-500 transition" />
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition"
+                />
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <button type="button" onClick={() => setPasswordOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition">Update Password</button>
+                <button
+                  type="button"
+                  disabled={submittingPassword}
+                  onClick={() => setPasswordOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingPassword}
+                  className="px-5 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
+                >
+                  {submittingPassword ? "Updating..." : "Update Password"}
+                </button>
               </div>
             </form>
           </div>
@@ -332,7 +360,7 @@ function InfoItem({ icon: Icon, label, value }) {
     <div className="flex items-start gap-3 py-2">
       <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
       <div>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">{label}</p>
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold">{label}</p>
         <p className="text-[13px] font-medium text-gray-900 dark:text-white">{value}</p>
       </div>
     </div>

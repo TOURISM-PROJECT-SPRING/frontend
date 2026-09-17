@@ -11,6 +11,7 @@ import AdminSystemStats from "../components/admin/AdminSystemStats";
 import AdminRecentActivities from "../components/admin/AdminRecentActivities";
 
 import AdminUsersPage from "./admin/AdminUsersPage";
+import AdminRolesPage from "./admin/AdminRolesPage";
 import AdminOwnersPage from "./admin/AdminOwnersPage";
 import AdminPlacesPage from "./admin/AdminPlacesPage";
 import AdminHotelsPage from "./admin/AdminHotelsPage";
@@ -106,6 +107,7 @@ export default function AdminDashboard() {
           <Routes>
             <Route index element={<AdminOverview />} />
             <Route path="users" element={<AdminUsersPage />} />
+            <Route path="roles" element={<AdminRolesPage />} />
             <Route path="owners" element={<AdminOwnersPage />} />
             <Route path="places" element={<AdminPlacesPage />} />
             <Route path="hotels" element={<AdminHotelsPage />} />

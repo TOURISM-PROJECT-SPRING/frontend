@@ -11,7 +11,7 @@ const AuthContext = createContext(null);
 
 function readStoredUser() {
   try {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = localStorage.getItem(USER_KEY) || localStorage.getItem("user");
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -108,6 +108,61 @@ export function AuthProvider({ children }) {
     [persist]
   );
 
+  const switchTestAccount = useCallback(
+    (account) => {
+      const isRoleAdmin =
+        account.role === "ADMIN" ||
+        account.roles?.includes("ADMIN") ||
+        account.username === "admin";
+      const isRoleTourist =
+        account.role === "TOURIST" ||
+        account.roles?.includes("TOURIST") ||
+        account.username === "tourist" ||
+        account.username === "customer";
+
+      const defaultRoles = isRoleAdmin ? ["ADMIN"] : isRoleTourist ? ["TOURIST"] : ["OWNER"];
+
+      const mockUser = {
+        id:
+          account.id ||
+          (account.username === "admin"
+            ? 1
+            : account.username === "customer" || account.username === "tourist"
+            ? 201
+            : account.username === "owner_restaurant"
+            ? 102
+            : account.username === "owner_tour"
+            ? 103
+            : 101),
+        username: account.username,
+        fullname:
+          account.fullname ||
+          account.label ||
+          (isRoleAdmin
+            ? "System Administrator"
+            : isRoleTourist
+            ? "Dara Customer"
+            : "Business Owner"),
+        email: account.email || `${account.username}@smart-tourism.com`,
+        roles: account.roles || defaultRoles,
+        assignedBusinesses:
+          account.assignedBusinesses ||
+          (account.username === "owner_restaurant"
+            ? ["restaurant"]
+            : account.username === "owner_tour"
+            ? ["tour"]
+            : isRoleAdmin || isRoleTourist
+            ? []
+            : ["hotel"]),
+      };
+      const existingToken = localStorage.getItem(TOKEN_KEY);
+      const testToken = existingToken || `test-token-${account.username}`;
+      persist(testToken, mockUser);
+      return mockUser;
+    },
+    [persist]
+  );
+
   const logout = useCallback(() => {
     // Best-effort server logout; never block the local sign-out.
     if (token && token !== "demo-token") {
@@ -132,9 +187,10 @@ export function AuthProvider({ children }) {
       canUseManager: canUseManager(user),
       login,
       register,
+      switchTestAccount,
       logout,
     }),
-    [user, token, ready, login, register, logout]
+    [user, token, ready, login, register, switchTestAccount, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -2,369 +2,446 @@
 
 ## Project Overview
 
-This is a **tourism website frontend** built with React 19 and Tailwind CSS v4, designed to connect with a Spring Boot REST API backend located at `../spring_boot_project_api/`.
+This is the **Cambodia Tourism Platform frontend** built with **React 19**, **Vite**, and **Tailwind CSS v4**. It serves as a full-featured travel, hospitality, and booking web application tailored for Cambodian tourism (destinations, tours, hotels, and dining), featuring public booking portals, user accounts, an **Admin Management Console**, and an **Owner Management Portal**. It integrates with a Spring Boot REST API companion backend located at `../spring_boot_project_api/` and supports **Bakong KHQR** dynamic payment processing.
 
-## Tech Stack
+---
 
-| Technology | Version | Purpose |
-|---|---|---|
-| React | 19.2.8 | UI framework |
-| Vite | 8.2.0 | Build tool & dev server |
-| Tailwind CSS | 4.3.3 | Utility-first CSS framework |
-| @tailwindcss/postcss | 4.3.3 | Tailwind integration via PostCSS |
-| PostCSS | 8.5.26 | CSS processing |
-| Oxlint | 1.75.0 | Linter (React hooks rules) |
+## Tech Stack & Dependencies
 
-## How to Run
+| Category | Package / Tool | Version | Purpose |
+|---|---|---|---|
+| **Core Framework** | React | `^19.2.8` | UI library (concurrent features, hooks) |
+| **DOM Renderer** | React DOM | `^19.2.8` | React DOM bindings |
+| **Build Tool & Server** | Vite | `^8.2.0` | Next-generation bundler & dev server (port 5173) |
+| **Routing** | React Router DOM | `^7.18.2` | Client-side routing with nested layout routes |
+| **Styling** | Tailwind CSS | `^4.3.3` | Utility-first CSS framework (CSS-first `@theme` configuration) |
+| **Tailwind Vite Plugin** | `@tailwindcss/vite` | `^4.3.3` | Native Tailwind v4 Vite compiler integration |
+| **Tailwind PostCSS** | `@tailwindcss/postcss` | `^4.3.3` | PostCSS processing pipeline |
+| **HTTP Client** | Axios | `^1.20.0` | API requests with JWT interceptor & baseURL proxy |
+| **Charts & Visuals** | Recharts | `^3.10.1` | Analytics charts (Revenue, Bookings, Channels) |
+| **Iconography** | Lucide React | `^1.34.0` | Clean vector iconography across public and admin interfaces |
+| **Internationalization** | i18next & react-i18next | `^26.4.0` / `^17.0.12` | Multi-language support (English & Khmer `km`) |
+| **Linter** | Oxlint | `^1.75.0` | High-performance linter enforcing React rules |
+
+---
+
+## How to Run & Environment Setup
+
+### Commands
 
 ```bash
-cd frontend-tourism-project
+# Navigate to frontend root
+cd tourism-frontend
+
+# Install dependencies
 npm install
-npm run dev        # Dev server at http://localhost:5174
-npm run build      # Production build to dist/
-npm run lint       # Run oxlint
-npm run preview    # Preview production build
+
+# Start Vite development server (runs on http://localhost:5173 with proxy to backend)
+npm run dev
+
+# Run Oxlint for code quality & React rules check
+npm run lint
+
+# Build production bundle to dist/
+npm run build
+
+# Preview production build locally
+npm run preview
 ```
+
+### Environment & Proxy Configuration
+
+- **Vite Proxy (`vite.config.js`)**:
+  Proxy configured for `^/api/` forwarding to `http://localhost:8080` (Spring Boot backend).
+- **Base URL (`src/api/axiosClient.js`)**:
+  Uses `import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'` with a default 15s timeout.
+- **JWT Storage**:
+  Stored in `localStorage` key `"token"`. Attached automatically via Axios request interceptor: `Authorization: Bearer <token>`.
+
+---
+
+## Current Project State
+
+| Area | Status | Notes |
+|---|---|---|
+| **Public Landing & Exploration** | ✅ Implemented | Hero, SearchPanel, CulturalSection, KhmerFood, PopularDestinations, PopularExperiences, RelatedStories |
+| **Hotel Module** | ✅ Implemented | `HotelsPage`, `HotelDetailPage` with 20 sub-components (gallery, booking widget, interactive map, reviews) |
+| **Tour Module** | ✅ Implemented | `ToursPage`, `TourDetailPage`, `TourPlaceDetailPage`, Tour cards, and detail modals |
+| **Dining / Restaurant Module** | ✅ Implemented | `DiningPage`, `RestaurantDetailPage`, Khmer food showcases |
+| **Authentication Flow** | ✅ Implemented | `AuthPage`, `LoginPage` (login, register, demo fallback mode for offline backend) |
+| **User Profile & Trips** | ✅ Implemented | `ProfilePage`, global `MyTrips` slide-out favorites drawer |
+| **Checkout & Payments** | ✅ Implemented | `CheckoutPage`, `BakongKhqrPaymentModal` (Bakong KHQR dynamic QR generation & verification) |
+| **Admin Dashboard** | ✅ Implemented | `AdminDashboard` shell + 20 management pages (`/admin/*`) with KPI cards, charts, and table views |
+| **Owner Dashboard** | ✅ Implemented | `OwnerDashboard` shell + 13 management pages (`/owner/*`) with analytics, listings, bookings, and payouts |
+| **Internationalization (i18n)** | ✅ Implemented | Khmer (`km`) and English (`en`) locale dictionaries in `src/i18n/locales/` |
+| **State Management** | ✅ Implemented | Context-based (`AuthContext`, `FavoritesContext`, `ThemeContext`) + custom hooks |
+| **API Services Layer** | ✅ Implemented | 33 dedicated service modules in `src/services/` connecting to REST endpoints |
+
+---
+
+## Architecture & Design System
+
+### 1. Theming & Tailwind CSS v4 System (`src/index.css`)
+
+The project adopts a rich Cambodian aesthetic with customized tokens:
+
+- **Brand Green (Primary)**:
+  - `--color-brand-50` (`#eef5f1`) to `--color-brand-950` (`#00150e`)
+  - Primary anchor: `--color-brand-700` (`#02462e`)
+- **Khmer Gold (Accent)**:
+  - `--color-gold-50` (`#fffbe6`) to `--color-gold-700` (`#8f6a00`)
+  - Vibrant accent: `--color-gold-400` (`#fec700`)
+- **Surface & Ink Tokens**:
+  - Light mode: `--color-canvas: #f8faf8`, `--color-card: #ffffff`, `--color-ink: #14201a`, `--color-muted: #68736d`, `--color-line: #e5eae7`
+  - Dark mode (`.dark`): `--color-canvas: #09120e`, `--color-card: #13241c`, `--color-ink: #f0f7f3`, `--color-muted: #8ea398`, `--color-line: #1d3429`
+- **Typography**:
+  - Display: `DM Sans`, `Kantumruy Pro`, `Noto Sans Khmer`
+  - Khmer text styling: `font-khmer` class (`Kantumruy Pro`, `Noto Serif Khmer`)
+- **Dark Mode**:
+  - Class-based dark mode configured via `@custom-variant dark (&:where(.dark, .dark *));`
+
+### 2. State Management Architecture
+
+Instead of heavy external boilerplate, the application relies on focused React Contexts and hooks:
+
+1. **`AuthContext.jsx`**:
+   - Stores `user` and `token` (`localStorage.getItem("token")`).
+   - Supports backend JWT login/register as well as graceful **demo fallbacks** (`DEMO_USER`) when backend is offline or during mock presentations.
+2. **`FavoritesContext.jsx`**:
+   - Manages trip wishlists and favorites across hotels, tours, and destinations.
+   - Synchronized with `MyTrips` global drawer and navbar quick access.
+3. **`ThemeContext.jsx`**:
+   - Toggles light and dark modes, synchronizing the `.dark` root class and user preferences.
+4. **Custom Data Hooks**:
+   - `useDashboardData`: Fetches aggregated metrics for admin and manager screens with partial failure resilience.
+   - `useTourPlaces`: Handles tour place search, district filtering, and category selection.
+   - `useResource`: Generic data-fetching hook with loading and error states.
+
+### 3. Role-Based Access Control (RBAC) (`src/utils/rbac.js`)
+
+User permissions are evaluated using the user's `roles` array:
+
+- **Roles**:
+  - `ROLES.ADMIN`: Full access to `/admin/*` and administrative data.
+  - `ROLES.OWNER`: Access to `/owner/*` for managing registered properties, packages, and earnings.
+  - `ROLES.MANAGER`: Access to operational management views.
+  - `ROLES.USER`: Standard traveler account (browsing, booking, profile, reviews).
+- **Protection**:
+  - `ProtectedRoute.jsx`: Enforces authentication and redirects unauthenticated visitors to `/login`.
+
+---
 
 ## Directory Structure
 
 ```
 tourism-frontend/
-├── index.html                      # Vite SPA entry point
-├── package.json                    # Dependencies & scripts
-├── postcss.config.js               # PostCSS config (Tailwind v4 plugin)
-├── vite.config.js                  # Vite config (React plugin)
-├── .oxlintrc.json                  # Linter config
-├── agent_guide.md                  # This file
-├── public/
-│   ├── favicon.svg                 # App icon
-│   └── icons.svg                   # SVG sprite
-├── src/
-│   ├── main.jsx                    # JS entry - renders <App />, imports index.css
-│   ├── index.css                   # @import "tailwindcss" (Tailwind v4 entry)
-│   ├── App.jsx                     # Root component - routing will be added here
-│   ├── App.css                     # Component-level styles
-│   │
-│   ├── api/                        # HTTP client & API endpoint functions
-│   │   ├── axios.js                # Axios instance with interceptors, base URL
-│   │   ├── endpoints.js            # API endpoint constants
-│   │   ├── destinations.js         # Destination API calls
-│   │   ├── bookings.js             # Booking API calls
-│   │   ├── auth.js                 # Authentication API calls
-│   │   └── users.js                # User API calls
-│   │
-│   ├── assets/                     # Static assets
-│   │   ├── hero.png                # Hero image
-│   │   ├── react.svg               # React logo
-│   │   ├── vite.svg                # Vite logo
-│   │   ├── images/                 # Additional images
-│   │   └── icons/                  # SVG icons
-│   │
-│   ├── components/                 # Reusable UI components (public-facing)
-│   │   ├── layout/                 # Global layout: Navbar, Footer, Sidebar, Layout wrapper
-│   │   ├── common/                 # Shared: Button, Card, Input, Modal, Spinner, Alert, Pagination
-│   │   ├── home/                   # Home page: HeroSection, FeaturedDestinations, Testimonials
-│   │   ├── destination/            # Destination: DestinationCard, DestinationGrid, Filter, Gallery
-│   │   ├── booking/                # Booking: BookingForm, BookingSummary, BookingCard
-│   │   ├── auth/                   # Auth: LoginForm, RegisterForm, ProtectedRoute
-│   │   ├── about/                  # About page components
-│   │   └── contact/                # Contact page components
-│   │
-│   ├── constants/                  # App-wide constants
-│   │   ├── routes.js               # Route path constants
-│   │   ├── api.js                  # API base URL, timeout
-│   │   └── config.js               # App config (pagination limits, etc.)
-│   │
-│   ├── context/                    # React Context providers
-│   │   ├── AuthContext.jsx         # Auth state + provider
-│   │   └── ThemeContext.jsx        # Dark/light theme toggle
-│   │
-│   ├── data/                       # Static & mock data
-│   │   ├── destinations.js         # Mock destination data
-│   │   ├── testimonials.js         # Mock reviews
-│   │   └── faq.js                  # FAQ content
-│   │
-│   ├── hooks/                      # Custom React hooks
-│   │   ├── useAuth.js              # Auth convenience hook
-│   │   ├── useFetch.js             # Generic data fetching with loading/error
-│   │   ├── useDebounce.js          # Debounce value for search
-│   │   ├── useLocalStorage.js      # Persist state to localStorage
-│   │   └── usePagination.js        # Pagination state
-│   │
-│   ├── pages/                      # Route-level page components
-│   │   ├── HomePage.jsx            # Landing: hero, featured destinations
-│   │   ├── DestinationsPage.jsx    # Browse all destinations
-│   │   ├── DestinationDetailPage.jsx # Single destination detail
-│   │   ├── BookingPage.jsx         # Booking form/checkout
-│   │   ├── MyBookingsPage.jsx      # User's booking history
-│   │   ├── AboutPage.jsx           # About the company
-│   │   ├── ContactPage.jsx         # Contact form
-│   │   ├── LoginPage.jsx           # User login
-│   │   ├── RegisterPage.jsx        # User registration
-│   │   ├── NotFoundPage.jsx        # 404 page
-│   │   ├── admin/                  # Admin route entry points
-│   │   │   └── AdminLayout.jsx     # ProtectedRoute + AdminLayout wrapper
-│   │   └── owner/                  # Owner route entry points
-│   │       └── OwnerLayout.jsx     # ProtectedRoute + OwnerLayout wrapper
-│   │
-│   ├── services/                   # Business logic layer (calls api/, used by components)
-│   │   ├── destinationService.js   # Destination business logic
-│   │   ├── bookingService.js       # Booking business logic
-│   │   ├── authService.js          # Login, register, logout
-│   │   └── userService.js          # User profile logic
-│   │
-│   ├── store/                      # Redux Toolkit state management
-│   │   ├── store.js                # Configured Redux store
-│   │   └── slices/
-│   │       ├── authSlice.js        # Authentication state
-│   │       ├── destinationSlice.js # Destinations state
-│   │       ├── bookingSlice.js     # Bookings state
-│   │       └── uiSlice.js          # UI state (modals, sidebar, theme)
-│   │
-│   ├── types/                      # JSDoc type definitions (if needed)
-│   │
-│   ├── utils/                      # Pure helper functions
-│   │   ├── formatters.js           # Date, currency, number formatters
-│   │   ├── validators.js           # Form validation helpers
-│   │   └── helpers.js              # General utilities
-│   │
-│   ├── admin/                      # ===== ADMIN DASHBOARD MODULE =====
-│   │   ├── components/
-│   │   │   ├── layout/             # AdminSidebar, AdminHeader, AdminLayout
-│   │   │   ├── common/             # StatusBadge, AdminCard, SearchInput, EmptyState
-│   │   │   ├── charts/             # StatsChart, BookingChart, RevenueChart
-│   │   │   ├── tables/             # DataTable, TablePagination, TableFilters
-│   │   │   ├── forms/              # DestinationForm, CategoryForm, UserForm
-│   │   │   ├── modals/             # ConfirmModal, DetailModal, ImageUploadModal
-│   │   │   └── dashboard/          # StatCard, RecentBookings, PopularDestinations
-│   │   ├── pages/
-│   │   │   ├── DashboardPage.jsx   # Overview stats, charts, recent activity
-│   │   │   ├── DestinationsPage.jsx # CRUD all destinations
-│   │   │   ├── BookingsPage.jsx    # View/manage all bookings
-│   │   │   ├── UsersPage.jsx       # View/manage all users
-│   │   │   ├── CategoriesPage.jsx  # CRUD categories
-│   │   │   ├── ReviewsPage.jsx     # Moderate reviews
-│   │   │   ├── SettingsPage.jsx    # Site settings
-│   │   │   └── LoginPage.jsx       # Admin login
-│   │   ├── hooks/
-│   │   │   ├── useAdminAuth.js     # Admin auth logic
-│   │   │   └── useDataTable.js     # Table sorting, filtering, pagination
-│   │   ├── utils/
-│   │   │   └── adminHelpers.js     # Admin-specific helpers
-│   │   └── data/
-│   │       └── mockStats.js        # Mock dashboard data
-│   │
-│   └── owner/                      # ===== OWNER DASHBOARD MODULE =====
-│       ├── components/
-│       │   ├── layout/             # OwnerSidebar, OwnerHeader, OwnerLayout
-│       │   ├── common/             # OwnerCard, StatusBadge, DateRangePicker, EmptyState
-│       │   ├── charts/             # EarningsChart, BookingTrendChart, OccupancyChart
-│       │   ├── tables/             # BookingTable, PackageTable, CustomerTable
-│       │   ├── forms/              # PackageForm, PricingForm, ScheduleForm
-│       │   ├── modals/             # ConfirmModal, BookingDetailModal, PayoutModal
-│       │   └── overview/           # EarningsSummary, UpcomingBookings, QuickActions
-│       ├── pages/
-│       │   ├── OverviewPage.jsx    # Dashboard with earnings, bookings, occupancy stats
-│       │   ├── MyPackagesPage.jsx  # Manage own tour packages
-│       │   ├── PackageDetailPage.jsx # Single package detail/edit
-│       │   ├── BookingsPage.jsx    # Bookings for owner's packages
-│       │   ├── BookingDetailPage.jsx # Single booking details
-│       │   ├── CustomersPage.jsx   # Customers who booked owner's packages
-│       │   ├── EarningsPage.jsx    # Revenue breakdown & payout history
-│       │   ├── SchedulePage.jsx    # Manage package availability & capacity
-│       │   ├── ReviewsPage.jsx     # View & respond to reviews
-│       │   └── ProfilePage.jsx     # Owner profile & business settings
-│       ├── hooks/
-│       │   ├── useOwnerAuth.js     # Owner auth logic
-│       │   ├── useOwnerStats.js    # Fetch owner dashboard stats
-│       │   └── useOwnerBookings.js # Booking list with filters
-│       ├── utils/
-│       │   └── ownerHelpers.js     # Earnings calc, date range helpers
-│       └── data/
-│           └── mockOwnerData.js    # Mock data for development
+├── index.html                           # Vite SPA entry point
+├── package.json                         # Dependencies & scripts
+├── postcss.config.js                    # PostCSS config (Tailwind v4 integration)
+├── vite.config.js                       # Vite config (proxy, port 5173, React plugin)
+├── .oxlintrc.json                       # Linter config
+├── agent_guide.md                       # This file
 │
-├── dist/                           # Production build output
-└── .gitignore
+├── public/
+│   ├── favicon.svg                      # App favicon
+│   └── icons.svg                        # SVG sprite assets
+│
+└── src/
+    ├── main.jsx                         # App bootstrap (StrictMode, Router, Providers)
+    ├── App.jsx                          # Top-level routing (PublicLayout, Admin, Owner)
+    ├── index.css                        # Tailwind v4 `@theme`, color palette & typography
+    │
+    ├── api/
+    │   └── axiosClient.js               # Axios instance with baseURL and auth interceptor
+    │
+    ├── assets/                          # Static assets and images
+    │
+    ├── components/
+    │   ├── admin/                       # Admin dashboard UI widgets
+    │   │   ├── AdminSidebar.jsx         # Collapsible admin navigation
+    │   │   ├── AdminTopbar.jsx          # Admin user header & quick notifications
+    │   │   ├── AdminKPICards.jsx        # Metrics summary cards
+    │   │   ├── AdminBookingsChart.jsx   # Booking trend visualizations
+    │   │   ├── AdminRevenueChart.jsx    # Revenue analytics chart
+    │   │   ├── AdminRecentBookings.jsx  # Recent reservations table
+    │   │   ├── AdminTopPlaces.jsx       # High-performing tourist spots
+    │   │   ├── AdminSystemStats.jsx     # System health and server metrics
+    │   │   └── AdminRecentActivities.jsx# Audit log timeline
+    │   │
+    │   ├── dashboard/                   # Owner dashboard UI widgets
+    │   │   ├── Sidebar.jsx              # Owner navigation sidebar
+    │   │   ├── Topbar.jsx               # Owner topbar
+    │   │   ├── KPICards.jsx             # Owner earnings & occupancy KPIs
+    │   │   ├── RevenueChart.jsx         # Revenue timeline
+    │   │   ├── BookingsChannelChart.jsx # Direct vs OTA booking source chart
+    │   │   ├── RecentBookingsTable.jsx  # Owner booking table
+    │   │   ├── TopPropertiesTable.jsx   # Top listing performance
+    │   │   ├── PropertyForm.jsx         # Property creation/editing form
+    │   │   ├── QuickActions.jsx         # Fast action triggers
+    │   │   └── InsightsCards.jsx        # Performance tips & insights
+    │   │
+    │   ├── explore/                     # Explore & booking widgets
+    │   │   ├── HotelCard.jsx            # Hotel presentation card
+    │   │   ├── TourCard.jsx             # Tour listing card
+    │   │   ├── ProvinceSidebar.jsx      # Cambodian province selector
+    │   │   ├── HotelDetailModal.jsx     # Quick hotel modal
+    │   │   ├── TourDetailModal.jsx      # Quick tour modal
+    │   │   ├── TripCart.jsx             # Booking cart panel
+    │   │   ├── MyTrips.jsx              # Favorites slide-over drawer
+    │   │   └── GuideInfo.jsx            # Local guide profile snippet
+    │   │
+    │   ├── hotels/                      # Hotel browsing & detailed view
+    │   │   ├── HotelSearchBar.jsx       # Destination, dates, guest filter bar
+    │   │   ├── FilterSidebar.jsx        # Price, amenities, stars filter
+    │   │   ├── HotelListingCard.jsx     # List card with ratings & pricing
+    │   │   └── detail/                  # 20 detailed hotel components
+    │   │       ├── HotelHeader.jsx      # Title, badges, address
+    │   │       ├── HotelGallery.jsx     # Photo showcase grid
+    │   │       ├── DateGuestSelector.jsx# Interactive reservation selector
+    │   │       ├── MapCard.jsx          # Location & nearby highlights
+    │   │       ├── StickyBookingBar.jsx # Sticky mobile booking bar
+    │   │       ├── ReviewModal.jsx      # User review submission modal
+    │   │       └── ...                  # (AboutSection, RatingBar, etc.)
+    │   │
+    │   ├── home/                        # Landing page sections
+    │   │   ├── Hero.jsx                 # Search banner & dynamic background
+    │   │   ├── SearchPanel.jsx          # Multi-tab search (Stays, Tours, Food)
+    │   │   ├── CulturalSection.jsx      # Cambodian cultural heritage showcase
+    │   │   ├── KhmerFood.jsx            # Authentic food & gastronomy
+    │   │   ├── PopularDestinations.jsx  # Siem Reap, Phnom Penh, coastal gems
+    │   │   ├── PopularExperiences.jsx   # Curated cultural excursions
+    │   │   ├── EssentialCambodia.jsx    # Practical travel tips
+    │   │   └── FinalCta.jsx             # Call-to-action banner
+    │   │
+    │   ├── checkout/                    # Booking checkout steps
+    │   │   ├── ActivityDetailsCard.jsx  # Selected experience/room details
+    │   │   ├── ContactDetailsCard.jsx   # Guest contact information
+    │   │   ├── PaymentDetailsCard.jsx   # Payment method selector
+    │   │   └── BookingSummary.jsx       # Price breakdown, taxes, total
+    │   │
+    │   ├── payment/                     # Payment processing components
+    │   │   └── BakongKhqrPaymentModal.jsx # Dynamic KHQR modal with status polling
+    │   │
+    │   ├── layout/                      # Global public layout
+    │   │   ├── Navbar.jsx               # Navigation, language switcher, auth buttons
+    │   │   ├── Footer.jsx               # Multi-column footer & newsletter signup
+    │   │   └── ProtectedRoute.jsx       # Route guard for authenticated areas
+    │   │
+    │   ├── auth/                        # Auth forms
+    │   │   ├── LoginForm.jsx            # Sign-in form
+    │   │   └── RegisterForm.jsx         # Sign-up form
+    │   │
+    │   └── ui/                          # Reusable UI primitives
+    │       ├── Button.jsx, Modal.jsx, Toast.jsx, Rating.jsx, StatusBadge.jsx,
+    │       ├── ThemeToggle.jsx, LanguageSwitcher.jsx, SmartImage.jsx, Icon.jsx
+    │
+    ├── context/                         # React contexts
+    │   ├── AuthContext.jsx              # JWT auth state & demo accounts
+    │   ├── FavoritesContext.jsx         # Saved destinations & trips
+    │   └── ThemeContext.jsx             # Light/dark theme toggle
+    │
+    ├── hooks/                           # Custom React hooks
+    │   ├── useDashboardData.js          # Aggregated dashboard metrics fetcher
+    │   ├── useTourPlaces.js             # Tour places search & filters
+    │   └── useResource.js               # Generic resource CRUD hook
+    │
+    ├── i18n/                            # Localization
+    │   ├── i18n.js                      # i18next configuration
+    │   └── locales/
+    │       ├── en.json                  # English translations
+    │       └── km.json                  # Khmer translations
+    │
+    ├── lib/                             # Core utilities & domain logic
+    │   ├── cartBooking.js               # Cart calculation logic
+    │   ├── explore.js                   # Explore filters & categories
+    │   └── format.js                    # Currency ($ USD / ៛ KHR) & date formatters
+    │
+    ├── pages/                           # Application route pages
+    │   ├── HomePage.jsx                 # Public landing page
+    │   ├── DestinationsPage.jsx         # Destinations catalog
+    │   ├── HotelsPage.jsx               # Hotel listings with filters
+    │   ├── HotelDetailPage.jsx          # Comprehensive hotel detail page
+    │   ├── ToursPage.jsx                # Tour listings
+    │   ├── TourDetailPage.jsx           # Tour detail & package booking
+    │   ├── TourPlaceDetailPage.jsx      # Individual place/attraction details
+    │   ├── DiningPage.jsx               # Restaurants and food listings
+    │   ├── RestaurantDetailPage.jsx     # Restaurant menu & detail
+    │   ├── AboutCambodiaPage.jsx        # History, culture, travel advice
+    │   ├── AboutPage.jsx                # Company information
+    │   ├── ContactPage.jsx              # Contact & support form
+    │   ├── OffersPage.jsx               # Special promotions & discounts
+    │   ├── FeaturedExperiencesPage.jsx  # Curated experiences
+    │   ├── LoginPage.jsx / AuthPage.jsx # Authentication screens
+    │   ├── CheckoutPage.jsx             # Checkout & order processing
+    │   ├── ProfilePage.jsx              # User profile & booking history
+    │   │
+    │   ├── AdminDashboard.jsx           # Admin console layout wrapper
+    │   ├── admin/                       # Admin console pages (20 pages)
+    │   │   ├── AdminUsersPage.jsx       # User accounts management
+    │   │   ├── AdminOwnersPage.jsx      # Business owners directory
+    │   │   ├── AdminPlacesPage.jsx      # Destination & attraction CRUD
+    │   │   ├── AdminHotelsPage.jsx      # Hotel property management
+    │   │   ├── AdminRoomsPage.jsx       # Room inventory
+    │   │   ├── AdminTicketsPage.jsx     # Attraction tickets
+    │   │   ├── AdminRestaurantsPage.jsx # Restaurant listings
+    │   │   ├── AdminFoodOrdersPage.jsx  # Dining orders
+    │   │   ├── AdminPackagesPage.jsx    # Tour package configurations
+    │   │   ├── AdminBookingsPage.jsx    # System-wide reservations
+    │   │   ├── AdminPaymentsPage.jsx    # Payment ledger & transactions
+    │   │   ├── AdminReviewsPage.jsx     # Moderation of reviews
+    │   │   ├── AdminPromotionsPage.jsx  # Site promotions & coupons
+    │   │   ├── AdminNotificationsPage.jsx # Broadcast notifications
+    │   │   ├── AdminReportsPage.jsx     # Exportable analytics reports
+    │   │   ├── AdminLogsPage.jsx        # System audit logs
+    │   │   ├── AdminSettingsPage.jsx    # Global platform settings
+    │   │   ├── AdminProfilePage.jsx     # Admin profile
+    │   │   └── AdminContactMessagesPage.jsx # Inquiries from contact page
+    │   │
+    │   ├── OwnerDashboard.jsx           # Owner console layout wrapper
+    │   └── owner/                       # Owner console pages (13 pages)
+    │       ├── PropertiesPage.jsx       # Owner property listings
+    │       ├── BookingsPage.jsx         # Bookings for owner properties
+    │       ├── PackagesPage.jsx         # Custom tour packages
+    │       ├── PricingPage.jsx          # Seasonal pricing & discounts
+    │       ├── ReviewsPage.jsx          # Guest review responses
+    │       ├── PromotionsPage.jsx       # Owner-specific deals
+    │       ├── ReportsPage.jsx          # Revenue & occupancy reports
+    │       ├── InsightsPage.jsx         # Business analytics & tips
+    │       ├── PayoutsPage.jsx          # Bank/Bakong payout history
+    │       ├── SettingsPage.jsx         # Business settings
+    │       ├── TeamPage.jsx             # Staff management
+    │       ├── HelpPage.jsx             # Partner support
+    │       └── OwnerProfilePage.jsx     # Owner account & contact info
+    │
+    ├── services/                        # Business logic & API clients (33 services)
+    │   ├── index.js                     # Centralized service barrel export
+    │   ├── authService.js               # Login, register, logout, password resets
+    │   ├── bakongService.js             # Bakong KHQR dynamic QR & status checks
+    │   ├── tourPlaceService.js          # Tour places CRUD & image attachments
+    │   ├── hotelService.js              # Hotel property CRUD
+    │   ├── hotelRoomService.js          # Hotel room associations
+    │   ├── roomBookingService.js        # Room reservation workflows
+    │   ├── ticketBookingService.js      # Attraction ticket bookings
+    │   ├── restaurantService.js         # Restaurants management
+    │   ├── foodService.js               # Restaurant menus & food items
+    │   ├── orderService.js              # Dining order management
+    │   ├── cartService.js               # Local & remote cart persistence
+    │   ├── paymentService.js            # General payment records
+    │   ├── promotionService.js          # Deals & promo codes
+    │   ├── provinceService.js           # Cambodian province data
+    │   ├── districtService.js           # District hierarchical data
+    │   ├── contactService.js            # Contact message delivery
+    │   ├── managementService.js         # Unified management endpoints
+    │   └── ... (Attachment services for hotels, rooms, food, places, users)
+    │
+    └── utils/
+        ├── rbac.js                      # Role checks (hasRole, canAccess, allowedRoles)
+        └── helpers.js                   # Date, format, and helper utilities
 ```
 
-## Backend Companion (Spring Boot API)
+---
 
-Located at `../spring_boot_project_api/`. Read `../spring_boot_project_api/agent_guide_ai.md` for full backend conventions.
+## Route Structure
 
-| Aspect | Value |
-|---|---|
-| Language | Java 21 |
-| Framework | Spring Boot 4.0.8-SNAPSHOT |
-| Build | Maven (`./mvnw`) |
-| Database | MySQL (configured via `application.properties`) |
-| ORM | Spring Data JPA |
-| Validation | Jakarta Bean Validation |
-| API Docs | SpringDoc OpenAPI (Swagger UI at `/swagger-ui.html`) |
-| Lombok | Yes (constructor injection) |
+### 1. Public Routes (`src/App.jsx`)
 
-### Backend Layered Architecture
-
-```
-controller/  →  service/ (interface)  →  service/impl/  →  repository/  →  model/ (Entity)
-      ↓                                        ↓
-dto/request/                              mapper/  ↔  dto/response/
-      ↓
-exception/
-```
-
-### Backend Conventions (must follow)
-
-1. **Never expose JPA entities directly** in API responses — always use DTOs + mappers
-2. **Constructor injection** only (no `@Autowired` field injection)
-3. **Lombok annotations**: `@Getter`, `@Setter`, `@Builder`, `@RequiredArgsConstructor`
-4. **Jakarta Bean Validation** on all request DTOs (`@NotNull`, `@NotBlank`, `@Size`, etc.)
-5. **Service pattern**: interface in `service/`, implementation in `service/impl/`
-6. **Package structure**: `com.example.spring_boot_project_api.*`
-
-## Current State
-
-**Directory structure is ready.** All folders are created with README guides, but no implementation yet:
-
-| Area | Status |
-|---|---|
-| Folder structure | ✅ Complete — all directories created |
-| Documentation | ✅ Complete — each folder has README.md |
-| Custom components | ❌ 0 — only default Vite template |
-| Pages/routes | ❌ 0 — `react-router-dom` not installed |
-| API calls | ❌ 0 — no HTTP client installed |
-| State management | ❌ 0 — Redux/Context empty |
-| Layout components | ❌ 0 — Navbar, Footer not created |
-| Admin dashboard | ❌ 0 — folder structure ready, no components |
-| Owner dashboard | ❌ 0 — folder structure ready, no components |
-| Backend | ❌ 0 controllers, 0 entities, 0 services |
-
-## What Needs to Be Built
-
-### Phase 1 — Foundation
-
-1. **Install dependencies**: `react-router-dom`, `axios`, `@reduxjs/toolkit`, `react-redux`, `react-hot-toast`
-2. **Create API client** in `src/api/axios.js` with interceptors, base URL, auth headers
-3. **Add state management** in `src/store/` with Redux Toolkit slices
-4. **Create routing** in `src/App.jsx` with React Router
-
-### Phase 2 — Layout & Common Components
-
-5. **Build layout** in `src/components/layout/` (Navbar, Footer, Layout wrapper)
-6. **Build common components** in `src/components/common/` (Button, Card, Input, Modal, Spinner, Alert)
-7. **Add context providers** in `src/context/` (AuthContext, ThemeContext)
-
-### Phase 3 — Public Pages
-
-8. **Create pages** in `src/pages/`: Home, Destinations, DestinationDetail, Booking, About, Contact
-9. **Build page-specific components**: HeroSection, DestinationCard, BookingForm, etc.
-10. **Connect to backend API** via services layer
-
-### Phase 4 — Auth & User Features
-
-11. **Build auth components**: LoginForm, RegisterForm, ProtectedRoute
-12. **Add auth flow**: login, register, logout, token refresh
-13. **Create user pages**: MyBookings, Profile
-
-### Phase 5 — Admin Dashboard
-
-14. **Build admin layout**: AdminSidebar, AdminHeader, AdminLayout
-15. **Create admin pages**: Dashboard, Destinations CRUD, Bookings, Users, Categories
-16. **Add admin components**: DataTable, Charts, Forms, Modals
-
-### Phase 6 — Owner Dashboard
-
-17. **Build owner layout**: OwnerSidebar, OwnerHeader, OwnerLayout
-18. **Create owner pages**: Overview, MyPackages, Bookings, Earnings, Schedule
-19. **Add owner components**: PackageForm, PricingForm, EarningsChart
-
-### Backend (companion project)
-
-1. Configure `application.properties` with MySQL connection
-2. Create JPA entities in `model/`
-3. Create repositories in `repository/`
-4. Create services in `service/` + `service/impl/`
-5. Create controllers in `controller/`
-6. Create DTOs in `dto/request/` and `dto/response/`
-7. Create mappers in `mapper/`
-8. Create exception handlers in `exception/`
-9. Run `./mvnw test` to verify
-
-## Key Files to Know
-
-| File | Why It Matters |
-|---|---|
-| `src/main.jsx` | Entry point — renders App, imports `index.css` (Tailwind) |
-| `src/App.jsx` | Root component — where routing will be added |
-| `src/index.css` | Tailwind CSS v4 import — all utility classes available |
-| `src/App.css` | Tailwind CSS v4 import — component-level styles |
-| `postcss.config.js` | Tailwind v4 PostCSS plugin config |
-| `vite.config.js` | Vite build config — React plugin only |
-| `package.json` | Dependencies — check before adding new packages |
-| `index.html` | SPA shell — loads `/src/main.jsx` |
-
-## User Roles & Dashboards
-
-| Role | Dashboard | Route | Access |
-|---|---|---|---|
-| **User** | Public site | `/` | Browse destinations, book tours, view bookings |
-| **Owner** | Owner panel | `/owner/*` | Manage own packages, bookings, earnings, schedules |
-| **Admin** | Admin panel | `/admin/*` | Manage all destinations, users, bookings, categories, settings |
-
-### Route Structure
-
-```
-/                          → HomePage (public)
-/destinations              → DestinationsPage (public)
-/destinations/:id          → DestinationDetailPage (public)
-/booking/:id               → BookingPage (public)
-/my-bookings               → MyBookingsPage (auth required)
-/about                     → AboutPage (public)
-/contact                   → ContactPage (public)
-/login                     → LoginPage (public)
-/register                  → RegisterPage (public)
-
-/admin                     → DashboardPage (admin only)
-/admin/destinations        → DestinationsPage (admin only)
-/admin/bookings            → BookingsPage (admin only)
-/admin/users               → UsersPage (admin only)
-/admin/categories          → CategoriesPage (admin only)
-/admin/reviews             → ReviewsPage (admin only)
-/admin/settings            → SettingsPage (admin only)
-
-/owner                     → OverviewPage (owner only)
-/owner/packages            → MyPackagesPage (owner only)
-/owner/packages/:id        → PackageDetailPage (owner only)
-/owner/bookings            → BookingsPage (owner only)
-/owner/earnings            → EarningsPage (owner only)
-/owner/schedule            → SchedulePage (owner only)
-/owner/reviews             → ReviewsPage (owner only)
-/owner/profile             → ProfilePage (owner only)
-```
-
-## Tailwind CSS v4 Notes
-
-- **No `tailwind.config.js`** — Tailwind v4 uses CSS-first config via `@theme` in CSS files
-- **No `postcss.config.js` needed for basic usage** — already configured with `@tailwindcss/postcss`
-- **Import**: Use `@import "tailwindcss";` in CSS files (NOT the old `@tailwind base/components/utilities`)
-- **Usage in JSX**: `<div className="text-blue-500 font-bold">` (always `className`, NOT `class`)
-- **Custom theme**: Add `@theme { --color-primary: #xxx; }` in CSS files to extend the default theme
-
-## Code Style Rules
-
-- **React**: Use functional components with hooks (no class components)
-- **JSX**: Always use `className` not `class`
-- **Linter**: Oxlint enforces `react/rules-of-hooks` (error) and `react/only-export-components` (warn)
-- **Imports**: Use ES module syntax (`import/export`)
-- **File naming**: lowercase with dashes for components (`my-component.jsx`) or PascalCase (`MyComponent.jsx`) — be consistent
-- **Component naming**: PascalCase for component files (`MyComponent.jsx`)
-
-## Component Naming Conventions
-
-To avoid naming conflicts between public, admin, and owner components:
-
-| Area | Convention | Example |
+| Path | Component | Description |
 |---|---|---|
-| **Public** | Generic names | `Card.jsx`, `BookingForm.jsx`, `Navbar.jsx` |
-| **Admin** | Prefix with `Admin` | `AdminSidebar.jsx`, `AdminCard.jsx`, `AdminDataTable.jsx` |
-| **Owner** | Prefix with `Owner` | `OwnerSidebar.jsx`, `OwnerCard.jsx`, `OwnerBookingTable.jsx` |
-| **Shared** | Generic names in `components/common/` | `Button.jsx`, `Modal.jsx`, `Spinner.jsx` |
+| `/` | `HomePage` | Hero, search panel, cultural spots, featured destinations |
+| `/hotel` | `HotelsPage` | Search, filter, and browse hotels |
+| `/hotels/:id` | `HotelDetailPage` | Full hotel profile, room selection, reviews, map |
+| `/tour` | `ToursPage` | Tour catalog across Cambodia |
+| `/tours/:id` | `TourDetailPage` | Tour details, itinerary, ticket booking |
+| `/restaurant` | `DiningPage` | Cambodian dining & cuisine directory |
+| `/restaurants/:id` | `RestaurantDetailPage`| Restaurant menu, hours, and reservation |
+| `/about-cambodia`| `AboutCambodiaPage` | Cultural guide, history, regions |
+| `/about` | `AboutPage` | About the platform and mission |
+| `/contact` | `ContactPage` | Contact inquiries |
+| `/offers` | `OffersPage` | Special promotions and holiday deals |
+| `/checkout` | `CheckoutPage` | Guest details, order review, payment modal trigger |
+| `/profile` | `ProfilePage` | User profile & booking history (*Protected*) |
+| `/login` | `LoginPage (mode="login")` | User sign-in |
+| `/register` | `LoginPage (mode="register")`| User sign-up |
+
+### 2. Admin Management Console (`/admin/*`)
+
+Accessible to users with the `ADMIN` role. Features a collapsible sidebar, breadcrumbs, search, and data tables:
+
+- `/admin` → Overview with KPI cards, revenue charts, booking activity, top places.
+- `/admin/users` → User directory and permission grants.
+- `/admin/owners` → Registered business owners and approval workflows.
+- `/admin/places` → Tourist attraction and place management.
+- `/admin/hotels` & `/admin/rooms` → Accommodation listings and room types.
+- `/admin/tickets` → Ticket pricing, quotas, and validation.
+- `/admin/restaurants` & `/admin/food-orders` → Dining partners and active food orders.
+- `/admin/packages` → Multi-day and themed travel packages.
+- `/admin/bookings` → System-wide booking records.
+- `/admin/payments` → Transactions, gateway status, and reconciliations.
+- `/admin/reviews` → Moderation of customer feedback.
+- `/admin/promotions` → Global discount codes and campaigns.
+- `/admin/notifications` → Broadcast alerts to users and partners.
+- `/admin/reports` → Comprehensive financial and operational exports.
+- `/admin/logs` → Security and system audit trail.
+- `/admin/settings` → System configuration parameters.
+- `/admin/profile` → Admin profile and credentials.
+
+### 3. Owner Management Portal (`/owner/*`)
+
+Accessible to users with the `OWNER` role (e.g. hotel operators, tour organizers):
+
+- `/owner` → Operational overview (earnings, upcoming bookings, occupancy trends).
+- `/owner/properties` → Manage own hotel or attraction listings.
+- `/owner/bookings` → Reservations made for owner-managed properties.
+- `/owner/packages` → Create and edit custom packages.
+- `/owner/pricing` → Set seasonal pricing, weekend surges, and discounts.
+- `/owner/reviews` → View and reply to customer reviews.
+- `/owner/promotions` → Launch special owner discounts.
+- `/owner/reports` & `/owner/insights` → Revenue breakdown and booking trends.
+- `/owner/payouts` → Payout history and Bakong settlement status.
+- `/owner/settings` & `/owner/team` → Business profile and staff permissions.
+- `/owner/profile` → Business owner contact and credential management.
+
+---
+
+## Services & Payment Integration
+
+### Bakong KHQR Integration (`src/services/bakongService.js`)
+
+The application includes first-class support for **National Bank of Cambodia's Bakong KHQR**:
+
+1. **QR Generation**:
+   `bakongService.generateQr({ bookingId, bookingType, amount, currency, description, customerPhone })` calls `/v1/bakong/generate-qr`.
+   Returns `qrString`, `qrImage` (base64 / URL), `md5` transaction hash, and `expiresAt`.
+2. **Payment Modal (`src/components/payment/BakongKhqrPaymentModal.jsx`)**:
+   Renders the generated KHQR, countdown timer, and continuously polls payment status via:
+   `bakongService.checkStatus({ md5, bookingId, bookingType })` calling `/v1/bakong/check-status`.
+3. **Sandbox Testing**:
+   Supports simulation in development to approve payments instantly without live banking requests.
+
+### Backend Companion API Overview
+
+- **Location**: `../spring_boot_project_api/`
+- **Stack**: Java 21, Spring Boot 4.x, Spring Data JPA, MySQL, SpringDoc OpenAPI.
+- **Documentation**: Swagger UI accessible at `http://localhost:8080/swagger-ui.html`.
+- **API Conventions**:
+  - DTOs for all requests and responses (no raw entity exposure).
+  - Jakarta Bean Validation on request payloads.
+  - Consistent REST URLs (e.g., `/api/tour-places`, `/api/hotels`, `/api/bookings`, `/api/v1/bakong/*`).
+
+---
+
+## Code Style & Development Conventions
+
+1. **Component Naming**:
+   - PascalCase for React component files (`HotelCard.jsx`, `AdminSidebar.jsx`).
+   - Suffix pages with `Page` (`HomePage.jsx`, `TourDetailPage.jsx`).
+   - Domain sub-folders under `components/` for specialized domains (`hotels/`, `explore/`, `admin/`, `dashboard/`, `home/`).
+2. **Imports**:
+   - Explicit ES module imports.
+   - Use Lucide icons: `import { MapPin, Calendar, Heart } from 'lucide-react'`.
+3. **Styling & Colors**:
+   - Always use CSS variables and Tailwind v4 classes: `text-brand-700`, `bg-gold-400`, `bg-canvas`, `text-ink`.
+   - Dark mode variants must be supported for both backgrounds and text: `bg-white dark:bg-gray-900 text-gray-900 dark:text-white`.
+4. **State & Effects**:
+   - Keep state local where possible; use Context (`useAuth()`, `useFavorites()`, `useTheme()`) for cross-cutting state.
+   - Guard against missing data with optional chaining (`item?.title`) and fallback arrays (`data || []`).
