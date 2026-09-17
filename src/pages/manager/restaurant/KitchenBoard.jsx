@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Icon from "../../../components/ui/Icon";
 import { DemoNote } from "../../../components/ui/feedback";
-import { useToast } from "../../../components/ui/Toast";
-import { orderService } from "../../../services/orderService";
 import { money } from "../../../lib/format";
 
 const COLUMNS = ["Pending", "Confirmed", "Preparing", "Ready", "Completed"];
@@ -23,26 +21,6 @@ const INITIAL = [
   { id: "FO-5005", customer: "Sokha Dara", items: "Nom Koma", qty: 1, time: "13:10", total: 2.5, status: "Completed" },
   { id: "FO-5006", customer: "Mia Park", items: "Fish Amok, Salad", qty: 2, time: "13:15", total: 11, status: "Pending" },
 ];
-
-function normalizeStatus(st) {
-  if (!st) return "Pending";
-  const s = String(st).toLowerCase();
-  if (s.includes("confirm")) return "Confirmed";
-  if (s.includes("prepar")) return "Preparing";
-  if (s.includes("ready")) return "Ready";
-  if (s.includes("complete") || s.includes("done")) return "Completed";
-  return "Pending";
-}
-
-function formatTime(iso) {
-  if (!iso) return "12:00";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  } catch {
-    return "12:00";
-  }
-}
 
 function OrderCard({ order, onMove, dragging, onDragStart, onDragEnd }) {
   const idx = COLUMNS.indexOf(order.status);
@@ -92,63 +70,14 @@ export default function KitchenBoard() {
   const [orders, setOrders] = useState(INITIAL);
   const [dragId, setDragId] = useState(null);
   const [overCol, setOverCol] = useState(null);
-  const [isApiBacked, setIsApiBacked] = useState(false);
-  const toast = useToast();
 
-  useEffect(() => {
-    let alive = true;
-    orderService
-      .getAllOrders()
-      .then((res) => {
-        if (!alive || !Array.isArray(res) || res.length === 0) return;
-        const mapped = res.map((o) => ({
-          id: `FO-${o.id}`,
-          rawId: o.id,
-          customer: o.userName || "Customer",
-          items: o.restaurantName || "Restaurant order",
-          qty: 1,
-          time: formatTime(o.createdAt || o.pickupTime),
-          total: Number(o.totalPrice || 0),
-          status: normalizeStatus(o.status),
-        }));
-        setOrders(mapped);
-        setIsApiBacked(true);
-      })
-      .catch(() => {
-        // Fallback to initial demo orders gracefully
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const move = async (id, status) => {
-    const target = orders.find((o) => o.id === id);
-    setOrders((os) => os.map((o) => (o.id === id ? { ...o, status } : o)));
-
-    if (target?.rawId) {
-      try {
-        await orderService.updateOrderStatus(target.rawId, status.toUpperCase());
-        toast.success(`Order ${id} updated to ${status}`);
-      } catch (err) {
-        console.warn("Could not sync order status to server:", err);
-        toast.info(`Updated order ${id} to ${status} (local)`);
-      }
-    } else {
-      toast.info(`Moved ${id} to ${status}`);
-    }
-  };
+  const move = (id, status) => setOrders((os) => os.map((o) => (o.id === id ? { ...o, status } : o)));
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-brand-800">Kitchen Board</h1>
-          <p className="mt-1 text-sm text-muted">
-            Drag orders or use the buttons to move them through each stage.
-            {isApiBacked && <span className="ml-2 font-semibold text-brand-700">· Connected to live API</span>}
-          </p>
-        </div>
+      <div>
+        <h1 className="font-display text-2xl font-bold text-brand-800">Kitchen Board</h1>
+        <p className="mt-1 text-sm text-muted">Drag orders or use the buttons to move them through each stage.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
@@ -200,7 +129,7 @@ export default function KitchenBoard() {
         })}
       </div>
 
-      {!isApiBacked && <DemoNote />}
+      <DemoNote />
     </div>
   );
 }

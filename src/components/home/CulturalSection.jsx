@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import Icon from "../ui/Icon";
 import { img } from "../../data/site";
 
@@ -6,15 +5,6 @@ const apsara = img("Apsara dance Khmer Cambodian.jpg", 1200);
 const temple = img("Ta_Prohm.jpg", 1000);
 
 export default function CulturalSection() {
-  const { t, i18n } = useTranslation();
-  const isKhmer = i18n.language === "km";
-
-  const stats = [
-    { n: isKhmer ? "៥,០០០+" : "5,000+", l: isKhmer ? "ប្រវត្តិសាស្ត្ររាប់ពាន់ឆ្នាំ" : "Years of history" },
-    { n: isKhmer ? "១,០០០+" : "1,000+", l: isKhmer ? "ប្រាសាទ និងវត្តអារាម" : "Temples & pagodas" },
-    { n: isKhmer ? "៥០+" : "50+", l: isKhmer ? "គោលដៅទេសចរណ៍" : "Destinations" },
-  ];
-
   return (
     <section className="relative isolate overflow-hidden bg-brand-800 py-20 text-white lg:py-28">
       <div className="absolute inset-0 -z-10">
@@ -28,18 +18,23 @@ export default function CulturalSection() {
           <div className="flex items-center gap-2">
             <span className="h-px w-8 bg-gold-400" />
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold-400">
-              {t("cultural.eyebrow")}
+              Experience the soul of Cambodia
             </span>
           </div>
           <h2 className="mt-4 font-display text-4xl font-bold leading-tight sm:text-[44px]">
-            {t("cultural.title")}
+            Where every journey tells a story
           </h2>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/80">
-            {t("cultural.desc")}
+            From ancient temples to vibrant cities, tropical islands and unforgettable
+            food — discover Cambodia through authentic local experiences.
           </p>
 
           <div className="mt-8 grid grid-cols-3 gap-4">
-            {stats.map((s) => (
+            {[
+              { n: "5,000+", l: "Years of history" },
+              { n: "1,000+", l: "Temples & pagodas" },
+              { n: "50+", l: "Destinations" },
+            ].map((s) => (
               <div key={s.l} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
                 <p className="font-display text-2xl font-bold text-gold-400">{s.n}</p>
                 <p className="mt-1 text-xs font-medium text-white/70">{s.l}</p>
@@ -48,22 +43,11 @@ export default function CulturalSection() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="/tours"
-              className="group inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-bold text-brand-900 transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:bg-gold-300"
-            >
-              {t("services.toursCta")}
-              <Icon
-                name="arrow-right"
-                size={17}
-                className="transition-transform duration-500 ease-out group-hover:translate-x-1"
-              />
+            <a href="#experiences" className="group inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 text-sm font-bold text-brand-900 transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:bg-gold-300">
+              Discover Tours <Icon name="arrow-right" size={17} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
             </a>
-            <a
-              href="/destinations"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-bold text-white transition-colors duration-500 ease-out hover:bg-white/10"
-            >
-              {t("nav.destinations")}
+            <a href="#destinations" className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm font-bold text-white transition-colors duration-500 ease-out hover:bg-white/10">
+              Browse Destinations
             </a>
           </div>
         </div>
@@ -78,12 +62,8 @@ export default function CulturalSection() {
                 <Icon name="landmark" size={22} />
               </span>
               <div>
-                <p className="text-sm font-bold">
-                  {isKhmer ? "ឧទ្យានបុរាណវិទ្យាអង្គរ" : "Angkor Archaeological Park"}
-                </p>
-                <p className="text-xs text-muted">
-                  {isKhmer ? "សម្បត្តិបេតិកភណ្ឌពិភពលោកយូណេស្កូ" : "UNESCO World Heritage Site"}
-                </p>
+                <p className="text-sm font-bold">Angkor Archaeological Park</p>
+                <p className="text-xs text-muted">UNESCO World Heritage Site</p>
               </div>
             </div>
           </div>

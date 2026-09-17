@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
@@ -8,8 +7,13 @@ import { money } from "../../lib/format";
 import { useFavorites } from "../../context/FavoritesContext";
 import { useToast } from "../ui/Toast";
 
+const CTA = {
+  tour: "View Tour",
+  hotel: "View",
+  restaurant: "Reserve",
+};
+
 export default function ListingCard({ item }) {
-  const { t } = useTranslation();
   const priceLabel = item.price != null ? money(item.price) : null;
   const isRestaurant = item.kind === "restaurant";
   const { isSaved, toggle } = useFavorites();
@@ -28,12 +32,6 @@ export default function ListingCard({ item }) {
       href: item.href,
     });
     toast[nowSaved ? "success" : "info"](nowSaved ? `Saved "${item.title}" to My trips.` : `Removed "${item.title}" from My trips.`);
-  };
-
-  const CTA = {
-    tour: t("listingCard.ctaTour"),
-    hotel: t("listingCard.ctaHotel"),
-    restaurant: t("listingCard.ctaRestaurant"),
   };
 
   return (
@@ -70,7 +68,7 @@ export default function ListingCard({ item }) {
         <button
           type="button"
           onClick={onToggleFavorite}
-          aria-label={saved ? (t("common.removeFromFavorites") || "Remove from My trips") : (t("common.saveFavorites") || "Save to My trips")}
+          aria-label={saved ? "Remove from My trips" : "Save to My trips"}
           aria-pressed={saved}
           className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full shadow-sm backdrop-blur transition-all duration-200 hover:scale-110 active:scale-95 ${
             saved ? "bg-white text-danger" : "bg-white/90 text-brand-700 hover:bg-white"
@@ -115,13 +113,13 @@ export default function ListingCard({ item }) {
           <p className="text-xs text-muted">
             {priceLabel ? (
               <>
-                {item.kind === "tour" && <span className="mr-1">{t("common.from")}</span>}
+                {item.kind === "tour" && <span className="mr-1">From</span>}
                 <span className="text-lg font-bold text-brand-700">{priceLabel}</span>
                 {item.priceUnit && <span className="text-muted">{item.priceUnit}</span>}
               </>
             ) : (
               <span className="text-sm font-semibold text-brand-700">
-                {isRestaurant ? t("listingCard.localDining") : item.kind === "hotel" ? t("listingCard.viewRates") : t("listingCard.explore")}
+                {isRestaurant ? "Local dining" : item.kind === "hotel" ? "View rates" : "Explore"}
               </span>
             )}
           </p>
@@ -129,7 +127,7 @@ export default function ListingCard({ item }) {
             to={item.href}
             className="inline-flex items-center gap-1.5 rounded-lg border border-brand-700/15 bg-brand-50 px-3.5 py-2 text-xs font-bold text-brand-700 transition-colors duration-500 ease-out hover:bg-brand-700 hover:text-white"
           >
-            {CTA[item.kind] || t("listingCard.ctaDefault") || "View"}
+            {CTA[item.kind] || "View"}
             <Icon name="arrow-right" size={13} className="transition-transform duration-300 group-hover:translate-x-0.5" />
           </Link>
         </div>

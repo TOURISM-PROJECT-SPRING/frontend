@@ -30,8 +30,8 @@ export default function InfoCard({ item, kind = "tour", fill = false }) {
   const reviews = typeof item.reviews === "number" ? item.reviews.toLocaleString() : item.reviews;
 
   return (
-    <article className={`group flex flex-col overflow-hidden rounded-xl border border-line bg-white transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:shadow-sm mt-3 ${fill ? "w-full" : "w-[262px] shrink-0 snap-start sm:w-[300px]"}`}>
-      <div className="relative aspect-[4/4] overflow-hidden">
+    <article className={`group flex flex-col overflow-hidden rounded-2xl border border-line/75 bg-white shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-lift ${fill ? "w-full" : "w-[262px] shrink-0 snap-start sm:w-[300px]"}`}>
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
         <div
           className="flex h-full w-full transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${idx * 100}%)` }}
@@ -47,11 +47,11 @@ export default function InfoCard({ item, kind = "tour", fill = false }) {
           onClick={onToggle}
           aria-label={saved ? "Remove from My trips" : "Save to My trips"}
           aria-pressed={saved}
-          className={`absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full shadow-sm backdrop-blur transition-colors ${
-            saved ? "bg-white text-rose-500" : "bg-white/90 text-brand-700 hover:bg-white"
+          className={`absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full shadow-md backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95 ${
+            saved ? "bg-white text-rose-500" : "bg-white/90 text-brand-900 hover:bg-white"
           }`}
         >
-          <Icon name="heart" size={18} fill={saved ? "currentColor" : "none"} />
+          <Icon name="heart" size={16} fill={saved ? "currentColor" : "none"} />
         </button>
 
         {/* Badge */}
@@ -96,9 +96,9 @@ export default function InfoCard({ item, kind = "tour", fill = false }) {
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-1 font-display text-base font-bold text-brand-800">{item.name}</h3>
+        <h3 className="line-clamp-1 font-display text-base font-bold text-brand-900 group-hover:text-brand-700 transition-colors">{item.name}</h3>
         <div className="mt-1.5 flex items-center gap-1.5">
-          <span className="text-sm font-bold text-brand-800">{item.rating}</span>
+          <span className="text-xs font-bold text-brand-800">{item.rating}</span>
           <span className="flex items-center gap-0.5" aria-hidden="true">
             {[1, 2, 3, 4, 5].map((n) => (
               <span key={n} className={`h-2 w-2 rounded-full ${n <= Math.round(item.rating) ? "bg-brand-600" : "bg-brand-200"}`} />
@@ -106,11 +106,26 @@ export default function InfoCard({ item, kind = "tour", fill = false }) {
           </span>
           {reviews && <span className="text-xs text-muted">({reviews})</span>}
         </div>
-        {(item.category || item.location) && (
-          <p className="mt-2 flex items-center gap-1 text-xs font-medium text-muted">
-            <Icon name="landmark" size={12} className="text-brand-400" /> {item.category || item.location}
-          </p>
-        )}
+        
+        <div className="mt-auto pt-3 border-t border-line/60 flex items-center justify-between">
+          {(item.category || item.location) ? (
+            <p className="flex items-center gap-1 text-xs font-medium text-muted truncate">
+              <Icon name="landmark" size={12} className="shrink-0 text-brand-500" />
+              <span className="truncate">{item.category || item.location}</span>
+            </p>
+          ) : <span />}
+          
+          <button
+            type="button"
+            onClick={onToggle}
+            className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold transition-colors ${
+              saved ? "bg-rose-50 text-rose-600" : "bg-brand-50 text-brand-700 hover:bg-brand-700 hover:text-white"
+            }`}
+          >
+            <span>{saved ? "Saved" : "Save"}</span>
+            <Icon name="heart" size={11} fill={saved ? "currentColor" : "none"} />
+          </button>
+        </div>
       </div>
     </article>
   );

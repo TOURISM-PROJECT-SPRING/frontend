@@ -1,165 +1,152 @@
 import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { Search, Star, MapPin, ChevronRight, Wind, Compass } from "lucide-react";
-import PageBanner from "../components/ui/PageBanner";
-import { LoadingState, ErrorState } from "../components/ui/AsyncState";
-import EmptyState from "../components/ui/EmptyState";
-import SafeImage from "../components/ui/SafeImage";
-import { tourPlaceService } from "../services/tourPlaceService";
-import { primaryPlaceImage } from "../utils/helpers";
+import { useFavorites } from "../context/FavoritesContext";
+import { useToast } from "../components/ui/Toast";
+import { EmptyState } from "../components/ui/feedback";
+import {
+  demoTours,
+  decorateTours,
+  applyTourFilters,
+  sortTours,
+  emptyFilters,
+  countActiveFilters,
+  resultsCountLabel,
+} from "../data/tours";
+import FilterBar from "../components/tours/FilterBar";
+import { provinceLabel } from "../data/restaurants";
+import SortControl from "../components/tours/SortControl";
+import PromoBanner from "../components/tours/PromoBanner";
+import ActivityCard from "../components/tours/ActivityCard";
+import AllFiltersDrawer from "../components/tours/AllFiltersDrawer";
+import ToursSkeleton from "../components/tours/ToursSkeleton";
+
+const CONTAINER = "mx-auto w-full max-w-[1400px] px-5 sm:px-6 lg:px-[70px]";
 
 export default function ToursPage() {
-  const { t } = useTranslation();
-  const [places, setPlaces] = useState([]);
+  const [filters, setFilters] = useState(emptyFilters);
+  const [sort, setSort] = useState("featured");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [search, setSearch] = useState("");
 
-  const load = async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const data = await tourPlaceService.getAllTourPlaces();
-      setPlaces(data);
-    } catch (err) {
-      console.error("Error fetching tours:", err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { isSaved, toggle } = useFavorites();
+  const toast = useToast();
 
   useEffect(() => {
-    load();
+    const t = setTimeout(() => setLoading(false), 550);
+    return () => clearTimeout(t);
   }, []);
 
-  const sorted = useMemo(
-    () =>
-      [...places]
-        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-        .filter(
-          (place) =>
-            !search ||
-            place.name?.toLowerCase().includes(search.toLowerCase()) ||
-            place.district?.name?.toLowerCase().includes(search.toLowerCase()) ||
-            place.address?.toLowerCase().includes(search.toLowerCase())
-        ),
-    [places, search]
+  const all = useMemo(() => decorateTours(demoTours), []);
+  const city = filters.location ? provinceLabel(filters.location) || filters.location : "Cambodia";
+
+  useEffect(() => {
+    document.title = `Things to do in ${city} | SovannDomNour`;
+    return () => {
+      document.title = "SovannDomNour";
+    };
+  }, [city]);
+  const visible = useMemo(
+    () => sortTours(applyTourFilters(all, filters), sort),
+    [all, filters, sort]
   );
 
-  const primaryImage = (place) => primaryPlaceImage(place);
+  const activeCount = countActiveFilters(filters);
+  const isFiltered = activeCount > 0;
+  const countLabel = resultsCountLabel(visible.length, { filtered: isFiltered });
+
+  const patch = (p) => setFilters((f) => ({ ...f, ...p }));
+  const clearAll = () => setFilters(emptyFilters());
+
+  const toggleFavorite = (a) => {
+    const saved = toggle({
+      kind: "tour",
+      id: a.id,
+      title: a.title,
+      image: a.images?.[0],
+      location: a.location,
+      href: a.href,
+    });
+    toast[saved ? "success" : "info"](
+      saved ? `Saved "${a.title}" to My trips.` : `Removed "${a.title}" from My trips.`
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900">
-      <PageBanner
-        image="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&h=600&fit=crop&q=80"
-        eyebrow="banners.tours.eyebrow"
-        title="banners.tours.title"
-        subtitle="banners.tours.subtitle"
-      />
+    <div className="min-h-screen bg-white">
+      {/* Page heading */}
+      <div className={CONTAINER}>
+        <h1 className="pt-8 pb-5 font-display text-[30px] font-bold leading-tight tracking-tight text-brand-900 sm:text-[38px]">
+          Things to do in {city}
+        </h1>
+      </div>
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
-        <div className="relative flex-1 mb-6 sm:mb-8 sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("tours.searchPlaceholder")}
-            className="w-full pl-10 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-200 dark:placeholder-gray-500 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-          />
+      {/* Sticky filter bar */}
+      <div className="sticky top-[72px] z-30 border-b border-line bg-white/90 backdrop-blur-md">
+        <div className={`${CONTAINER} py-3`}>
+          <FilterBar filters={filters} onPatch={patch} onOpenAllFilters={() => setDrawerOpen(true)} />
+        </div>
+      </div>
+
+      {/* Results + sort */}
+      <div className={CONTAINER}>
+        <div className="flex flex-wrap items-center justify-between gap-3 py-5">
+          <p className="text-xl font-bold text-brand-900">{countLabel}</p>
+          <SortControl value={sort} onChange={setSort} />
         </div>
 
+        <PromoBanner />
+
+        {/* Grid */}
         {loading ? (
-          <LoadingState rows={6} />
-        ) : error ? (
-          <ErrorState onRetry={load} />
+          <div className="py-8">
+            <ToursSkeleton count={8} />
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="py-16">
+            <div className="mx-auto max-w-md">
+              <EmptyState
+                title="No activities match your filters"
+                message={`Try removing a filter or switching location to see more things to do in ${city}.`}
+                icon="binoculars"
+                action={
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800"
+                  >
+                    Clear all filters
+                  </button>
+                }
+              />
+            </div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
-            {sorted.map((place) => (
-              <Link
-                key={place.id}
-                to={`/tours/${place.id}`}
-                className="group relative bg-white dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-none transition-all flex flex-col sm:flex-row"
-              >
-                <div className="relative h-48 sm:h-auto sm:w-56 md:w-64 shrink-0 overflow-hidden">
-                  <SafeImage
-                    src={primaryImage(place)}
-                    alt={place.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 bg-primary/90 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg">
-                    {place.placeCategory?.name || "Tour"}
-                  </div>
-                </div>
-                <div className="p-3.5 sm:p-4 lg:p-5 flex flex-col flex-1">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
-                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                      <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                      <span className="truncate">{place.district?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                      <Wind className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                      <span className="truncate">{place.district?.province?.name}</span>
-                    </div>
-                    {place.rating != null && (
-                      <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 ml-auto shrink-0">
-                        <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 fill-amber-400" />
-                        {place.rating}
-                      </div>
-                    )}
-                  </div>
-
-                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 dark:text-white">
-                    {place.name}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">
-                    {place.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2.5 sm:mt-3">
-                    {place.address && (
-                      <span className="px-1.5 sm:px-2 py-0.5 bg-primary/5 text-primary text-[10px] sm:text-xs font-medium rounded-md">
-                        {place.address}
-                      </span>
-                    )}
-                    {place.status && (
-                      <span className="px-1.5 sm:px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 text-[10px] sm:text-xs font-medium rounded-md">
-                        {place.status}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between mt-auto pt-3 sm:pt-4">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xl sm:text-2xl font-bold text-amber-500">
-                        ★ {place.rating != null ? place.rating : "—"}
-                      </span>
-                      <span className="text-xs sm:text-sm text-gray-400 dark:text-gray-500 ml-0.5 sm:ml-1">
-                        {t("tours.rating")}
-                      </span>
-                    </div>
-                    <span className="inline-flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary text-white text-xs sm:text-sm font-semibold rounded-lg group-hover:bg-primary-dark transition-colors">
-                      {t("tours.viewDetails")}
-                      <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </span>
-                  </div>
-                </div>
-              </Link>
+          <div className="grid grid-cols-1 gap-5 py-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {visible.map((a, i) => (
+              <ActivityCard
+                key={a.id}
+                activity={a}
+                index={i + 1}
+                favorite={isSaved("tour", a.id)}
+                onToggleFavorite={toggleFavorite}
+              />
             ))}
           </div>
         )}
 
-        {!loading && !error && sorted.length === 0 && (
-          <EmptyState
-            icon={Compass}
-            title={t("tours.noResults")}
-            onAction={() => setSearch("")}
-            actionLabel={t("common.tryAgain")}
-          />
+        {!loading && visible.length > 0 && (
+          <p className="pb-16 text-center text-sm font-medium text-muted">
+            You&apos;ve seen all {visible.length.toLocaleString("en-US")} matching activities in {city}
+          </p>
         )}
       </div>
+
+      <AllFiltersDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={filters}
+        onPatch={patch}
+        resultCount={visible.length}
+      />
     </div>
   );
 }

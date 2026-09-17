@@ -32,7 +32,7 @@ export default function EssentialCambodia({ active, onChange }) {
   };
 
   return (
-    <section id="essentials" className="py-10 mt-5">
+    <section id="essentials" className="pt-8 pb-4">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Plan your trip"
@@ -42,7 +42,7 @@ export default function EssentialCambodia({ active, onChange }) {
 
         <div className="relative mt-5 flex items-center group">
           <div
-            className={`pointer-events-none absolute bottom-0 left-0 top-0 z-10 w-24 bg-gradient-to-r from-cream to-transparent transition-opacity duration-300 ${
+            className={`pointer-events-none absolute bottom-0 left-0 top-0 z-10 w-24 bg-gradient-to-r from-canvas to-transparent transition-opacity duration-300 ${
               canScrollLeft ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -85,7 +85,7 @@ export default function EssentialCambodia({ active, onChange }) {
           </div>
 
           <div
-            className={`pointer-events-none absolute bottom-0 right-0 top-0 z-10 w-24 bg-gradient-to-l from-cream to-transparent transition-opacity duration-300 ${
+            className={`pointer-events-none absolute bottom-0 right-0 top-0 z-10 w-24 bg-gradient-to-l from-canvas to-transparent transition-opacity duration-300 ${
               canScrollRight ? "opacity-100" : "opacity-0"
             }`}
           />

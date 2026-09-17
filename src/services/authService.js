@@ -22,22 +22,4 @@ export const authService = {
     const response = await axiosClient.post('/auth/logout');
     return response.data;
   },
-  forgotPassword: async (email) => {
-    const response = await axiosClient.post('/auth/forgot-password', { email });
-    return response.data;
-  },
-  resetPassword: async ({ token, newPassword } = {}) => {
-    const response = await axiosClient.post('/auth/reset-password', {
-      token,
-      newPassword,
-    });
-    return response.data;
-  },
-  changePassword: async ({ currentPassword, newPassword } = {}) => {
-    const response = await axiosClient.post('/auth/change-password', {
-      currentPassword,
-      newPassword,
-    });
-    return response.data;
-  },
 };

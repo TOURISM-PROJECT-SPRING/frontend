@@ -5,15 +5,16 @@ import ProtectedRoute from "./components/layout/ProtectedRoute";
 import MyTrips from "./components/explore/MyTrips";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
-import PlaceholderPage from "./pages/PlaceholderPage";
+import ToursPage from "./pages/ToursPage";
+import ActivityDetailPage from "./pages/ActivityDetailPage";
 import HotelsPage from "./pages/HotelsPage";
+import RestaurantSearchPage from "./pages/RestaurantSearchPage";
 import TourDetailPage from "./pages/TourDetailPage";
 import HotelDetailPage from "./pages/HotelDetailPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import CheckoutPage from "./pages/CheckoutPage";
-import AdminDashboard from "./pages/AdminDashboard";
-import OwnerDashboard from "./pages/OwnerDashboard";
+import ManagerArea from "./pages/manager/ManagerArea";
 
 function PublicLayout() {
   return (
@@ -22,10 +23,11 @@ function PublicLayout() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/tour" element={<PlaceholderPage title="Tours" icon="binoculars" blurb="Tour packages across the Kingdom are coming soon." />} />
+          <Route path="/tour" element={<ToursPage />} />
           <Route path="/hotel" element={<HotelsPage />} />
-          <Route path="/restaurant" element={<PlaceholderPage title="Restaurants" icon="utensils" blurb="The best places to eat and drink are coming soon." />} />
+          <Route path="/restaurant" element={<RestaurantSearchPage />} />
           <Route path="/tours/:id" element={<TourDetailPage />} />
+          <Route path="/activity/:id" element={<ActivityDetailPage />} />
           <Route path="/hotels/:id" element={<HotelDetailPage />} />
           <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
           <Route
@@ -53,14 +55,13 @@ function App() {
       <Route path="/register" element={<LoginPage mode="register" />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route
-        path="/admin/*"
+        path="/manager/*"
         element={
           <ProtectedRoute>
-            <AdminDashboard />
+            <ManagerArea />
           </ProtectedRoute>
         }
       />
-      <Route path="/owner/*" element={<OwnerDashboard />} />
       <Route path="/*" element={<PublicLayout />} />
     </Routes>
   );

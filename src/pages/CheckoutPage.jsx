@@ -11,6 +11,9 @@ import ActivityDetailsCard from "../components/checkout/ActivityDetailsCard";
 import PaymentDetailsCard from "../components/checkout/PaymentDetailsCard";
 import BookingSummary from "../components/checkout/BookingSummary";
 import { MOCK_BOOKING, isValidEmail, cardNumberValid, expiryValid, cvcValid, bookingReference, longDate } from "../components/checkout/checkoutData";
+import { ticketBookingService } from "../services/ticketBookingService";
+import { roomBookingService } from "../services/roomBookingService";
+import { paymentService } from "../services/paymentService";
 
 const HOLD_SECONDS = 11 * 60 + 30; // 11:30
 const TIME_OPTIONS = ["4:30 AM", "6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "5:30 PM"];
@@ -24,7 +27,7 @@ export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
-  const { user } = useAuth();
+  const { user, userId } = useAuth();
 
   const [booking, setBooking] = useState(() => ({ ...MOCK_BOOKING, ...(location.state || {}) }));
 
@@ -96,7 +99,7 @@ export default function CheckoutPage() {
     return e;
   };
 
-  const onBook = () => {
+  const onBook = async () => {
     if (expired) { toast.error("Your reservation hold expired. Please start again."); return; }
     const e = validate();
     setErrors(e);
@@ -105,12 +108,54 @@ export default function CheckoutPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+    if (!userId) {
+      toast.error("Please sign in to complete your booking.");
+      navigate("/login", { state: { from: "/checkout" } });
+      return;
+    }
     setSubmitting(true);
-    // Front-end only: simulate a short processing delay, then confirm.
-    setTimeout(() => {
-      setSubmitting(false);
-      setConfirmed({ reference: bookingReference(booking.date) });
-    }, 900);
+    try {
+      const paymentMethod = payMethod === "card" ? "Card" : "CARD";
+      const bookingIds = { roomBookingIds: [], ticketBookingIds: [], foodOrderIds: [], tourBookingIds: [] };
+
+      if (booking.kind === "hotel") {
+        const roomId = Number(booking.roomId) || null;
+        if (!roomId) throw new Error("No room selected.");
+        const room = await roomBookingService.createRoomBooking({
+          userId,
+          roomId,
+          numGuest: Number(booking.guests) || 2,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          paymentMethod,
+        });
+        bookingIds.roomBookingIds.push(room.id);
+      } else {
+        const ticketId = Number(booking.ticketId) || null;
+        if (!ticketId) throw new Error("No ticket selected.");
+        const ticket = await ticketBookingService.createTicketBooking({
+          userId,
+          ticketId,
+          quantity: Number(booking.guests) || 1,
+          visitDate: booking.date,
+          paymentMethod,
+        });
+        bookingIds.ticketBookingIds.push(ticket.id);
+      }
+
+      const payment = await paymentService.processPayment({
+        ...bookingIds,
+        paymentMethod,
+      });
+      if (payment) {
+        setConfirmed({ reference: payment.transactionId || bookingReference(booking.date) });
+      } else {
+        toast.error("The payment was rejected. Please try again.");
+      }
+    } catch (err) {
+      toast.error(err?.message || "Booking couldn't be placed — the backend is unreachable.");
+    }
+    setSubmitting(false);
   };
 
   const applyChange = () => {

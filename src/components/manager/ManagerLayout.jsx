@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
 import { UNIFIED_NAV, UNIFIED_BOTTOM_NAV } from "../../data/managerConfig";
@@ -135,7 +134,6 @@ function GroupItem({ entry, open, collapsed, onToggle, onNavigate }) {
 function Sidebar({ open, collapsed, onClose }) {
   const location = useLocation();
   const { user } = useAuth();
-  const { t } = useTranslation();
   const nav = useMemo(() => navForUser(user), [user]);
   const bottomNav = useMemo(() => bottomNavForUser(user), [user]);
   const [openGroups, setOpenGroups] = useState(() => {
@@ -222,7 +220,7 @@ function Sidebar({ open, collapsed, onClose }) {
             className="mt-2 flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-muted outline-none transition-colors duration-200 hover:bg-brand-50 hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-500/40"
           >
             <Icon name="arrow-up-right" size={18} className="shrink-0" />
-            <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>{t("managerLayout.backToPlatform")}</span>
+            <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>Back to platform</span>
           </Link>
         </div>
       </aside>
@@ -245,14 +243,13 @@ function Header({ onMenu, collapsed, onToggleCollapse }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { t } = useTranslation();
   const title = currentTitle(location.pathname, navForUser(user), bottomNavForUser(user));
 
   return (
     <header className="sticky top-0 z-30 flex items-center gap-2.5 border-b border-line bg-canvas/85 px-4 py-3 backdrop-blur sm:gap-3 sm:px-6">
       <button
         onClick={onMenu}
-        aria-label={t("managerLayout.menuLabel")}
+        aria-label="Menu"
         className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-white text-brand-800 lg:hidden"
       >
         <Icon name="menu" size={20} />
@@ -260,7 +257,7 @@ function Header({ onMenu, collapsed, onToggleCollapse }) {
 
       <button
         onClick={onToggleCollapse}
-        aria-label={collapsed ? t("managerLayout.expandSidebar") : t("managerLayout.collapseSidebar")}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-white text-brand-800 transition-colors hover:bg-brand-50 lg:grid"
       >
         <Icon
@@ -286,12 +283,12 @@ function Header({ onMenu, collapsed, onToggleCollapse }) {
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
         <label className="hidden h-10 w-64 max-w-xs items-center gap-2.5 rounded-xl border border-line bg-white px-3 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/15 lg:flex">
           <Icon name="search" size={17} className="text-muted" />
-          <input placeholder={t("managerLayout.searchPh")} className="w-full bg-transparent text-sm focus:outline-none" />
+          <input placeholder="Search…" className="w-full bg-transparent text-sm focus:outline-none" />
         </label>
         <button className="hidden h-10 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-ink/70 hover:bg-white sm:flex">
           EN <Icon name="chevron-down" size={14} />
         </button>
-        <button aria-label={t("managerLayout.notifications")} className="relative grid h-10 w-10 place-items-center rounded-xl border border-line bg-white text-brand-800 hover:bg-brand-50">
+        <button aria-label="Notifications" className="relative grid h-10 w-10 place-items-center rounded-xl border border-line bg-white text-brand-800 hover:bg-brand-50">
           <Icon name="bell" size={19} />
           <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-gold-400 ring-2 ring-canvas" />
         </button>
@@ -304,7 +301,7 @@ function Header({ onMenu, collapsed, onToggleCollapse }) {
               logout();
               navigate("/login");
             }}
-            aria-label={t("managerLayout.logout")}
+            aria-label="Logout"
             className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-brand-50 hover:text-danger"
           >
             <Icon name="logout" size={18} />

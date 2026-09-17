@@ -7,12 +7,11 @@ import { buildColumns } from "../../../components/manager/columns";
 import { entityMeta } from "../../../data/managerData";
 import { useManager } from "../../../hooks/useManager";
 import { useAuth } from "../../../context/AuthContext";
-import useDashboardData from "../../../hooks/useDashboardData";
 import Icon from "../../../components/ui/Icon";
 import { WORKSPACES } from "../../../data/managerConfig";
 import { DemoNote } from "../../../components/ui/feedback";
 
-const DEFAULT_REVENUE = [
+const revenue = [
   { label: "Jan", value: 38000 },
   { label: "Feb", value: 42000 },
   { label: "Mar", value: 47000 },
@@ -20,8 +19,7 @@ const DEFAULT_REVENUE = [
   { label: "May", value: 49000 },
   { label: "Jun", value: 58000 },
 ];
-
-const DEFAULT_MIX = [
+const mix = [
   { label: "Tours", value: 46, color: "#02462e" },
   { label: "Hotels", value: 33, color: "#fec700" },
   { label: "Restaurants", value: 21, color: "#4f8d70" },
@@ -31,40 +29,23 @@ const SWITCHERS = ["tour", "hotel", "restaurant"];
 
 export default function SuperAdminDashboard() {
   const { user } = useAuth();
-  const { items: bookings, loading: bookingsLoading } = useManager("all-bookings");
-  const { data, loading: dashLoading, refresh } = useDashboardData();
+  const { items: bookings, loading } = useManager("all-bookings");
   const first = (user?.fullname || "there").split(" ")[0];
-
-  const adminStats = data?.superAdminStats || {};
-  const revenue = adminStats.revenueTrend && adminStats.revenueTrend.length
-    ? adminStats.revenueTrend.map((r) => ({ label: r.month, value: r.revenue }))
-    : DEFAULT_REVENUE;
-  const mix = adminStats.mix || DEFAULT_MIX;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-brand-800">Platform Overview</h1>
-          <p className="mt-1 text-sm text-muted">Welcome, {first} — full oversight across every business line.</p>
-        </div>
-        <button
-          onClick={refresh}
-          disabled={dashLoading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-bold text-brand-700 shadow-soft hover:bg-brand-50"
-        >
-          <Icon name="arrow-right" size={13} className={dashLoading ? "animate-spin" : ""} />
-          {dashLoading ? "Syncing API..." : "Sync Live Data"}
-        </button>
+      <div>
+        <h1 className="font-display text-2xl font-bold text-brand-800">Platform Overview</h1>
+        <p className="mt-1 text-sm text-muted">Welcome, {first} — full oversight across every business line.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Total Users" value={Number(adminStats.totalUsers || 4820).toLocaleString()} icon="users" tone="green" delta="+12%" />
-        <StatCard label="Tour Packages" value={String(adminStats.tourPackages || 5)} icon="compass" tone="green" />
-        <StatCard label="Hotels" value={String(adminStats.hotels || 4)} icon="bed" tone="gold" />
-        <StatCard label="Restaurants" value={String(adminStats.restaurants || 4)} icon="utensils" tone="gold" />
-        <StatCard label="Total Bookings" value={Number(adminStats.totalBookings || 1284).toLocaleString()} icon="calendar" tone="green" delta="+9%" />
-        <StatCard label="Total Revenue" value={adminStats.totalRevenue || "$286k"} icon="trending-up" tone="gold" delta="+8%" />
+        <StatCard label="Total Users" value="4,820" icon="users" tone="green" delta="+12%" />
+        <StatCard label="Tour Packages" value="5" icon="compass" tone="green" />
+        <StatCard label="Hotels" value="4" icon="bed" tone="gold" />
+        <StatCard label="Restaurants" value="4" icon="utensils" tone="gold" />
+        <StatCard label="Total Bookings" value="1,284" icon="calendar" tone="green" delta="+9%" />
+        <StatCard label="Total Revenue" value="$286k" icon="trending-up" tone="gold" delta="+8%" />
       </div>
 
       <div>
@@ -93,11 +74,11 @@ export default function SuperAdminDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <ChartCard title="Revenue Overview" subtitle="6-month revenue trend" className="lg:col-span-2">
+        <ChartCard title="Revenue Overview" subtitle="Last 6 months" className="lg:col-span-2">
           <BarChart data={revenue} />
         </ChartCard>
         <ChartCard title="Bookings by Business">
-          <Donut segments={mix} centerValue={Number(adminStats.totalBookings || 1284).toLocaleString()} centerLabel="total" />
+          <Donut segments={mix} centerValue="1,284" centerLabel="total" />
         </ChartCard>
       </div>
 
@@ -108,7 +89,7 @@ export default function SuperAdminDashboard() {
             View all <Icon name="arrow-right" size={15} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
-        <DataTable columns={buildColumns(entityMeta("all-bookings").columns)} rows={bookings.slice(0, 6)} loading={bookingsLoading} searchable={false} />
+        <DataTable columns={buildColumns(entityMeta("all-bookings").columns)} rows={bookings.slice(0, 6)} loading={loading} searchable={false} />
       </div>
 
       <DemoNote />

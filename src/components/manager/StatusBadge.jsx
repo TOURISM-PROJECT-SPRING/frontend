@@ -1,5 +1,3 @@
-import { useTranslation } from "react-i18next";
-
 const MAP = {
   // bookings / orders
   pending: "warning",
@@ -45,10 +43,9 @@ const DOT = {
 };
 
 export default function StatusBadge({ status, dot = true, className = "" }) {
-  const { t } = useTranslation();
   const key = String(status || "").toLowerCase();
   const tone = MAP[key] || "neutral";
-  const label = t(`statuses.${key}`, { defaultValue: status ? String(status).replace(/^\w/, (c) => c.toUpperCase()) : "—" });
+  const label = status ? String(status).replace(/^\w/, (c) => c.toUpperCase()) : "—";
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${TONES[tone]} ${className}`}

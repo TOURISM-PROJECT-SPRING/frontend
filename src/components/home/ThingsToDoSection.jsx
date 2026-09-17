@@ -10,7 +10,7 @@ export default function ThingsToDoSection({ category = "Essentials" }) {
       : thingsToDo.filter((t) => t.tags?.includes(category));
 
   return (
-    <section id="things-to-do">
+    <section id="things-to-do" className="pb-20 pt-2">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>

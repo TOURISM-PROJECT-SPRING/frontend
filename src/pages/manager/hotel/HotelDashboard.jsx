@@ -11,39 +11,43 @@ import { buildColumns } from "../../../components/manager/columns";
 import { entityMeta } from "../../../data/managerData";
 import { useManager } from "../../../hooks/useManager";
 import { useAuth } from "../../../context/AuthContext";
-import useDashboardData from "../../../hooks/useDashboardData";
+import { img } from "../../../data/site";
 import Icon from "../../../components/ui/Icon";
+
+const occupancy = [
+  { label: "Mon", value: 62 },
+  { label: "Tue", value: 70 },
+  { label: "Wed", value: 66 },
+  { label: "Thu", value: 78 },
+  { label: "Fri", value: 90 },
+  { label: "Sat", value: 96 },
+  { label: "Sun", value: 84 },
+];
+
+const hotels = [
+  { id: 1, name: "Sofitel Angkor Phokeethra", meta: "Siem Reap", price: 120, rating: 4.8, image: img("Palm Paradise Pool.jpg", 600) },
+  { id: 2, name: "The Royal Sands", meta: "Sihanoukville", price: 85, rating: 4.6, image: img("Swimming pool and Makuti-thatched villa in Malindi.jpg", 600) },
+  { id: 3, name: "Kampot Riverside Villa", meta: "Kampot", price: 60, rating: 4.7, image: img("Main swimming pool at Paradisus by Meliá Bali.jpg", 600) },
+  { id: 4, name: "Kep Garden Resort", meta: "Kep", price: 55, rating: 4.5, image: img("Negombo Beach resort pool (Unsplash).jpg", 600) },
+];
+
+const availability = [
+  { label: "Available", value: 86, tone: "bg-success" },
+  { label: "Occupied", value: 120, tone: "bg-danger" },
+  { label: "Reserved", value: 24, tone: "bg-warning" },
+  { label: "Maintenance", value: 12, tone: "bg-brand-300" },
+];
 
 export default function HotelDashboard() {
   const { user } = useAuth();
-  const { items: bookings, loading: bookingsLoading } = useManager("hotel-bookings");
-  const { data, loading: dashLoading, refresh } = useDashboardData();
+  const { items: bookings, loading } = useManager("hotel-bookings");
   const first = (user?.fullname || "there").split(" ")[0];
-
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-
-  const hotelStats = data?.hotelStats || {};
-  const occupancy = hotelStats.occupancy || [
-    { label: "Mon", value: 62 },
-    { label: "Tue", value: 70 },
-    { label: "Wed", value: 66 },
-    { label: "Thu", value: 78 },
-    { label: "Fri", value: 90 },
-    { label: "Sat", value: 96 },
-    { label: "Sun", value: 84 },
-  ];
-  const availability = hotelStats.availability || [
-    { label: "Available", value: 86, tone: "bg-success" },
-    { label: "Occupied", value: 120, tone: "bg-danger" },
-    { label: "Reserved", value: 24, tone: "bg-warning" },
-    { label: "Maintenance", value: 12, tone: "bg-brand-300" },
-  ];
-  const hotels = hotelStats.hotels || [];
 
   return (
     <div className="space-y-6">
@@ -53,18 +57,17 @@ export default function HotelDashboard() {
         subtitle="Manage your hotels, room types and reservations — keep occupancy healthy and every stay memorable."
         date={today}
         actions={[
-          { label: dashLoading ? "Refreshing..." : "Refresh Hotels", icon: "arrow-right", onClick: refresh },
           { label: "Add Hotel", icon: "plus", to: "/manager/hotel/hotels" },
           { label: "View Reservations", icon: "calendar", to: "/manager/hotel/bookings" },
         ]}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <StatCard label="Total Hotels" value={String(hotelStats.totalHotels || 4)} icon="bed" tone="green" spark={[2, 3, 3, 4, 4, 4]} className="animate-rise" />
-        <StatCard label="Total Rooms" value={String(hotelStats.totalRooms || 242)} icon="layers" tone="green" spark={[150, 180, 210, 228, 236, 242]} className="animate-rise delay-100" />
-        <StatCard label="Available Rooms" value={String(hotelStats.availableRooms || 86)} icon="check-circle" tone="gold" spark={[64, 70, 74, 80, 83, 86]} className="animate-rise delay-200" />
-        <StatCard label="Upcoming Reservations" value={String(hotelStats.upcomingReservations || 54)} icon="calendar" tone="green" delta="+9%" spark={[31, 36, 42, 47, 51, 54]} className="animate-rise delay-300" />
-        <StatCard label="Monthly Revenue" value={hotelStats.monthlyRevenue || "$32.5k"} icon="trending-up" tone="gold" delta="+6%" spark={[22, 25, 27, 29, 31, 33]} className="animate-rise delay-300" />
+        <StatCard label="Total Hotels" value="4" icon="bed" tone="green" spark={[2, 3, 3, 4, 4, 4]} className="animate-rise" />
+        <StatCard label="Total Rooms" value="242" icon="layers" tone="green" spark={[150, 180, 210, 228, 236, 242]} className="animate-rise delay-100" />
+        <StatCard label="Available Rooms" value="86" icon="check-circle" tone="gold" spark={[64, 70, 74, 80, 83, 86]} className="animate-rise delay-200" />
+        <StatCard label="Upcoming Reservations" value="54" icon="calendar" tone="green" delta="+9%" spark={[31, 36, 42, 47, 51, 54]} className="animate-rise delay-300" />
+        <StatCard label="Monthly Revenue" value="$32.5k" icon="trending-up" tone="gold" delta="+6%" spark={[22, 25, 27, 29, 31, 33]} className="animate-rise delay-300" />
       </div>
 
       <div className="animate-rise delay-100">
@@ -110,7 +113,7 @@ export default function HotelDashboard() {
 
       <div className="animate-rise delay-200">
         <SectionHeader eyebrow="Activity" title="Recent hotel bookings" action="View all" to="/manager/hotel/bookings" />
-        <DataTable columns={buildColumns(entityMeta("hotel-bookings").columns)} rows={bookings.slice(0, 5)} loading={bookingsLoading} searchable={false} />
+        <DataTable columns={buildColumns(entityMeta("hotel-bookings").columns)} rows={bookings.slice(0, 5)} loading={loading} searchable={false} />
       </div>
 
       <div className="animate-rise delay-300">

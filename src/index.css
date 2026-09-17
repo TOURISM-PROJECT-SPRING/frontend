@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
 
-/* Tailwind v4 class-based dark mode */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Light-only brand: neutralise dark variant so nothing can accidentally go dark. */
+@custom-variant dark (&:where(.never-dark, .never-dark *));
 
 @theme {
   /* Brand green — primary */
@@ -28,14 +28,13 @@
   --color-gold-600: #b98a00;
   --color-gold-700: #8f6a00;
 
-  /* Neutrals / surfaces (dynamically resolved) */
-  --color-canvas: var(--color-canvas);
-  --color-cream: var(--color-cream);
-  --color-cream-soft: var(--color-cream-soft);
-  --color-card: var(--color-card);
-  --color-ink: var(--color-ink);
-  --color-muted: var(--color-muted);
-  --color-line: var(--color-line);
+  /* Neutrals / surfaces */
+  --color-canvas: #f8faf8;
+  --color-cream: #fffdf7;
+  --color-cream-soft: #fbf7ee;
+  --color-ink: #14201a;
+  --color-muted: #68736d;
+  --color-line: #e5eae7;
 
   /* Semantic */
   --color-success: #1c8a5a;
@@ -52,63 +51,9 @@
   --shadow-lift: 0 16px 44px rgba(2, 70, 46, 0.16);
 }
 
-:root {
-  --color-canvas: #f8faf8;
-  --color-cream: #fffdf7;
-  --color-cream-soft: #fbf7ee;
-  --color-card: #ffffff;
-  --color-ink: #14201a;
-  --color-muted: #68736d;
-  --color-line: #e5eae7;
-}
-
-.dark {
-  --color-canvas: #09120e;
-  --color-cream: #0f1c16;
-  --color-cream-soft: #0b1510;
-  --color-card: #13241c;
-  --color-ink: #f0f7f3;
-  --color-muted: #8ea398;
-  --color-line: #1d3429;
-
-  --color-brand-800: #e2f2e9;
-  --color-brand-700: #5dbb8f;
-  --color-brand-50: #15291f;
-  --color-brand-100: #1d392b;
-
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.45), 0 10px 25px rgba(0, 0, 0, 0.35);
-  --shadow-lift: 0 16px 44px rgba(0, 0, 0, 0.65);
-}
-
-.dark .bg-white {
-  background-color: var(--color-card) !important;
-}
-.dark .bg-white\/95 {
-  background-color: rgba(19, 36, 28, 0.95) !important;
-}
-.dark .bg-white\/90 {
-  background-color: rgba(19, 36, 28, 0.9) !important;
-}
-.dark .bg-white\/80 {
-  background-color: rgba(19, 36, 28, 0.8) !important;
-}
-.dark .bg-white\/60 {
-  background-color: rgba(19, 36, 28, 0.6) !important;
-}
-
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
-}
-
-html[lang="km"] {
-  line-height: 1.65;
-  --font-display: "Koulen", "Playfair Display", ui-serif, Georgia, serif;
-  --font-sans: "Kantumruy Pro", "Inter", ui-sans-serif, system-ui, sans-serif;
-}
-
-html[lang="km"] .font-display {
-  letter-spacing: 0.015em;
 }
 
 body {

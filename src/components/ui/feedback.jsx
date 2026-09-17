@@ -1,5 +1,4 @@
 import { createPortal } from "react-dom";
-import { useTranslation } from "react-i18next";
 import Icon from "./Icon";
 
 export function Skeleton({ className = "" }) {
@@ -23,8 +22,7 @@ export function CardGridSkeleton({ count = 8, cols = "sm:grid-cols-2 lg:grid-col
   );
 }
 
-export function EmptyState({ title, message, icon = "compass", action }) {
-  const { t } = useTranslation();
+export function EmptyState({ title = "Nothing here yet", message, icon = "compass", action }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-white/60 px-6 py-16 text-center">
       <span className="relative grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-brand-50 to-gold-50 text-brand-600">
@@ -33,9 +31,7 @@ export function EmptyState({ title, message, icon = "compass", action }) {
           <Icon name="plus" size={13} />
         </span>
       </span>
-      <h3 className="mt-5 font-display text-xl font-bold text-brand-800">
-        {title ?? t("common.emptyDefault") ?? "Nothing here yet"}
-      </h3>
+      <h3 className="mt-5 font-display text-xl font-bold text-brand-800">{title}</h3>
       {message && <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{message}</p>}
       {action && <div className="mt-6">{action}</div>}
     </div>
@@ -44,11 +40,10 @@ export function EmptyState({ title, message, icon = "compass", action }) {
 
 // Shown when the backend is unreachable and we're rendering demo data.
 export function DemoNote({ className = "" }) {
-  const { t } = useTranslation();
   return (
     <div className={`inline-flex items-center gap-2 rounded-full border border-gold-300 bg-gold-50 px-3.5 py-1.5 text-xs font-semibold text-gold-700 ${className}`}>
       <Icon name="info" size={14} />
-      {t("common.demoNote")}
+      Showing demo data — start the backend to go live
     </div>
   );
 }

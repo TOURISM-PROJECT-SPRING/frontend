@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Modal } from "../ui/Modal";
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
@@ -15,7 +14,6 @@ function nightsBetween(a, b) {
 }
 
 export default function HotelDetailModal({ hotel, open, onClose, onAdd }) {
-  const { t } = useTranslation();
   const rooms = hotel?.rooms || [];
   const [roomId, setRoomId] = useState("");
   const [checkIn, setCheckIn] = useState("");
@@ -51,7 +49,7 @@ export default function HotelDetailModal({ hotel, open, onClose, onAdd }) {
       <div className="relative overflow-hidden rounded-2xl border border-line">
         <SmartImage src={hotel.image} alt={hotel.title} className="aspect-[16/7] w-full" />
         <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-brand-700 backdrop-blur">
-          {hotel.badge || t("hotelModal.badgeFallback")}
+          {hotel.badge || "Hotel"}
         </span>
       </div>
 
@@ -60,14 +58,14 @@ export default function HotelDetailModal({ hotel, open, onClose, onAdd }) {
           <h2 className="font-display text-2xl font-bold text-brand-800">{hotel.title}</h2>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
             <Icon name="map-pin" size={15} className="text-brand-400" />
-            {hotel.location || hotel.province || t("common.cambodia")}
+            {hotel.location || hotel.province || "Cambodia"}
           </p>
           {hotel.rating != null && <div className="mt-1.5"><Rating value={hotel.rating} size="sm" /></div>}
         </div>
         {hotel.price != null && (
           <div className="text-right">
-            <p className="text-[11px] font-bold uppercase text-muted">{t("common.from")}</p>
-            <p className="font-display text-2xl font-bold text-brand-700">{money(hotel.price)}<span className="text-xs font-medium text-muted">{t("common.perNight")}</span></p>
+            <p className="text-[11px] font-bold uppercase text-muted">From</p>
+            <p className="font-display text-2xl font-bold text-brand-700">{money(hotel.price)}<span className="text-xs font-medium text-muted">/night</span></p>
           </div>
         )}
       </div>
@@ -76,12 +74,12 @@ export default function HotelDetailModal({ hotel, open, onClose, onAdd }) {
 
       <div className="mt-6">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold text-brand-800">
-          <Icon name="bed" size={19} className="text-brand-500" /> {t("hotelModal.selectRoom")}
+          <Icon name="bed" size={19} className="text-brand-500" /> Select a room
         </h3>
 
         {rooms.length === 0 ? (
           <p className="mt-3 rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
-            {t("hotelModal.ratesOnRequest")}
+            Room rates are available when you enquire.
           </p>
         ) : (
           <div className="mt-3 space-y-2.5">
@@ -105,13 +103,13 @@ export default function HotelDetailModal({ hotel, open, onClose, onAdd }) {
                     <div>
                       <p className="text-sm font-bold text-brand-800">{r.roomType}</p>
                       <p className="text-xs text-muted">
-                        {r.capacity ? t("hotelModal.sleeps", { count: r.capacity }) : t("hotelModal.sleepsGuests")}
-                        {r.total != null ? ` · ${t("hotelModal.available", { count: r.total })}` : ""}
+                        {r.capacity ? `Sleeps ${r.capacity}` : "Sleeps guests"}
+                        {r.total != null ? ` · ${r.total} available` : ""}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-brand-700">{money(r.price)}<span className="text-xs font-medium text-muted">{t("common.perNight")}</span></p>
+                    <p className="text-sm font-bold text-brand-700">{money(r.price)}<span className="text-xs font-medium text-muted">/night</span></p>
                   </div>
                 </button>
               );
@@ -123,25 +121,25 @@ export default function HotelDetailModal({ hotel, open, onClose, onAdd }) {
       <div className="mt-6 rounded-2xl border border-gold-300 bg-gold-50 p-5">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold text-brand-800"><Icon name="calendar" size={14} className="text-brand-500" /> {t("hotelModal.checkInLabel")}</span>
+            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold text-brand-800"><Icon name="calendar" size={14} className="text-brand-500" /> Check-in</span>
             <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-white px-3 text-sm outline-none focus:border-brand-400" />
           </label>
           <label className="block">
-            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold text-brand-800"><Icon name="calendar" size={14} className="text-brand-500" /> {t("hotelModal.checkOutLabel")}</span>
+            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold text-brand-800"><Icon name="calendar" size={14} className="text-brand-500" /> Check-out</span>
             <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-white px-3 text-sm outline-none focus:border-brand-400" />
           </label>
           <label className="block">
-            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold text-brand-800"><Icon name="users" size={14} className="text-brand-500" /> {t("hotelModal.guestsLabel")}</span>
+            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold text-brand-800"><Icon name="users" size={14} className="text-brand-500" /> Guests</span>
             <select value={guests} onChange={(e) => setGuests(Number(e.target.value))} className="h-11 w-full rounded-xl border border-line bg-white px-3 text-sm outline-none focus:border-brand-400">
-              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{t("hotelModal.guestOption", { count: n })}</option>)}
+              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n} guest{n > 1 ? "s" : ""}</option>)}
             </select>
           </label>
           <div className="flex items-end justify-between rounded-xl border border-brand-100 bg-white px-3 py-2">
             <div>
-              <p className="text-[11px] font-bold uppercase text-muted">{t("hotelModal.stayTotal")}</p>
+              <p className="text-[11px] font-bold uppercase text-muted">Stay total</p>
               <p className="font-display text-lg font-bold text-brand-800">
                 {room ? `${money(total)}` : "—"}
-                <span className="text-xs font-medium text-muted"> · {t("hotelModal.nightShort", { count: nights })}</span>
+                <span className="text-xs font-medium text-muted"> · {nights} night{nights > 1 ? "s" : ""}</span>
               </p>
             </div>
             {room && <span className="text-xs font-medium text-muted">{room.roomType}</span>}
@@ -154,14 +152,10 @@ export default function HotelDetailModal({ hotel, open, onClose, onAdd }) {
           onClick={handleAdd}
           className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold-400 text-sm font-bold text-brand-900 transition-colors duration-500 ease-out hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Icon name="plus" size={18} /> {t("hotelModal.addToTrip")}{room ? ` · ${money(total)}` : ""}
+          <Icon name="plus" size={18} /> Add hotel to my trip{room ? ` · ${money(total)}` : ""}
         </button>
-        <div className="mt-3 text-[11px] font-medium text-gold-700">
-          <span className="inline-flex items-center gap-1"><Icon name="check-circle" size={13} /> {t("hotelModal.bestPriceNote")}</span>
-          <span className="mx-2 text-gold-300">·</span>
-          <span>{t("hotelModal.taxesNote")}</span>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-gold-700">
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium text-gold-700">
+          <span className="inline-flex items-center gap-1"><Icon name="check-circle" size={13} /> Best-price guarantee</span>
           {hotel.phone && <span className="inline-flex items-center gap-1"><Icon name="phone" size={12} /> {hotel.phone}</span>}
           {hotel.email && <span className="inline-flex items-center gap-1"><Icon name="mail" size={12} /> {hotel.email}</span>}
         </div>

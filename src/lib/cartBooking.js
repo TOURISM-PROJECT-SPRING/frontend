@@ -52,3 +52,25 @@ export function buildRoomBookingPayload(item, userId) {
     paymentMethod: "Card",
   };
 }
+
+export function buildUnifiedPaymentPayload(cart, paymentMethod = "Card") {
+  const items = Array.isArray(cart) ? cart : [cart];
+  const payload = {
+    roomBookingIds: [],
+    ticketBookingIds: [],
+    foodOrderIds: [],
+    tourBookingIds: [],
+    paymentMethod,
+  };
+  for (const item of items) {
+    const kind = item.kind;
+    if (kind === "hotel") {
+      payload.roomBookingIds.push(Number(item.roomBookingId) || Number(item.id) || item.roomBookingId);
+    } else if (kind === "tour") {
+      payload.ticketBookingIds.push(Number(item.ticketBookingId) || Number(item.id) || item.ticketBookingId);
+    } else if (kind === "restaurant") {
+      payload.foodOrderIds.push(Number(item.foodOrderId) || Number(item.id) || item.foodOrderId);
+    }
+  }
+  return payload;
+}

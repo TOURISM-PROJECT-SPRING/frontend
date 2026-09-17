@@ -1,303 +1,453 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
-import LanguageSwitcher from "../ui/LanguageSwitcher";
-import ThemeToggle from "../ui/ThemeToggle";
 import { useAuth } from "../../context/AuthContext";
 import { useFavorites } from "../../context/FavoritesContext";
 
-const PROFILE_MENU = [
-  { key: "trips", label: "My Trips", icon: "luggage", to: "/profile" },
-  { key: "bookings", label: "My Bookings", icon: "calendar", to: "/profile" },
-  { key: "profile", label: "My Profile", icon: "user", to: "/profile" },
+const NAV_LINKS = [
+  { label: "Explore", to: "/", icon: "compass", end: true },
+  { label: "Tours", to: "/tour", icon: "binoculars" },
+  { label: "Hotels", to: "/hotel", icon: "bed" },
+  { label: "Dining", to: "/restaurant", icon: "utensils" },
 ];
 
-// Second-row category tabs. "Cambodia" replaces the old Home link.
-const TABS = [
-  { key: "cambodia", label: "Cambodia", to: "/", icon: "map-pin-house", end: true },
-  { key: "tours", label: "Tour", to: "/tour", icon: "binoculars" },
-  { key: "hotels", label: "Hotel", to: "/hotel", icon: "bed" },
-  { key: "restaurants", label: "Restaurant", to: "/restaurant", icon: "utensils" },
+const TRENDING_SEARCHES = [
+  { text: "Angkor Sunrise Tour", to: "/tour?q=Angkor+Sunrise" },
+  { text: "Siem Reap Luxury Resorts", to: "/hotel?q=Siem+Reap" },
+  { text: "Koh Rong Island Stays", to: "/hotel?q=Koh+Rong" },
+  { text: "Khmer Fine Dining", to: "/restaurant?q=Khmer" },
 ];
 
 export default function Navbar() {
-  const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [mobileSearch, setMobileSearch] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef(null);
+  const searchContainerRef = useRef(null);
+
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, logout, canUseManager: canManager } = useAuth();
   const { count, openFavorites } = useFavorites();
 
-  const isTabActive = (to, end) =>
+  const isLinkActive = (to, end) =>
     end ? location.pathname === to : location.pathname === to || location.pathname.startsWith(to + "/");
 
+  // Track scroll for subtle frosted glass effect
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Close menus on page change
   useEffect(() => {
-    setOpen(false);
+    setMobileMenuOpen(false);
     setProfileOpen(false);
-    setMobileSearch(false);
+    setSearchFocused(false);
   }, [location.pathname]);
 
-  const submitSearch = (e) => {
+  // Global keyboard shortcut (Ctrl+K or Cmd+K) to focus search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchFocused(true);
+      }
+      if (e.key === "Escape") {
+        setSearchFocused(false);
+        setProfileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Handle clicking outside search container
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
     const q = searchQuery.trim();
     navigate(q ? `/tour?q=${encodeURIComponent(q)}` : "/tour");
     setSearchQuery("");
-    setMobileSearch(false);
+    setSearchFocused(false);
   };
 
-  const tabClass = (active) =>
-    `relative inline-flex items-center gap-1.5 px-3 py-3.5 text-sm font-bold transition-colors ${
-      active
-        ? "text-brand-800 dark:text-gold-400"
-        : "text-ink/60 hover:text-brand-700 dark:text-ink/75 dark:hover:text-gold-300"
-    }`;
+  const userInitials = (user?.fullname || user?.username || "SD")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full animate-navbarfly border-b backdrop-blur-lg transition-colors duration-300 ${
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
         scrolled
-          ? "border-line bg-white/85 shadow-[0_4px_20px_rgba(20,32,26,0.08)] dark:bg-[#09120e]/95 dark:border-line"
-          : "border-transparent bg-white/60 dark:bg-[#09120e]/60"
+          ? "border-b border-line/80 bg-white/90 shadow-[0_4px_24px_rgba(2,70,46,0.06)] backdrop-blur-xl"
+          : "border-b border-line/40 bg-white/80 backdrop-blur-md"
       }`}
     >
-      {/* Row 1 — logo, search, actions */}
-      <nav className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Link to="/" aria-label="SovannDomNour home" className="shrink-0">
-          <Logo />
-        </Link>
+      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        
+        {/* ================= LEFT: BRAND LOGO ================= */}
+        <div className="flex items-center gap-6">
+          <Link to="/" aria-label="SovannDomNour Home" className="shrink-0 transition-transform active:scale-95">
+            <Logo />
+          </Link>
 
-        {/* Search pill (desktop) */}
-        <form onSubmit={submitSearch} className="relative ml-1 hidden min-w-0 max-w-md flex-1 md:block">
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
-            <Icon name="search" size={17} />
-          </span>
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tours, hotels, food…"
-            aria-label="Search"
-            className="h-11 w-full rounded-full border border-line bg-white/80 pl-11 pr-4 text-sm font-medium text-ink shadow-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15 dark:bg-card dark:text-ink"
-          />
-        </form>
+          {/* Desktop Nav Links (Segmented Navigation) */}
+          <nav className="hidden lg:flex items-center gap-1 rounded-full border border-line/60 bg-canvas/80 p-1 shadow-2xs backdrop-blur-sm">
+            {NAV_LINKS.map((link) => {
+              const active = isLinkActive(link.to, link.end);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`relative flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-200 ${
+                    active
+                      ? "bg-brand-700 text-white shadow-xs"
+                      : "text-muted hover:text-brand-800 hover:bg-white/70"
+                  }`}
+                >
+                  <Icon
+                    name={link.icon}
+                    size={14}
+                    className={active ? "text-gold-300" : "text-brand-500"}
+                  />
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-        {/* Right actions */}
-        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-          {/* Mobile search toggle */}
+        {/* ================= CENTER: SEARCH BAR ================= */}
+        <div ref={searchContainerRef} className="relative hidden md:block flex-1 max-w-xs lg:max-w-sm">
+          <form onSubmit={handleSearchSubmit} className="relative">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
+              <Icon name="search" size={16} />
+            </span>
+            <input
+              ref={searchInputRef}
+              value={searchQuery}
+              onFocus={() => setSearchFocused(true)}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tours, stays, dining…"
+              className={`h-10 w-full rounded-full border bg-canvas/80 pl-9 pr-14 text-xs font-medium text-ink outline-none transition-all duration-200 ${
+                searchFocused
+                  ? "border-brand-500 bg-white shadow-xs ring-2 ring-brand-500/15"
+                  : "border-line/80 hover:border-brand-300 hover:bg-white"
+              }`}
+            />
+            {/* Keyboard shortcut or clear button */}
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+              >
+                <Icon name="x" size={14} />
+              </button>
+            ) : (
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-line bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-muted shadow-2xs">
+                ⌘K
+              </span>
+            )}
+          </form>
+
+          {/* Search Suggestions Popover */}
+          {searchFocused && (
+            <div className="absolute left-0 right-0 top-12 z-50 animate-scalein rounded-2xl border border-line bg-white/95 p-3 shadow-lift backdrop-blur-xl">
+              <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-muted">Trending in Cambodia</p>
+              <div className="mt-2 space-y-1">
+                {TRENDING_SEARCHES.map((item) => (
+                  <button
+                    key={item.text}
+                    type="button"
+                    onClick={() => {
+                      navigate(item.to);
+                      setSearchFocused(false);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-semibold text-brand-900 transition-colors hover:bg-brand-50"
+                  >
+                    <Icon name="trending-up" size={14} className="text-brand-500 shrink-0" />
+                    <span className="truncate">{item.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ================= RIGHT: ACTIONS & PROFILE ================= */}
+        <div className="flex items-center gap-2">
+          
+          {/* Mobile Search Icon Trigger */}
           <button
             type="button"
-            onClick={() => setMobileSearch((v) => !v)}
+            onClick={() => setMobileMenuOpen(true)}
             aria-label="Search"
-            className={`grid h-10 w-10 place-items-center rounded-full transition-colors md:hidden ${
-              mobileSearch ? "bg-brand-700 text-white" : "text-ink/70 hover:bg-brand-100 hover:text-brand-700"
-            }`}
+            className="grid h-10 w-10 place-items-center rounded-full text-muted transition-colors hover:bg-brand-50 hover:text-brand-800 md:hidden"
           >
-            <Icon name="search" size={19} />
+            <Icon name="search" size={18} />
           </button>
 
-          {/* Favorites / My trips */}
+          {/* Saved Trips / Favorites Button */}
           <button
             type="button"
             onClick={openFavorites}
-            aria-label={`Open My trips, ${count} saved`}
-            className="relative grid h-10 w-10 place-items-center rounded-full text-ink/70 transition-all duration-200 hover:-translate-y-px hover:bg-brand-100 hover:text-brand-700 hover:shadow-sm dark:hover:bg-brand-50/20 dark:hover:text-gold-300"
+            aria-label={`Open Saved Trips (${count})`}
+            className="group relative flex h-10 items-center gap-1.5 rounded-full border border-line/70 bg-white px-3 text-xs font-bold text-brand-800 shadow-2xs transition-all hover:border-brand-300 hover:bg-brand-50/50 hover:shadow-sm active:scale-95"
           >
-            <Icon name="heart" size={19} />
+            <Icon
+              name="heart"
+              size={16}
+              className={`transition-transform group-hover:scale-110 ${
+                count > 0 ? "text-rose-500" : "text-muted"
+              }`}
+              fill={count > 0 ? "currentColor" : "none"}
+            />
+            <span className="hidden sm:inline">Trips</span>
             {count > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-gold-400 px-1 text-[10px] font-bold text-brand-900 ring-2 ring-white">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold-400 px-1 text-[10px] font-black text-brand-950">
                 {count}
               </span>
             )}
           </button>
 
-          {/* Theme Toggle (Light / Dark) */}
-          <div className="hidden sm:block">
-            <ThemeToggle />
-          </div>
-
-          {/* Interactive Language Switcher */}
-          <div className="hidden sm:block">
-            <LanguageSwitcher />
-          </div>
-
+          {/* Authenticated User Menu */}
           {isAuthenticated ? (
-            <div className="relative ml-1 hidden items-center lg:flex">
+            <div className="relative">
               <button
+                type="button"
                 onClick={() => setProfileOpen((v) => !v)}
-                aria-label="Open profile menu"
-                className="grid h-9 w-9 place-items-center rounded-full bg-brand-700 text-xs font-bold text-gold-400 shadow-sm ring-2 ring-white/60 transition-all duration-200 hover:-translate-y-px hover:bg-brand-800 hover:ring-gold-400/60"
+                className="flex items-center gap-2 rounded-full border border-line/80 bg-white p-1 pr-3 shadow-2xs transition-all hover:border-brand-300 hover:shadow-sm active:scale-95"
               >
-                {(user?.fullname || user?.username || "SD").slice(0, 2).toUpperCase()}
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-gold-300 to-amber-500 font-display text-xs font-black text-brand-950 shadow-2xs">
+                  {userInitials}
+                </span>
+                <span className="hidden sm:inline max-w-[100px] truncate text-xs font-bold text-brand-900">
+                  {user?.fullname ? user.fullname.split(" ")[0] : user?.username || "Account"}
+                </span>
+                <Icon
+                  name="chevron-down"
+                  size={14}
+                  className={`text-muted transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                />
               </button>
+
+              {/* Luxury Profile Dropdown */}
               {profileOpen && (
                 <>
-                  <button aria-label="Close profile menu" className="fixed inset-0 z-40 cursor-default" onClick={() => setProfileOpen(false)} />
-                  <div className="absolute right-0 top-12 z-50 w-60 animate-scalein overflow-hidden rounded-2xl border border-line bg-white/95 p-2 shadow-lift backdrop-blur-xl dark:bg-card">
-                    <div className="border-b border-line px-3 py-2.5">
-                      <p className="truncate text-sm font-bold text-brand-800 dark:text-brand-200">{user?.fullname || user?.username || "Traveler"}</p>
-                      <p className="truncate text-xs text-muted">{user?.email || "@" + (user?.username || "traveler")}</p>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setProfileOpen(false)}
+                  />
+                  <div className="absolute right-0 top-12 z-50 w-64 animate-scalein overflow-hidden rounded-2xl border border-line bg-white/95 p-2 shadow-lift backdrop-blur-xl">
+                    {/* User Header */}
+                    <div className="rounded-xl bg-gradient-to-r from-brand-900 to-brand-800 p-3 text-white">
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold-400 font-display text-xs font-black text-brand-950">
+                          {userInitials}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-white">
+                            {user?.fullname || user?.username || "Traveler"}
+                          </p>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gold-300">
+                            <Icon name="badge-check" size={11} /> Gold Explorer
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    {PROFILE_MENU.map((m) => (
-                      <Link key={m.key} to={m.to} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
-                        <Icon name={m.icon} size={18} className="text-brand-500" />
-                        {t(`nav.${m.key}`) || m.label}
-                        <Icon name="chevron-right" size={14} className="ml-auto text-muted/50" />
+
+                    {/* Navigation Items */}
+                    <div className="mt-1 space-y-0.5">
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-brand-900 transition-colors hover:bg-brand-50"
+                      >
+                        <Icon name="user" size={16} className="text-brand-600" />
+                        <span>Profile Details</span>
                       </Link>
-                    ))}
-                    {canManager && (
-                      <Link to="/manager" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
-                        <Icon name="grid" size={18} className="text-gold-600" />
-                        {t("nav.management") || "Management"}
-                        <Icon name="chevron-right" size={14} className="ml-auto text-muted/50" />
+
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-brand-900 transition-colors hover:bg-brand-50"
+                      >
+                        <Icon name="luggage" size={16} className="text-brand-600" />
+                        <span>My Bookings &amp; Vouchers</span>
                       </Link>
-                    )}
-                    <button
-                      onClick={() => { setProfileOpen(false); logout(); navigate("/"); }}
-                      className="mt-1 flex w-full items-center gap-3 rounded-xl border-t border-line px-3 py-2.5 text-sm font-bold text-danger transition-colors hover:bg-danger/10"
-                    >
-                      <Icon name="logout" size={18} />
-                      {t("nav.signOut") || "Sign Out"}
-                    </button>
+
+                      {canManager && (
+                        <Link
+                          to="/manager"
+                          className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-brand-900 transition-colors hover:bg-brand-50"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Icon name="grid" size={16} className="text-gold-600" />
+                            <span>Management Portal</span>
+                          </div>
+                          <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[9px] font-extrabold text-gold-800">
+                            Staff
+                          </span>
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* Sign Out */}
+                    <div className="mt-1 border-t border-line/60 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileOpen(false);
+                          logout();
+                          navigate("/");
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-danger transition-colors hover:bg-red-50"
+                      >
+                        <Icon name="logout" size={16} />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
             </div>
           ) : (
-            <div className="hidden items-center gap-2 lg:flex">
-              <Link to="/login">
-                <span className="inline-flex h-10 items-center rounded-full border border-line bg-white/70 px-4 text-sm font-semibold text-brand-800 transition-all duration-200 hover:-translate-y-px hover:border-brand-300 hover:bg-white hover:shadow-sm dark:bg-card dark:text-ink">
-                  {t("nav.login") || "Login"}
-                </span>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex h-9 items-center rounded-full px-3.5 text-xs font-bold text-brand-800 transition-colors hover:bg-brand-50"
+              >
+                Sign In
               </Link>
-              <Link to="/register">
-                <span className="inline-flex h-10 items-center rounded-full bg-gradient-to-r from-brand-600 to-brand-700 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md">
-                  {t("nav.register") || "Register"}
-                </span>
+              <Link
+                to="/register"
+                className="inline-flex h-9 items-center rounded-full bg-brand-700 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-brand-800 hover:shadow-sm active:scale-95"
+              >
+                Register
               </Link>
             </div>
           )}
 
-          {/* Mobile toggle */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <ThemeToggle />
-            <LanguageSwitcher compact />
-            <button
-              onClick={() => setOpen((v) => !v)}
-              aria-label="Menu"
-              className="grid h-11 w-11 place-items-center rounded-xl border border-line text-brand-800 dark:text-ink"
-            >
-              <Icon name={open ? "x" : "menu"} size={22} />
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile search row */}
-      {mobileSearch && (
-        <div className="border-t border-line/60 px-4 py-3 md:hidden">
-          <form onSubmit={submitSearch} className="relative">
-            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
-              <Icon name="search" size={17} />
-            </span>
-            <input
-              autoFocus
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tours, hotels, food…"
-              className="h-11 w-full rounded-full border border-line bg-white pl-11 pr-4 text-sm font-medium text-ink outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15 dark:bg-card dark:text-ink"
-            />
-          </form>
-        </div>
-      )}
-
-      {/* Row 2 — category sub-nav (desktop) */}
-      <div className="hidden border-t border-line/60 lg:block">
-        <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 sm:px-6 lg:px-8">
-          {TABS.map((tab) => {
-            const active = isTabActive(tab.to, tab.end);
-            return (
-              <Link key={tab.to} to={tab.to} className={tabClass(active)}>
-                <Icon name={tab.icon} size={17} className={active ? "text-brand-700 dark:text-gold-400" : "text-brand-500"} />
-                {t(`nav.${tab.key}`) || tab.label}
-                {active && <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-brand-700 dark:bg-gold-400" />}
-              </Link>
-            );
-          })}
+          {/* Mobile Hamburger Toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label="Toggle menu"
+            className="grid h-10 w-10 place-items-center rounded-full border border-line bg-white text-brand-900 shadow-2xs transition-colors hover:bg-brand-50 lg:hidden"
+          >
+            <Icon name={mobileMenuOpen ? "x" : "menu"} size={19} />
+          </button>
         </div>
       </div>
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="mx-3 mb-3 mt-1 animate-scalein rounded-2xl border border-line/80 bg-white/95 p-3 shadow-lift backdrop-blur-xl sm:mx-4 lg:hidden dark:bg-card">
-          <ul className="flex flex-col">
-            {TABS.map((tab) => {
-              const active = isTabActive(tab.to, tab.end);
+      {/* ================= MOBILE DRAWER / SHEET ================= */}
+      {mobileMenuOpen && (
+        <div className="border-t border-line bg-white/98 p-4 shadow-lift backdrop-blur-xl lg:hidden animate-slidein">
+          {/* Mobile Search */}
+          <form onSubmit={handleSearchSubmit} className="relative mb-4">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
+              <Icon name="search" size={16} />
+            </span>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search Angkor, Siem Reap, stays…"
+              className="h-11 w-full rounded-full border border-line bg-canvas pl-10 pr-4 text-xs font-medium text-ink outline-none focus:border-brand-500 focus:bg-white"
+            />
+          </form>
+
+          {/* Navigation Links */}
+          <div className="space-y-1">
+            {NAV_LINKS.map((link) => {
+              const active = isLinkActive(link.to, link.end);
               return (
-                <li key={tab.to}>
-                  <Link
-                    to={tab.to}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition-colors ${
-                      active ? "bg-brand-700 text-white" : "text-ink/80 hover:bg-brand-50 dark:hover:bg-brand-50/20"
-                    }`}
-                  >
-                    <Icon name={tab.icon} size={18} className={active ? "text-gold-400" : "text-brand-500"} />
-                    {t(`nav.${tab.key}`) || tab.label}
-                    <Icon name="chevron-right" size={18} className="ml-auto text-muted" />
-                  </Link>
-                </li>
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition-colors ${
+                    active
+                      ? "bg-brand-700 text-white"
+                      : "text-brand-900 hover:bg-brand-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      name={link.icon}
+                      size={18}
+                      className={active ? "text-gold-300" : "text-brand-600"}
+                    />
+                    <span>{link.label}</span>
+                  </div>
+                  <Icon name="chevron-right" size={16} className={active ? "text-gold-300" : "text-muted"} />
+                </Link>
               );
             })}
-            <li>
-              <button
-                onClick={() => { setOpen(false); openFavorites(); }}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold text-ink/80 transition-colors hover:bg-brand-50 dark:hover:bg-brand-50/20"
-              >
-                <Icon name="heart" size={18} className="text-brand-500" />
-                {t("nav.myTrips") || "My Trips"} <span className="text-sm">{count > 0 && `(${count})`}</span>
-              </button>
-            </li>
-          </ul>
-          <div className="mt-3 border-t border-line pt-3">
+          </div>
+
+          {/* Divider & Account Links */}
+          <div className="mt-4 border-t border-line/80 pt-4">
             {isAuthenticated ? (
-              <div className="flex flex-col gap-2">
-                <Link to="/profile" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-brand-800 hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
-                  <Icon name="user" size={18} className="text-brand-500" /> {t("nav.profile") || "My Profile"}
+              <div className="space-y-1">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-900 hover:bg-brand-50"
+                >
+                  <Icon name="user" size={16} className="text-brand-600" />
+                  <span>Profile &amp; Bookings</span>
                 </Link>
                 {canManager && (
-                  <Link to="/manager" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-brand-800 hover:bg-brand-50 dark:text-ink dark:hover:bg-brand-50/20">
-                    <Icon name="grid" size={18} className="text-gold-600" /> {t("nav.management") || "Management"}
+                  <Link
+                    to="/manager"
+                    className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-900 hover:bg-brand-50"
+                  >
+                    <Icon name="grid" size={16} className="text-gold-600" />
+                    <span>Management Portal</span>
                   </Link>
                 )}
                 <button
-                  onClick={() => { setOpen(false); logout(); navigate("/"); }}
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-danger hover:bg-danger/10"
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                    navigate("/");
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold text-danger hover:bg-red-50"
                 >
-                  <Icon name="logout" size={18} /> {t("nav.signOut") || "Sign Out"}
+                  <Icon name="logout" size={16} />
+                  <span>Sign Out</span>
                 </button>
               </div>
             ) : (
-              <div className="flex gap-3">
-                <Link to="/login" className="flex-1">
-                  <span className="flex h-11 w-full items-center justify-center rounded-full border border-line bg-white text-sm font-bold text-brand-800 dark:bg-card dark:text-ink">
-                    {t("nav.login") || "Login"}
-                  </span>
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <Link
+                  to="/login"
+                  className="flex h-11 items-center justify-center rounded-xl border border-line bg-white text-xs font-bold text-brand-800"
+                >
+                  Sign In
                 </Link>
-                <Link to="/register" className="flex-1">
-                  <span className="flex h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-brand-600 to-brand-700 text-sm font-bold text-white">
-                    {t("nav.register") || "Register"}
-                  </span>
+                <Link
+                  to="/register"
+                  className="flex h-11 items-center justify-center rounded-xl bg-brand-700 text-xs font-bold text-white shadow-xs"
+                >
+                  Register
                 </Link>
               </div>
             )}
@@ -307,3 +457,4 @@ export default function Navbar() {
     </header>
   );
 }
+

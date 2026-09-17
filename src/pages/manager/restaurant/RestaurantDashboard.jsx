@@ -11,33 +11,36 @@ import { buildColumns } from "../../../components/manager/columns";
 import { entityMeta } from "../../../data/managerData";
 import { useManager } from "../../../hooks/useManager";
 import { useAuth } from "../../../context/AuthContext";
-import useDashboardData from "../../../hooks/useDashboardData";
+import { img } from "../../../data/site";
 import Icon from "../../../components/ui/Icon";
+
+const ordersTrend = [
+  { label: "Mon", value: 42 },
+  { label: "Tue", value: 55 },
+  { label: "Wed", value: 48 },
+  { label: "Thu", value: 63 },
+  { label: "Fri", value: 88 },
+  { label: "Sat", value: 104 },
+  { label: "Sun", value: 76 },
+];
+
+const dishes = [
+  { id: 1, name: "Fish Amok", meta: "Main", price: 6.5, image: img("Amok trey.jpg", 600) },
+  { id: 2, name: "Beef Lok Lak", meta: "Main", price: 7, image: img("Beef Lok Lak.jpg", 600) },
+  { id: 3, name: "Num Banh Chok", meta: "Noodles", price: 3.5, image: img("Num Banh Chok Somlar Kari.jpg", 600) },
+  { id: 4, name: "Nom Koma", meta: "Dessert", price: 2.5, image: img("Chek ktis.jpg", 600) },
+];
 
 export default function RestaurantDashboard() {
   const { user } = useAuth();
-  const { items: orders, loading: ordersLoading } = useManager("food-orders");
-  const { data, loading: dashLoading, refresh } = useDashboardData();
+  const { items: orders, loading } = useManager("food-orders");
   const first = (user?.fullname || "there").split(" ")[0];
-
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-
-  const restaurantStats = data?.restaurantStats || {};
-  const ordersTrend = restaurantStats.ordersTrend || [
-    { label: "Mon", value: 42 },
-    { label: "Tue", value: 55 },
-    { label: "Wed", value: 48 },
-    { label: "Thu", value: 63 },
-    { label: "Fri", value: 88 },
-    { label: "Sat", value: 104 },
-    { label: "Sun", value: 76 },
-  ];
-  const dishes = restaurantStats.dishes || [];
 
   return (
     <div className="space-y-6">
@@ -47,18 +50,17 @@ export default function RestaurantDashboard() {
         subtitle="Manage your menu, orders and restaurant operations — from kitchen board to guest table."
         date={today}
         actions={[
-          { label: dashLoading ? "Refreshing..." : "Refresh Restaurant", icon: "arrow-right", onClick: refresh },
           { label: "Add Food", icon: "plus", to: "/manager/restaurant/foods" },
           { label: "Open Kitchen Board", icon: "grid", to: "/manager/restaurant/kitchen" },
         ]}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <StatCard label="Today's Orders" value={String(restaurantStats.todayOrders || 38)} icon="ticket" tone="green" delta="+14%" spark={[22, 26, 28, 31, 34, 38]} className="animate-rise" />
-        <StatCard label="Pending Orders" value={String(restaurantStats.pendingOrders || 6)} icon="clock" tone="gold" spark={[9, 8, 7, 7, 6, 6]} className="animate-rise delay-100" />
-        <StatCard label="Total Food Items" value={String(restaurantStats.totalFoods || 42)} icon="utensils" tone="green" spark={[30, 34, 36, 38, 40, 42]} className="animate-rise delay-200" />
-        <StatCard label="Active Tables" value={String(restaurantStats.activeTables || 12)} icon="layers" tone="gold" spark={[8, 9, 10, 11, 11, 12]} className="animate-rise delay-300" />
-        <StatCard label="Today's Revenue" value={restaurantStats.todayRevenue || "$1.2k"} icon="trending-up" tone="green" delta="+9%" spark={[0.7, 0.85, 0.9, 1, 1.1, 1.2]} className="animate-rise delay-300" />
+        <StatCard label="Today's Orders" value="38" icon="ticket" tone="green" delta="+14%" spark={[22, 26, 28, 31, 34, 38]} className="animate-rise" />
+        <StatCard label="Pending Orders" value="6" icon="clock" tone="gold" spark={[9, 8, 7, 7, 6, 6]} className="animate-rise delay-100" />
+        <StatCard label="Total Food Items" value="42" icon="utensils" tone="green" spark={[30, 34, 36, 38, 40, 42]} className="animate-rise delay-200" />
+        <StatCard label="Active Tables" value="12" icon="layers" tone="gold" spark={[8, 9, 10, 11, 11, 12]} className="animate-rise delay-300" />
+        <StatCard label="Today's Revenue" value="$1.2k" icon="trending-up" tone="green" delta="+9%" spark={[0.7, 0.85, 0.9, 1, 1.1, 1.2]} className="animate-rise delay-300" />
       </div>
 
       <div className="animate-rise delay-100">
@@ -74,7 +76,7 @@ export default function RestaurantDashboard() {
       </div>
 
       <div className="grid gap-6 animate-rise delay-200 lg:grid-cols-3">
-        <ChartCard title="Orders Overview" subtitle="Orders per day · live trend" className="lg:col-span-2">
+        <ChartCard title="Orders Overview" subtitle="Orders per day · this week" className="lg:col-span-2">
           <BarChart data={ordersTrend} />
         </ChartCard>
         <div className="relative flex flex-col overflow-hidden rounded-2xl bg-brand-800 p-5 text-white shadow-soft">
@@ -94,7 +96,7 @@ export default function RestaurantDashboard() {
 
       <div className="animate-rise delay-200">
         <SectionHeader eyebrow="Activity" title="Recent orders" action="View all" to="/manager/restaurant/orders" />
-        <DataTable columns={buildColumns(entityMeta("food-orders").columns)} rows={orders.slice(0, 5)} loading={ordersLoading} searchable={false} />
+        <DataTable columns={buildColumns(entityMeta("food-orders").columns)} rows={orders.slice(0, 5)} loading={loading} searchable={false} />
       </div>
 
       <div className="animate-rise delay-300">

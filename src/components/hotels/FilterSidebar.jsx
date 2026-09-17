@@ -1,6 +1,6 @@
 import { FilterSection, CheckRow } from "./FilterSection";
 import RatingDots from "./RatingDots";
-import { PROPERTY_TYPES } from "../../data/hotels";
+import { PROPERTY_TYPES, emptyFilters, countActiveFilters } from "../../data/hotels";
 
 const PRICE_MIN = 20;
 const PRICE_MAX = 200;
@@ -8,6 +8,7 @@ const PRICE_MAX = 200;
 // Left filter rail: Popular / Deals / Awards / Property types / Price.
 // Purely controlled — the page owns filter state so chips and drawer share it.
 export default function FilterSidebar({ filters, onPatch }) {
+  const activeCount = countActiveFilters(filters);
   const toggleType = (key) =>
     onPatch({
       types: filters.types.includes(key) ? filters.types.filter((t) => t !== key) : [...filters.types, key],
