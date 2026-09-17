@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Sidebar from "../components/dashboard/Sidebar";
 import Topbar from "../components/dashboard/Topbar";
+import BusinessGuard from "../components/dashboard/BusinessGuard";
 import { OwnerBusinessProvider } from "../context/OwnerBusinessContext";
 
 // Dashboard (overview)
@@ -93,22 +94,99 @@ export default function OwnerDashboard() {
             <Routes>
               <Route index element={<DashboardOverview />} />
 
-              {/* Hotel Routes */}
-              <Route path="properties" element={<OwnerPropertiesPage />} />
-              <Route path="rooms" element={<OwnerRoomsPage />} />
-              <Route path="bookings" element={<OwnerBookingsPage />} />
-              <Route path="pricing" element={<OwnerPricingPage />} />
+              {/* Hotel Routes - Protected by BusinessGuard */}
+              <Route
+                path="properties"
+                element={
+                  <BusinessGuard business="hotel">
+                    <OwnerPropertiesPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="rooms"
+                element={
+                  <BusinessGuard business="hotel">
+                    <OwnerRoomsPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="bookings"
+                element={
+                  <BusinessGuard business="hotel">
+                    <OwnerBookingsPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="pricing"
+                element={
+                  <BusinessGuard business="hotel">
+                    <OwnerPricingPage />
+                  </BusinessGuard>
+                }
+              />
 
-              {/* Restaurant Routes */}
-              <Route path="restaurants" element={<OwnerRestaurantsPage />} />
-              <Route path="menu" element={<OwnerMenuPage />} />
-              <Route path="orders" element={<OwnerOrdersPage />} />
+              {/* Restaurant Routes - Protected by BusinessGuard */}
+              <Route
+                path="restaurants"
+                element={
+                  <BusinessGuard business="restaurant">
+                    <OwnerRestaurantsPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="menu"
+                element={
+                  <BusinessGuard business="restaurant">
+                    <OwnerMenuPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="orders"
+                element={
+                  <BusinessGuard business="restaurant">
+                    <OwnerOrdersPage />
+                  </BusinessGuard>
+                }
+              />
 
-              {/* Tour Routes */}
-              <Route path="tours" element={<OwnerToursPage />} />
-              <Route path="tickets" element={<OwnerTicketsPage />} />
-              <Route path="ticket-bookings" element={<OwnerTicketBookingsPage />} />
-              <Route path="packages" element={<OwnerPackagesPage />} />
+              {/* Tour / Tourists Routes - Protected by BusinessGuard */}
+              <Route
+                path="tours"
+                element={
+                  <BusinessGuard business="tour">
+                    <OwnerToursPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="tickets"
+                element={
+                  <BusinessGuard business="tour">
+                    <OwnerTicketsPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="ticket-bookings"
+                element={
+                  <BusinessGuard business="tour">
+                    <OwnerTicketBookingsPage />
+                  </BusinessGuard>
+                }
+              />
+              <Route
+                path="packages"
+                element={
+                  <BusinessGuard business="tour">
+                    <OwnerPackagesPage />
+                  </BusinessGuard>
+                }
+              />
 
               {/* Shared Marketing & Analytics */}
               <Route path="reviews" element={<OwnerReviewsPage />} />

@@ -11,7 +11,8 @@ export const BUSINESS_TYPES = [
     icon: "Building2",
     color: "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-800",
     badge: "🏨 Hotel",
-    description: "Manage properties, room types, pricing, and guest bookings",
+    tagline: "Properties, Rooms, Reservations & Dynamic Pricing",
+    description: "Manage hotel properties, room categories, night rates, and guest bookings",
   },
   {
     id: "restaurant",
@@ -20,16 +21,133 @@ export const BUSINESS_TYPES = [
     icon: "UtensilsCrossed",
     color: "text-amber-500 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-800",
     badge: "🍽️ Restaurant",
-    description: "Manage restaurants, food menus, dish prices, and food orders",
+    tagline: "Outlets, Menus, Dishes & Live Food Orders",
+    description: "Manage restaurant profiles, food dishes, price menus, and food delivery orders",
   },
   {
     id: "tour",
-    label: "Tours & Experiences",
-    shortLabel: "Tours",
+    label: "Tourists & Tours",
+    shortLabel: "Tourists / Tours",
     icon: "Compass",
     color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-800",
-    badge: "🎫 Tour",
-    description: "Manage tourism places, attraction tickets, and packages",
+    badge: "🎫 Tourist & Tour",
+    tagline: "Destinations, Attraction Tickets & Packages",
+    description: "Manage tourist attractions, entrance tickets, visitor bookings, and tour packages",
+  },
+];
+
+export const TEST_OWNERS = [
+  {
+    id: 101,
+    username: "owner_hotel",
+    password: "owner123",
+    label: "Hotel Owner",
+    fullname: "Sovann Hotel Owner",
+    email: "owner.hotel@smart-tourism.com",
+    badge: "🏨 Hotel Owner",
+    assignedBusinesses: ["hotel"],
+    redirect: "/owner",
+    description: "Owns Hotel & Stays. Restaurant and Tourists are LOCKED.",
+  },
+  {
+    id: 102,
+    username: "owner_restaurant",
+    password: "owner123",
+    label: "Restaurant Owner",
+    fullname: "Chann Restaurant Owner",
+    email: "owner.restaurant@smart-tourism.com",
+    badge: "🍽️ Restaurant Owner",
+    assignedBusinesses: ["restaurant"],
+    redirect: "/owner",
+    description: "Owns Restaurant & Dining. Hotel and Tourists are LOCKED.",
+  },
+  {
+    id: 103,
+    username: "owner_tour",
+    password: "owner123",
+    label: "Tourists Owner",
+    fullname: "Bopha Tour Owner",
+    email: "owner.tour@smart-tourism.com",
+    badge: "🎫 Tourists Owner",
+    assignedBusinesses: ["tour"],
+    redirect: "/owner",
+    description: "Owns Tourists & Attractions. Hotel and Restaurant are LOCKED.",
+  },
+];
+
+export const TEST_ALL_ROLES = [
+  {
+    id: 1,
+    username: "admin",
+    password: "admin123",
+    label: "Admin",
+    fullname: "System Administrator",
+    email: "admin@smart-tourism.com",
+    role: "ADMIN",
+    roles: ["ADMIN"],
+    badge: "👑 Admin",
+    type: "admin",
+    redirect: "/admin",
+    description: "System Administrator with full management & verification privileges.",
+  },
+  {
+    id: 201,
+    username: "customer",
+    password: "customer123",
+    label: "Customer / Tourist",
+    fullname: "Dara Customer",
+    email: "customer@smart-tourism.com",
+    role: "TOURIST",
+    roles: ["TOURIST"],
+    badge: "🎒 Customer / Tourist",
+    type: "customer",
+    redirect: "/",
+    description: "Customer / Tourist booking hotels, attraction tickets, and food.",
+  },
+  {
+    id: 101,
+    username: "owner_hotel",
+    password: "owner123",
+    label: "Hotel Owner",
+    fullname: "Sovann Hotel Owner",
+    email: "owner.hotel@smart-tourism.com",
+    role: "OWNER",
+    roles: ["OWNER"],
+    badge: "🏨 Hotel Owner",
+    type: "owner",
+    assignedBusinesses: ["hotel"],
+    redirect: "/owner",
+    description: "Hotel Stays active. Restaurant & Tourists modules LOCKED.",
+  },
+  {
+    id: 102,
+    username: "owner_restaurant",
+    password: "owner123",
+    label: "Restaurant Owner",
+    fullname: "Chann Restaurant Owner",
+    email: "owner.restaurant@smart-tourism.com",
+    role: "OWNER",
+    roles: ["OWNER"],
+    badge: "🍽️ Dining Owner",
+    type: "owner",
+    assignedBusinesses: ["restaurant"],
+    redirect: "/owner",
+    description: "Restaurant Dining active. Hotel & Tourists modules LOCKED.",
+  },
+  {
+    id: 103,
+    username: "owner_tour",
+    password: "owner123",
+    label: "Tourists Owner",
+    fullname: "Bopha Tour Owner",
+    email: "owner.tour@smart-tourism.com",
+    role: "OWNER",
+    roles: ["OWNER"],
+    badge: "🎫 Tour Owner",
+    type: "owner",
+    assignedBusinesses: ["tour"],
+    redirect: "/owner",
+    description: "Tourists & Tours active. Hotel & Restaurant modules LOCKED.",
   },
 ];
 
@@ -37,40 +155,51 @@ const OwnerBusinessContext = createContext(null);
 
 export function OwnerBusinessProvider({ children }) {
   const { user } = useAuth();
-  const userId = user?.id || "guest";
+  const userId = user?.id || user?.username || "guest";
   const storageKey = `${OWNER_BIZ_KEY_PREFIX}${userId}`;
 
-  const [businessTypes, setBusinessTypesState] = useState(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
+  const resolveBusinessesForUser = useCallback((currentUser) => {
+    if (!currentUser) return ["hotel"];
+    const uname = (currentUser.username || "").toLowerCase();
+
+    // 1. Direct username mapping for the 3 test owner types
+    if (uname === "owner_restaurant") {
+      return ["restaurant"];
+    }
+    if (uname === "owner_tour" || uname === "owner_tourist") {
+      return ["tour"];
+    }
+    if (uname === "owner_hotel" || uname === "owner") {
+      return ["hotel"];
+    }
+
+    // 2. User assignedBusinesses array if explicitly present
+    if (Array.isArray(currentUser.assignedBusinesses) && currentUser.assignedBusinesses.length > 0) {
+      return currentUser.assignedBusinesses;
+    }
+
+    // 3. Stored in localStorage
+    const saved = localStorage.getItem(`${OWNER_BIZ_KEY_PREFIX}${currentUser.id || uname}`);
+    if (saved) {
+      try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    // Default to hotel, or if role specifies
-    return ["hotel"];
-  });
+      } catch {}
+    }
 
+    // Default fallback
+    return ["hotel"];
+  }, []);
+
+  const [businessTypes, setBusinessTypesState] = useState(() => resolveBusinessesForUser(user));
   const [activeBusinessView, setActiveBusinessView] = useState("all");
 
-  // Reload when user changes
+  // Re-evaluate when user changes
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setBusinessTypesState(parsed);
-          return;
-        }
-      }
-    } catch {}
-    // default
-    setBusinessTypesState(["hotel"]);
-  }, [storageKey]);
+    setBusinessTypesState(resolveBusinessesForUser(user));
+  }, [user, resolveBusinessesForUser]);
 
-  const saveTypes = useCallback(
+  const setAssignedBusinesses = useCallback(
     (types) => {
       const valid = types.filter((t) => ["hotel", "restaurant", "tour"].includes(t));
       const finalTypes = valid.length > 0 ? valid : ["hotel"];
@@ -84,44 +213,74 @@ export function OwnerBusinessProvider({ children }) {
     [storageKey]
   );
 
-  const toggleBusinessType = useCallback(
+  // Expose global helper for browser console testing
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.__setOwnerBusinesses = (types) => {
+        setAssignedBusinesses(types);
+        console.log("Simulated assigned businesses:", types);
+      };
+    }
+  }, [setAssignedBusinesses]);
+
+  const isBusinessLocked = useCallback(
     (typeId) => {
-      setBusinessTypesState((prev) => {
-        let updated;
-        if (prev.includes(typeId)) {
-          // Do not allow deselecting all businesses
-          if (prev.length === 1) return prev;
-          updated = prev.filter((t) => t !== typeId);
-        } else {
-          updated = [...prev, typeId];
-        }
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
+      return !businessTypes.includes(typeId);
     },
-    [storageKey]
+    [businessTypes]
   );
 
   const hasHotel = businessTypes.includes("hotel");
   const hasRestaurant = businessTypes.includes("restaurant");
   const hasTour = businessTypes.includes("tour");
   const isMultiBusiness = businessTypes.length > 1;
+  const isAllUnlocked = businessTypes.length === 3;
+  const activeCount = businessTypes.length;
+  const lockedCount = 3 - activeCount;
+
+  // Find which test owner profile matches currently
+  const currentTestOwner =
+    TEST_OWNERS.find(
+      (o) =>
+        o.username === user?.username ||
+        (user?.username === "owner" && o.username === "owner_hotel")
+    ) || {
+      username: user?.username || "owner",
+      fullname: user?.fullname || "Business Owner",
+      badge: hasHotel
+        ? "🏨 Hotel Owner"
+        : hasRestaurant
+        ? "🍽️ Restaurant Owner"
+        : "🎫 Tourists Owner",
+      assignedBusinesses: businessTypes,
+    };
+
+  const statusSummary =
+    activeCount === 3
+      ? "All 3 Businesses Active"
+      : activeCount === 2
+      ? "2 Active • 1 Locked"
+      : "1 Active • 2 Locked";
 
   return (
     <OwnerBusinessContext.Provider
       value={{
         businessTypes,
-        setBusinessTypes: saveTypes,
-        toggleBusinessType,
+        setAssignedBusinesses,
+        isBusinessLocked,
         hasHotel,
         hasRestaurant,
         hasTour,
         isMultiBusiness,
+        isAllUnlocked,
+        activeCount,
+        lockedCount,
+        statusSummary,
         activeBusinessView,
         setActiveBusinessView,
         BUSINESS_TYPES,
+        TEST_OWNERS,
+        currentTestOwner,
       }}
     >
       {children}

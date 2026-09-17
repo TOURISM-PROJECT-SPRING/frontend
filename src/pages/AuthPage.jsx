@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { TEST_OWNERS, TEST_ALL_ROLES } from "../context/OwnerBusinessContext";
 import {
   Mail,
   Lock,
@@ -17,6 +18,7 @@ import {
   X,
   ShieldCheck,
   Building2,
+  UtensilsCrossed,
   Compass,
 } from "lucide-react";
 
@@ -28,7 +30,7 @@ const features = [
 
 export default function AuthPage({ initialMode = "login" }) {
   const { t } = useTranslation();
-  const { login, register } = useAuth();
+  const { login, register, switchTestAccount } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState(initialMode);
   const [showPassword, setShowPassword] = useState(false);
@@ -139,6 +141,27 @@ export default function AuthPage({ initialMode = "login" }) {
         });
         redirectByUserRole(res?.user);
       } catch (err) {
+        // Fallback for all demo test accounts (Admin, Customer, and 3 Owners)
+        const uname = loginForm.usernameOrEmail.trim().toLowerCase();
+        const testMatch = TEST_ALL_ROLES.find(
+          (o) =>
+            o.username === uname ||
+            (uname === "owner" && o.username === "owner_hotel") ||
+            (uname === "tourist" && o.username === "customer")
+        );
+        if (
+          testMatch &&
+          (loginForm.password === testMatch.password ||
+            loginForm.password === "password123" ||
+            loginForm.password === "owner123" ||
+            loginForm.password === "admin123" ||
+            loginForm.password === "customer123" ||
+            loginForm.password === "tourist123")
+        ) {
+          const userObj = switchTestAccount(testMatch);
+          redirectByUserRole(userObj);
+          return;
+        }
         setFormError(getApiError(err));
       } finally {
         setLoading(false);
@@ -187,6 +210,20 @@ export default function AuthPage({ initialMode = "login" }) {
     }));
     setFormError("");
     setErrors({});
+  };
+
+  const handleQuickLogin = (username, password) => {
+    fillDemoAccount(username, password);
+    const testMatch = TEST_ALL_ROLES.find(
+      (o) =>
+        o.username === username ||
+        (username === "owner" && o.username === "owner_hotel") ||
+        (username === "tourist" && o.username === "customer")
+    );
+    if (testMatch) {
+      const userObj = switchTestAccount(testMatch);
+      redirectByUserRole(userObj);
+    }
   };
 
   const switchMode = (m) => {
@@ -305,44 +342,162 @@ export default function AuthPage({ initialMode = "login" }) {
           {/* ===== LOGIN ===== */}
           {mode === "login" && (
             <form onSubmit={handleLogin} className="space-y-4 animate-fade-in-up">
-              {/* Demo Account Quick Pills */}
-              <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 rounded-xl">
-                <div className="text-[11px] font-semibold text-amber-900 dark:text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Quick Demo Accounts
+              {/* Comprehensive Test Accounts Panel */}
+              <div className="p-4 bg-[#edf5f0]/90 dark:bg-gray-900 border border-[#1b3b2b]/25 dark:border-emerald-800/40 rounded-2xl space-y-3.5 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-bold text-[#1b3b2b] dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#1b3b2b] dark:text-emerald-400" />
+                    <span>Testing Accounts & Roles</span>
+                  </div>
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Click to fill credentials</span>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => fillDemoAccount("admin", "admin123")}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-white dark:bg-gray-900 border border-amber-200/80 dark:border-amber-900/60 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition text-center"
-                  >
-                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-red-500" /> Admin
+
+                {/* Section 1: Platform Roles (Admin & Customer) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Platform Roles:
                     </span>
-                    <span className="text-[10px] text-gray-400">admin / admin123</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillDemoAccount("owner", "owner123")}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-white dark:bg-gray-900 border border-amber-200/80 dark:border-amber-900/60 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition text-center"
-                  >
-                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1">
-                      <Building2 className="w-3 h-3 text-primary" /> Owner
-                    </span>
-                    <span className="text-[10px] text-gray-400">owner / owner123</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillDemoAccount("tourist", "tourist123")}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-white dark:bg-gray-900 border border-amber-200/80 dark:border-amber-900/60 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition text-center"
-                  >
-                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1">
-                      <Compass className="w-3 h-3 text-emerald-500" /> Tourist
-                    </span>
-                    <span className="text-[10px] text-gray-400">tourist / tourist123</span>
-                  </button>
+                    <span className="text-[10px] text-gray-400">Admin & Public</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Admin Test Button */}
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("admin", "admin123")}
+                      className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
+                        loginForm.usernameOrEmail === "admin"
+                          ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-xs font-bold"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#1b3b2b]/40 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-lg">👑</span>
+                        <div className="leading-tight truncate">
+                          <p className="text-xs font-bold">Admin</p>
+                          <p className={`text-[10px] ${loginForm.usernameOrEmail === "admin" ? "text-white/80" : "text-gray-400"}`}>
+                            admin123
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                        loginForm.usernameOrEmail === "admin"
+                          ? "bg-[#f4b938] text-gray-950 font-black"
+                          : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                      }`}>
+                        /admin
+                      </span>
+                    </button>
+
+                    {/* Customer / Tourist Test Button */}
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("customer", "customer123")}
+                      className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
+                        loginForm.usernameOrEmail === "customer" || loginForm.usernameOrEmail === "tourist"
+                          ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-xs font-bold"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#1b3b2b]/40 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-lg">🎒</span>
+                        <div className="leading-tight truncate">
+                          <p className="text-xs font-bold">Customer</p>
+                          <p className={`text-[10px] ${loginForm.usernameOrEmail === "customer" || loginForm.usernameOrEmail === "tourist" ? "text-white/80" : "text-gray-400"}`}>
+                            customer123
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                        loginForm.usernameOrEmail === "customer" || loginForm.usernameOrEmail === "tourist"
+                          ? "bg-[#f4b938] text-gray-950 font-black"
+                          : "bg-[#edf5f0] text-[#1b3b2b] dark:bg-[#16291e] dark:text-emerald-300 border border-[#1b3b2b]/20"
+                      }`}>
+                        Public
+                      </span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Section 2: Business Owners (3 Verticals) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Business Owners (3 Verticals):
+                    </span>
+                    <span className="text-[10px] text-gray-400">Owner Portal</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("owner_hotel", "owner123")}
+                      className={`p-2 rounded-xl border text-center transition flex flex-col items-center justify-center cursor-pointer ${
+                        loginForm.usernameOrEmail === "owner_hotel" || loginForm.usernameOrEmail === "owner"
+                          ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-xs font-bold"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#1b3b2b]/40 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">
+                        🏨 Hotel
+                      </span>
+                      <span className={`text-[10px] ${loginForm.usernameOrEmail === "owner_hotel" ? "text-white/80" : "text-gray-400"}`}>
+                        owner_hotel
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("owner_restaurant", "owner123")}
+                      className={`p-2 rounded-xl border text-center transition flex flex-col items-center justify-center cursor-pointer ${
+                        loginForm.usernameOrEmail === "owner_restaurant"
+                          ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-xs font-bold"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#1b3b2b]/40 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">
+                        🍽️ Dining
+                      </span>
+                      <span className={`text-[10px] ${loginForm.usernameOrEmail === "owner_restaurant" ? "text-white/80" : "text-gray-400"}`}>
+                        owner_restaurant
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("owner_tour", "owner123")}
+                      className={`p-2 rounded-xl border text-center transition flex flex-col items-center justify-center cursor-pointer ${
+                        loginForm.usernameOrEmail === "owner_tour"
+                          ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-xs font-bold"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#1b3b2b]/40 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      <span className="text-xs font-bold flex items-center gap-1">
+                        🎫 Tours
+                      </span>
+                      <span className={`text-[10px] ${loginForm.usernameOrEmail === "owner_tour" ? "text-white/80" : "text-gray-400"}`}>
+                        owner_tour
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Instant 1-Click Login Action */}
+                {loginForm.usernameOrEmail && (
+                  <div className="pt-2 border-t border-[#1b3b2b]/15 dark:border-emerald-800/30 flex items-center justify-between">
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                      Ready to test as <strong className="text-[#1b3b2b] dark:text-emerald-300 font-bold">{loginForm.usernameOrEmail}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickLogin(loginForm.usernameOrEmail, loginForm.password)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#1b3b2b] hover:bg-[#12281e] text-white transition cursor-pointer shadow-2xs"
+                    >
+                      Instant Sign In ⚡
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Username or Email */}

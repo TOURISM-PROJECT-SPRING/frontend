@@ -129,9 +129,9 @@ function computeDashboard([roomBookings, ticketBookings, foodOrders, tourPlaces,
     }));
 
   const bookingsByType = [
-    { name: "Hotel Rooms", value: rb.length, color: "#3b82f6" },
-    { name: "Tickets", value: tb.length, color: "#22c55e" },
-    { name: "Food Orders", value: fo.length, color: "#f59e0b" },
+    { name: "Hotel Rooms", value: rb.length, color: "#1b3b2b" },
+    { name: "Tickets", value: tb.length, color: "#f4b938" },
+    { name: "Food Orders", value: fo.length, color: "#2d6a4f" },
   ].filter((x) => x.value > 0);
   const totalChannel = bookingsByType.reduce((sum, x) => sum + x.value, 0);
 
