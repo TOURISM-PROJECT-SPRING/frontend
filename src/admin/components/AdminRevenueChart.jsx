@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../hooks/useDashboardData";
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null;

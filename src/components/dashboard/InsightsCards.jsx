@@ -1,5 +1,5 @@
 import { TrendingUp, BedDouble, MapPin, UtensilsCrossed } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../../admin/hooks/useDashboardData";
 
 export default function InsightsCards() {
   const { data } = useDashboardData();

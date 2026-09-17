@@ -1,5 +1,5 @@
 import { BedDouble, Ticket, UtensilsCrossed } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../hooks/useDashboardData";
 
 const typeConfig = {
   Room: { icon: BedDouble, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10" },

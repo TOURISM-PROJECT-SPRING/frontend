@@ -1,5 +1,5 @@
 import { DollarSign, BedDouble, Star, TrendingUp } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../hooks/useDashboardData";
 
 const money = (v) =>
   `$${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;

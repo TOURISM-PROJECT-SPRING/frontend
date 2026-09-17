@@ -41,6 +41,13 @@ export function pickImage(list, seed) {
   return list[Math.abs(Number(seed) || 0) % list.length];
 }
 
+export function withTimeout(promise, ms = 10000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms)),
+  ]);
+}
+
 export function primaryPlaceImage(place, fallback = TRAVEL_IMAGES[0]) {
   const images = place?.placeImages;
   const primary = images?.find((i) => i.isPrimary);

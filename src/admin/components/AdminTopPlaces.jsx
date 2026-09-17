@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, MapPin, Star, Ticket } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../hooks/useDashboardData";
 
 const rankColors = {
   1: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400",

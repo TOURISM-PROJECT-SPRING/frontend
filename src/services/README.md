@@ -20,12 +20,14 @@ One service per backend controller — see `src/api/README.md` for the full cove
 - `ticketService.js` - Tickets (available, by-place, price range)
 - `ticketBookingService.js` - Ticket bookings (cancel, mark-used, verify QR, ETicket PDF download)
 - `paymentService.js` - Payments (initiate, callbacks)
+- `profileService.js` - Admin profile read (`GET /management/users/{id}`) + password change (`POST /auth/change-password`)
 - `imageService.js` - File upload to Cloudinary
 - `userAttachmentService.js` - User attachments (profile/cover images)
 - `hotelAttachmentService.js` - Hotel attachments
 - `roomAttachmentService.js` - Room attachments
 - `foodAttachmentService.js` - Food attachments
 - `restaurantAttachmentService.js` - Restaurant attachments
+- `settingsService.js` - Admin settings persistence (localStorage; backend endpoint TBD)
 
 Notes:
 

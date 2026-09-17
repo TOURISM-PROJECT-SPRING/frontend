@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ChevronDown } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../../admin/hooks/useDashboardData";
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null;

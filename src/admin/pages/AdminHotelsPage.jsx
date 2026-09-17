@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import { Search, Plus, MapPin, Eye, Edit3, Trash2 } from "lucide-react";
+import { Search, Plus, MapPin, Eye, Edit3, Trash2, Loader2 } from "lucide-react";
 import { hotelService } from "../../services/hotelService";
 import { hotelAttachmentService } from "../../services/hotelAttachmentService";
 import { districtService } from "../../services/districtService";
 import { useAuth } from "../../context/AuthContext";
-import AdminImageField from "../../components/admin/AdminImageField";
-import { HOTEL_IMAGES, pickImage } from "../../utils/helpers";
+import AdminImageField from "../components/AdminImageField";
+import { HOTEL_IMAGES, pickImage, withTimeout } from "../../utils/helpers";
+import { useToast } from "../../components/ui/Toast";
 
 export default function AdminHotelsPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -18,19 +20,23 @@ export default function AdminHotelsPage() {
   const [imageFile, setImageFile] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [hotelData, districtData] = await Promise.all([
+        const [hotelData, districtData] = await withTimeout(Promise.all([
           hotelService.getAllHotelsWithImages(),
           districtService.getAllDistricts(),
-        ]);
+        ]));
         setHotels(hotelData);
         setDistricts(districtData);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching hotels:", error);
+        setFetchError(true);
         setLoading(false);
       }
     };
@@ -45,6 +51,7 @@ export default function AdminHotelsPage() {
   });
 
   const handleSave = async (data) => {
+    setSaving(true);
     try {
       const payload = {
         hotelName: data.hotelName,
@@ -72,23 +79,41 @@ export default function AdminHotelsPage() {
       setFormOpen(false);
       setEditItem(null);
       setImageFile(null);
+      toast.success(editItem ? "Hotel updated" : "Hotel created");
     } catch (error) {
       console.error("Error saving hotel:", error);
+      toast.error("Failed to save hotel");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
+    setDeleting(true);
     try {
       await hotelService.deleteHotel(deleteTarget.id);
       setHotels((prev) => prev.filter((h) => h.id !== deleteTarget.id));
       setDeleteTarget(null);
+      toast.success("Hotel deleted");
     } catch (error) {
       console.error("Error deleting hotel:", error);
+      toast.error("Failed to delete hotel");
+    } finally {
+      setDeleting(false);
     }
   };
 
   if (loading) {
     return <div className="p-12 text-center text-sm text-gray-400">Loading hotels from server...</div>;
+  }
+
+  if (fetchError && hotels.length === 0) {
+    return (
+      <div className="p-12 text-center space-y-4">
+        <p className="text-sm text-red-500">Could not load hotels from the server.</p>
+        <button onClick={() => window.location.reload()} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">Retry</button>
+      </div>
+    );
   }
 
   return (
@@ -146,8 +171,8 @@ export default function AdminHotelsPage() {
 
       {viewTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewTarget(null)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade" onClick={() => setViewTarget(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scalein">
             {viewTarget.imageUrl && <img src={viewTarget.imageUrl} alt={viewTarget.hotelName} className="w-full h-48 object-cover" />}
             <div className="p-6">
               <div className="flex items-center justify-between mb-2">
@@ -170,8 +195,8 @@ export default function AdminHotelsPage() {
 
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scalein">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editItem ? "Edit Hotel" : "Add Hotel"}</h2>
               <button onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
@@ -205,7 +230,7 @@ export default function AdminHotelsPage() {
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); setImageFile(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">{editItem ? "Save Changes" : "Add Hotel"}</button>
+                <button type="submit" disabled={saving} className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editItem ? "Save Changes" : "Add Hotel"}</button>
               </div>
             </form>
           </div>
@@ -214,14 +239,14 @@ export default function AdminHotelsPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade" onClick={() => setDeleteTarget(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center animate-scalein">
             <div className="flex items-center justify-center w-12 h-12 bg-red-50 rounded-full mx-auto mb-4"><Trash2 className="w-6 h-6 text-red-500" /></div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Hotel</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Are you sure you want to delete <strong>{deleteTarget.hotelName}</strong>? This cannot be undone.</p>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-              <button onClick={handleDelete} className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition">Delete</button>
+              <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">{deleting && <Loader2 className="w-4 h-4 animate-spin" />}Delete</button>
             </div>
           </div>
         </div>

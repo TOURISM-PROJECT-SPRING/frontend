@@ -1,5 +1,5 @@
 import { CalendarCheck, DollarSign, BedDouble, Star, TrendingUp, Building2 } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../../admin/hooks/useDashboardData";
 
 export default function KPICards() {
   const { data, loading } = useDashboardData();

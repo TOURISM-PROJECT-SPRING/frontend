@@ -9,6 +9,14 @@ export const managementService = {
     const response = await axiosClient.get(`/management/users/${id}`);
     return response.data;
   },
+  updateUser: async (id, data) => {
+    const response = await axiosClient.put(`/management/users/${id}`, data);
+    return response.data;
+  },
+  deleteUser: async (id) => {
+    const response = await axiosClient.delete(`/management/users/${id}`);
+    return response.data;
+  },
   getOwners: async () => {
     const response = await axiosClient.get('/management/owners');
     return response.data;

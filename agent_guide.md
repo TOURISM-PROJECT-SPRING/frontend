@@ -102,10 +102,8 @@ tourism-frontend/
 │   │   ├── LoginPage.jsx           # User login
 │   │   ├── RegisterPage.jsx        # User registration
 │   │   ├── NotFoundPage.jsx        # 404 page
-│   │   ├── admin/                  # Admin route entry points
-│   │   │   └── AdminLayout.jsx     # ProtectedRoute + AdminLayout wrapper
-│   │   └── owner/                  # Owner route entry points
-│   │       └── OwnerLayout.jsx     # ProtectedRoute + OwnerLayout wrapper
+│   │   └── owner/                  # Owner route entry point
+│   │       └── OwnerDashboardPage.jsx # Owner dashboard shell
 │   │
 │   ├── services/                   # Business logic layer (calls api/, used by components)
 │   │   ├── destinationService.js   # Destination business logic
@@ -129,59 +127,46 @@ tourism-frontend/
 │   │   └── helpers.js              # General utilities
 │   │
 │   ├── admin/                      # ===== ADMIN DASHBOARD MODULE =====
-│   │   ├── components/
-│   │   │   ├── layout/             # AdminSidebar, AdminHeader, AdminLayout
-│   │   │   ├── common/             # StatusBadge, AdminCard, SearchInput, EmptyState
-│   │   │   ├── charts/             # StatsChart, BookingChart, RevenueChart
-│   │   │   ├── tables/             # DataTable, TablePagination, TableFilters
-│   │   │   ├── forms/              # DestinationForm, CategoryForm, UserForm
-│   │   │   ├── modals/             # ConfirmModal, DetailModal, ImageUploadModal
-│   │   │   └── dashboard/          # StatCard, RecentBookings, PopularDestinations
-│   │   ├── pages/
-│   │   │   ├── DashboardPage.jsx   # Overview stats, charts, recent activity
-│   │   │   ├── DestinationsPage.jsx # CRUD all destinations
-│   │   │   ├── BookingsPage.jsx    # View/manage all bookings
-│   │   │   ├── UsersPage.jsx       # View/manage all users
-│   │   │   ├── CategoriesPage.jsx  # CRUD categories
-│   │   │   ├── ReviewsPage.jsx     # Moderate reviews
-│   │   │   ├── SettingsPage.jsx    # Site settings
-│   │   │   └── LoginPage.jsx       # Admin login
+│   │   ├── AdminDashboard.jsx      # Shell: sidebar + topbar + nested routes
+│   │   ├── index.js                # Barrel export
+│   │   ├── components/             # Admin-prefixed components
+│   │   │   ├── AdminSidebar.jsx        # Collapsible navigation
+│   │   │   ├── AdminTopbar.jsx         # Search, notifications, profile dropdown
+│   │   │   ├── AdminKPICards.jsx       # KPI stat cards
+│   │   │   ├── AdminBookingsChart.jsx  # Bookings-by-type/weekday chart
+│   │   │   ├── AdminRevenueChart.jsx   # Revenue-by-month chart
+│   │   │   ├── AdminRecentBookings.jsx # Latest bookings
+│   │   │   ├── AdminRecentActivities.jsx
+│   │   │   ├── AdminTopPlaces.jsx      # Most-booked tourist places
+│   │   │   ├── AdminSystemStats.jsx    # System-wide counters
+│   │   │   └── AdminImageField.jsx     # Image upload input
 │   │   ├── hooks/
-│   │   │   ├── useAdminAuth.js     # Admin auth logic
-│   │   │   └── useDataTable.js     # Table sorting, filtering, pagination
-│   │   ├── utils/
-│   │   │   └── adminHelpers.js     # Admin-specific helpers
-│   │   └── data/
-│   │       └── mockStats.js        # Mock dashboard data
+│   │   │   └── useDashboardData.js     # Aggregates dashboard KPIs (2-min cache)
+│   │   └── pages/                  # Admin route pages (eager, nested routes)
+│   │       ├── AdminUsersPage.jsx       # Users list + detail modal
+│   │       ├── AdminOwnersPage.jsx      # Owners / businesses
+│   │       ├── AdminPlacesPage.jsx      # CRUD tourist places
+│   │       ├── AdminHotelsPage.jsx      # CRUD hotels
+│   │       ├── AdminRoomsPage.jsx       # CRUD rooms
+│   │       ├── AdminTicketsPage.jsx     # CRUD tickets
+│   │       ├── AdminRestaurantsPage.jsx # CRUD restaurants
+│   │       ├── AdminFoodOrdersPage.jsx  # Food orders
+│   │       ├── AdminPackagesPage.jsx    # Tour packages
+│   │       ├── AdminBookingsPage.jsx    # Bookings by type
+│   │       ├── AdminPaymentsPage.jsx    # Payments
+│   │       ├── AdminReviewsPage.jsx     # Moderate reviews
+│   │       ├── AdminPromotionsPage.jsx  # Promotions
+│   │       ├── AdminNotificationsPage.jsx
+│   │       ├── AdminContactMessagesPage.jsx
+│   │       ├── AdminReportsPage.jsx     # KPIs & revenue breakdown
+│   │       ├── AdminLogsPage.jsx        # System logs
+│   │       ├── AdminSettingsPage.jsx    # Site settings (settingsService)
+│   │       ├── AdminProfilePage.jsx     # Profile + password (profileService)
+│   │       ├── AdminPlaceholderPage.jsx # "Under construction" fallback
+│   │       └── AdminNotFoundPage.jsx    # 404 fallback for /admin/*
 │   │
-│   └── owner/                      # ===== OWNER DASHBOARD MODULE =====
-│       ├── components/
-│       │   ├── layout/             # OwnerSidebar, OwnerHeader, OwnerLayout
-│       │   ├── common/             # OwnerCard, StatusBadge, DateRangePicker, EmptyState
-│       │   ├── charts/             # EarningsChart, BookingTrendChart, OccupancyChart
-│       │   ├── tables/             # BookingTable, PackageTable, CustomerTable
-│       │   ├── forms/              # PackageForm, PricingForm, ScheduleForm
-│       │   ├── modals/             # ConfirmModal, BookingDetailModal, PayoutModal
-│       │   └── overview/           # EarningsSummary, UpcomingBookings, QuickActions
-│       ├── pages/
-│       │   ├── OverviewPage.jsx    # Dashboard with earnings, bookings, occupancy stats
-│       │   ├── MyPackagesPage.jsx  # Manage own tour packages
-│       │   ├── PackageDetailPage.jsx # Single package detail/edit
-│       │   ├── BookingsPage.jsx    # Bookings for owner's packages
-│       │   ├── BookingDetailPage.jsx # Single booking details
-│       │   ├── CustomersPage.jsx   # Customers who booked owner's packages
-│       │   ├── EarningsPage.jsx    # Revenue breakdown & payout history
-│       │   ├── SchedulePage.jsx    # Manage package availability & capacity
-│       │   ├── ReviewsPage.jsx     # View & respond to reviews
-│       │   └── ProfilePage.jsx     # Owner profile & business settings
-│       ├── hooks/
-│       │   ├── useOwnerAuth.js     # Owner auth logic
-│       │   ├── useOwnerStats.js    # Fetch owner dashboard stats
-│       │   └── useOwnerBookings.js # Booking list with filters
-│       ├── utils/
-│       │   └── ownerHelpers.js     # Earnings calc, date range helpers
-│       └── data/
-│           └── mockOwnerData.js    # Mock data for development
+│   └── owner/                      # ===== OWNER DASHBOARD =====
+│       └── (OwnerDashboardPage in src/pages/owner/)
 │
 ├── dist/                           # Production build output
 └── .gitignore
@@ -223,20 +208,28 @@ exception/
 
 ## Current State
 
-**Directory structure is ready.** All folders are created with README guides, but no implementation yet:
+The app is substantially built. Public pages, auth, layout, the admin dashboard, and API/services layers are implemented:
 
 | Area | Status |
 |---|---|
-| Folder structure | ✅ Complete — all directories created |
-| Documentation | ✅ Complete — each folder has README.md |
-| Custom components | ❌ 0 — only default Vite template |
-| Pages/routes | ❌ 0 — `react-router-dom` not installed |
-| API calls | ❌ 0 — no HTTP client installed |
-| State management | ❌ 0 — Redux/Context empty |
-| Layout components | ❌ 0 — Navbar, Footer not created |
-| Admin dashboard | ❌ 0 — folder structure ready, no components |
-| Owner dashboard | ❌ 0 — folder structure ready, no components |
-| Backend | ❌ 0 controllers, 0 entities, 0 services |
+| Folder structure | ✅ Complete |
+| Documentation | ✅ Complete — READMEs updated to match code |
+| Routing | ✅ `react-router-dom` v7 with public + `/admin/*` routes |
+| API client | ✅ Axios instance with token interceptor (`src/api/axiosClient.js`) |
+| State management | ✅ React Context (`AuthContext`) + hooks (no Redux) |
+| Layout components | ✅ Navbar, Footer, ProtectedRoute |
+| Admin dashboard | ✅ Full module in `src/admin/` — 20+ pages, shell, charts, RBAC |
+| Owner dashboard | 🟡 Minimal — `OwnerDashboardPage` in `src/pages/owner/` |
+| Backend | ✅ companion Spring Boot API in `../spring_boot_project_api/` |
+
+Admin dashboard specifics:
+- Shell + layout: `src/admin/AdminDashboard.jsx`, `AdminSidebar`, `AdminTopbar`
+- Dashboard KPIs/charts via `src/admin/hooks/useDashboardData.js` (2-min in-memory cache)
+- Full CRUD for places, hotels, rooms, tickets, restaurants (with image upload)
+- Read/list for users, owners, payments, promotions, notifications, reviews, packages, food orders, logs
+- Settings persist via `src/services/settingsService.js` (localStorage; backend endpoint TBD)
+- Profile reads `GET /management/users/:id`, password via `POST /auth/change-password`
+- Unknown `/admin/*` paths fall back to `AdminNotFoundPage`
 
 ## What Needs to Be Built
 
@@ -267,9 +260,11 @@ exception/
 
 ### Phase 5 — Admin Dashboard
 
-14. **Build admin layout**: AdminSidebar, AdminHeader, AdminLayout
-15. **Create admin pages**: Dashboard, Destinations CRUD, Bookings, Users, Categories
-16. **Add admin components**: DataTable, Charts, Forms, Modals
+14. **Admin module** ✅ Done — `src/admin/` with `AdminDashboard.jsx` shell, `AdminSidebar`, `AdminTopbar`
+15. **Admin pages** ✅ Done — Dashboard, Users, Owners, Places, Hotels, Rooms, Tickets, Restaurants, Food Orders, Packages, Bookings, Payments, Reviews, Promotions, Notifications, Contact Messages, Reports, Logs, Profile, Settings
+16. **Admin components** ✅ Done — KPI cards, charts, tables (inline), forms, modals, 404 fallback
+
+Remaining admin work: backend CRUD endpoints for users/promotions/notifications (currently read-only), a backend settings persistence endpoint, and a real Help Center page.
 
 ### Phase 6 — Owner Dashboard
 

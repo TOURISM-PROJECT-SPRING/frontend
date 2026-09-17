@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { roomBookingService } from "../services/roomBookingService";
-import { ticketBookingService } from "../services/ticketBookingService";
-import { orderService } from "../services/orderService";
-import { tourPlaceService } from "../services/tourPlaceService";
-import { hotelService } from "../services/hotelService";
-import { roomService } from "../services/roomService";
-import { restaurantService } from "../services/restaurantService";
-import { ticketService } from "../services/ticketService";
-import { foodService } from "../services/foodService";
+import { roomBookingService } from "../../services/roomBookingService";
+import { ticketBookingService } from "../../services/ticketBookingService";
+import { orderService } from "../../services/orderService";
+import { tourPlaceService } from "../../services/tourPlaceService";
+import { hotelService } from "../../services/hotelService";
+import { roomService } from "../../services/roomService";
+import { restaurantService } from "../../services/restaurantService";
+import { ticketService } from "../../services/ticketService";
+import { foodService } from "../../services/foodService";
 
 let sharedPromise = null;
 let sharedData = null;

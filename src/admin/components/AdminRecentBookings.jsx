@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../hooks/useDashboardData";
 
 const statusStyle = {
   CONFIRMED: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400",

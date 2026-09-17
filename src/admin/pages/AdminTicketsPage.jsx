@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Search, Plus, Eye, Edit3, Trash2 } from "lucide-react";
+import { Search, Plus, Eye, Edit3, Trash2, Loader2 } from "lucide-react";
 import { ticketService } from "../../services/ticketService";
 import { tourPlaceService } from "../../services/tourPlaceService";
-import { formatPrice } from "../../utils/helpers";
+import { formatPrice, withTimeout } from "../../utils/helpers";
+import { useToast } from "../../components/ui/Toast";
 
 const availableColors = {
   Available: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400",
@@ -12,6 +13,7 @@ const availableColors = {
 const availLabel = (t) => (t.isAvailable ? "Available" : "Sold Out");
 
 export default function AdminTicketsPage() {
+  const toast = useToast();
   const [tickets, setTickets] = useState([]);
   const [tourPlaces, setTourPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,19 +23,23 @@ export default function AdminTicketsPage() {
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ticketData, placeData] = await Promise.all([
+        const [ticketData, placeData] = await withTimeout(Promise.all([
           ticketService.getAllTickets(),
           tourPlaceService.getAllTourPlaces(),
-        ]);
+        ]));
         setTickets(ticketData);
         setTourPlaces(placeData);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching tickets:", error);
+        setFetchError(true);
         setLoading(false);
       }
     };
@@ -49,6 +55,7 @@ export default function AdminTicketsPage() {
   });
 
   const handleSave = async (data) => {
+    setSaving(true);
     try {
       const payload = {
         name: data.name,
@@ -66,23 +73,41 @@ export default function AdminTicketsPage() {
       }
       setFormOpen(false);
       setEditItem(null);
+      toast.success(editItem ? "Ticket updated" : "Ticket created");
     } catch (error) {
       console.error("Error saving ticket:", error);
+      toast.error("Failed to save ticket");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
+    setDeleting(true);
     try {
       await ticketService.deleteTicket(deleteTarget.id);
       setTickets((prev) => prev.filter((t) => t.id !== deleteTarget.id));
       setDeleteTarget(null);
+      toast.success("Ticket deleted");
     } catch (error) {
       console.error("Error deleting ticket:", error);
+      toast.error("Failed to delete ticket");
+    } finally {
+      setDeleting(false);
     }
   };
 
   if (loading) {
     return <div className="p-12 text-center text-sm text-gray-400">Loading tickets from server...</div>;
+  }
+
+  if (fetchError && tickets.length === 0) {
+    return (
+      <div className="p-12 text-center space-y-4">
+        <p className="text-sm text-red-500">Could not load tickets from the server.</p>
+        <button onClick={() => window.location.reload()} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">Retry</button>
+      </div>
+    );
   }
 
   return (
@@ -148,8 +173,8 @@ export default function AdminTicketsPage() {
 
       {viewTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewTarget(null)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade" onClick={() => setViewTarget(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scalein">
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Ticket Details</h3>
               <button onClick={() => setViewTarget(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
@@ -173,8 +198,8 @@ export default function AdminTicketsPage() {
 
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setFormOpen(false); setEditItem(null); }} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade" onClick={() => { setFormOpen(false); setEditItem(null); }} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scalein">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{editItem ? "Edit Ticket" : "Add Ticket"}</h2>
               <button onClick={() => { setFormOpen(false); setEditItem(null); }} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-400">&times;</button>
@@ -210,7 +235,7 @@ export default function AdminTicketsPage() {
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <button type="button" onClick={() => { setFormOpen(false); setEditItem(null); }} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition">{editItem ? "Save Changes" : "Add Ticket"}</button>
+                <button type="submit" disabled={saving} className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{editItem ? "Save Changes" : "Add Ticket"}</button>
               </div>
             </form>
           </div>
@@ -219,14 +244,14 @@ export default function AdminTicketsPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade" onClick={() => setDeleteTarget(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center animate-scalein">
             <div className="flex items-center justify-center w-12 h-12 bg-red-50 rounded-full mx-auto mb-4"><Trash2 className="w-6 h-6 text-red-500" /></div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Ticket</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Are you sure you want to delete <strong>{deleteTarget.name}</strong>? This cannot be undone.</p>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-              <button onClick={handleDelete} className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition">Delete</button>
+              <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">{deleting && <Loader2 className="w-4 h-4 animate-spin" />}Delete</button>
             </div>
           </div>
         </div>

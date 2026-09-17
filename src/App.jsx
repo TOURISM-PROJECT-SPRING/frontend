@@ -15,7 +15,7 @@ import DestinationsPage from "./pages/DestinationsPage";
 import DestinationDetailPage from "./pages/DestinationDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import ManagerArea from "./pages/manager/ManagerArea";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./admin/AdminDashboard";
 
 function PublicLayout() {
   return (
@@ -73,5 +73,5 @@ function App() {
     </Routes>
   );
 }
-
+ 
 export default App;

@@ -1,5 +1,5 @@
 import { MapPin, Building2, CalendarCheck, UtensilsCrossed, Ticket as TicketIcon } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../hooks/useDashboardData";
 
 export default function AdminSystemStats() {
   const { data } = useDashboardData();

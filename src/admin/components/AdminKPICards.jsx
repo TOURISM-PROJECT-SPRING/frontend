@@ -1,5 +1,5 @@
 import { MapPin, Building2, BedDouble, CalendarCheck, Wallet, UtensilsCrossed, TrendingUp } from "lucide-react";
-import useDashboardData from "../../hooks/useDashboardData";
+import useDashboardData from "../hooks/useDashboardData";
 
 export default function AdminKPICards() {
   const { data } = useDashboardData();

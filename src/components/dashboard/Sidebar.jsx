@@ -71,7 +71,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         </div>
         {!collapsed && (
           <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">
-            Smart Tourism
+            SovannDomNour
           </span>
         )}
       </div>

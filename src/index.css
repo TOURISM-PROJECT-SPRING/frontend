@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* Light-only brand: neutralise dark variant so nothing can accidentally go dark. */
-@custom-variant dark (&:where(.never-dark, .never-dark *));
+/* Dark variant only activates inside the admin shell (.admin-dark); the public site stays light-only. */
+@custom-variant dark (&:where(.admin-dark, .admin-dark *));
 
 @theme {
   /* Brand green — primary */
@@ -37,6 +37,7 @@
 
   /* Semantic */
   --color-primary: #1c5a40;
+  --color-primary-dark: #013724;
   --color-success: #1c8a5a;
   --color-warning: #d98a00;
   --color-danger: #d1483b;
@@ -92,6 +93,54 @@ body {
   }
 }
 
+/* Smooth admin theme crossfade (View Transitions API) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 400ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(root) {
+  animation-name: theme-fade-out;
+}
+::view-transition-new(root) {
+  animation-name: theme-fade-in;
+}
+@keyframes theme-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes theme-fade-out {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+
+/* Fallback for browsers without view transitions: force a unified color tween */
+.theme-transition,
+.theme-transition * {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 400ms !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Admin dark mode: keep form text readable on dark fields */
+.admin-dark input:not([type="checkbox"]):not([type="radio"]),
+.admin-dark select,
+.admin-dark textarea {
+  color: #f3f4f6;
+  caret-color: #f3f4f6;
+}
+.admin-dark input::placeholder,
+.admin-dark select::placeholder,
+.admin-dark textarea::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+/* Admin dark mode: brighten brand-green text for contrast */
+.admin-dark .text-primary {
+  color: var(--color-brand-300);
+}
+
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -131,13 +180,43 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-left {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.08); }
+}
+
 .animate-rise { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-fade { animation: fade 0.9s ease both; }
 .animate-slowzoom { animation: slowzoom 24s ease-in-out infinite alternate; }
 .animate-scalein { animation: scalein 0.28s ease-out both; }
+.animate-scale-in { animation: scalein 0.28s ease-out both; }
+.animate-fade-in-up { animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slide-down { animation: slide-down 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slide-right { animation: slide-right 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slide-left { animation: slide-left 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
 
+.delay-75 { animation-delay: 75ms; }
 .delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
 .delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
 .delay-300 { animation-delay: 300ms; }
 .delay-500 { animation-delay: 500ms; }
 

@@ -1,37 +1,39 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { Routes, Route } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
-import AdminSidebar from "../components/admin/AdminSidebar";
-import AdminTopbar from "../components/admin/AdminTopbar";
-import AdminKPICards from "../components/admin/AdminKPICards";
-import AdminBookingsChart from "../components/admin/AdminBookingsChart";
-import AdminRevenueChart from "../components/admin/AdminRevenueChart";
-import AdminRecentBookings from "../components/admin/AdminRecentBookings";
-import AdminTopPlaces from "../components/admin/AdminTopPlaces";
-import AdminSystemStats from "../components/admin/AdminSystemStats";
-import AdminRecentActivities from "../components/admin/AdminRecentActivities";
+import AdminSidebar from "./components/AdminSidebar";
+import AdminTopbar from "./components/AdminTopbar";
+import AdminKPICards from "./components/AdminKPICards";
+import AdminBookingsChart from "./components/AdminBookingsChart";
+import AdminRevenueChart from "./components/AdminRevenueChart";
+import AdminRecentBookings from "./components/AdminRecentBookings";
+import AdminTopPlaces from "./components/AdminTopPlaces";
+import AdminSystemStats from "./components/AdminSystemStats";
+import AdminRecentActivities from "./components/AdminRecentActivities";
 
-import AdminUsersPage from "./admin/AdminUsersPage";
-import AdminOwnersPage from "./admin/AdminOwnersPage";
-import AdminPlaceholderPage from "./admin/AdminPlaceholderPage";
-import useDashboardData from "../hooks/useDashboardData";
-import AdminPlacesPage from "./admin/AdminPlacesPage";
-import AdminHotelsPage from "./admin/AdminHotelsPage";
-import AdminRoomsPage from "./admin/AdminRoomsPage";
-import AdminTicketsPage from "./admin/AdminTicketsPage";
-import AdminRestaurantsPage from "./admin/AdminRestaurantsPage";
-import AdminFoodOrdersPage from "./admin/AdminFoodOrdersPage";
-import AdminPackagesPage from "./admin/AdminPackagesPage";
-import AdminBookingsPage from "./admin/AdminBookingsPage";
-import AdminPaymentsPage from "./admin/AdminPaymentsPage";
-import AdminReviewsPage from "./admin/AdminReviewsPage";
-import AdminPromotionsPage from "./admin/AdminPromotionsPage";
-import AdminNotificationsPage from "./admin/AdminNotificationsPage";
-import AdminReportsPage from "./admin/AdminReportsPage";
-import AdminLogsPage from "./admin/AdminLogsPage";
-import AdminSettingsPage from "./admin/AdminSettingsPage";
-import AdminProfilePage from "./admin/AdminProfilePage";
-import AdminContactMessagesPage from "./admin/AdminContactMessagesPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminOwnersPage from "./pages/AdminOwnersPage";
+import AdminPlaceholderPage from "./pages/AdminPlaceholderPage";
+import AdminNotFoundPage from "./pages/AdminNotFoundPage";
+import useDashboardData from "./hooks/useDashboardData";
+import AdminPlacesPage from "./pages/AdminPlacesPage";
+import AdminHotelsPage from "./pages/AdminHotelsPage";
+import AdminRoomsPage from "./pages/AdminRoomsPage";
+import AdminTicketsPage from "./pages/AdminTicketsPage";
+import AdminRestaurantsPage from "./pages/AdminRestaurantsPage";
+import AdminFoodOrdersPage from "./pages/AdminFoodOrdersPage";
+import AdminPackagesPage from "./pages/AdminPackagesPage";
+import AdminBookingsPage from "./pages/AdminBookingsPage";
+import AdminPaymentsPage from "./pages/AdminPaymentsPage";
+import AdminReviewsPage from "./pages/AdminReviewsPage";
+import AdminPromotionsPage from "./pages/AdminPromotionsPage";
+import AdminNotificationsPage from "./pages/AdminNotificationsPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
+import AdminLogsPage from "./pages/AdminLogsPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
+import AdminProfilePage from "./pages/AdminProfilePage";
+import AdminContactMessagesPage from "./pages/AdminContactMessagesPage";
 
 function AdminOverview() {
   const { error } = useDashboardData();
@@ -74,9 +76,45 @@ function AdminOverview() {
 
 export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem("tourism_admin_theme") === "dark";
+    } catch {
+      return false;
+    }
+  });
+  const [themeTween, setThemeTween] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("tourism_admin_theme", isDarkMode ? "dark" : "light");
+    } catch {
+      /* ignore */
+    }
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    if (!themeTween) return;
+    const t = setTimeout(() => setThemeTween(false), 450);
+    return () => clearTimeout(t);
+  }, [themeTween]);
+
+  const toggleDarkMode = () => {
+    const apply = () => {
+      flushSync(() => {
+        setIsDarkMode((prev) => !prev);
+        setThemeTween(true);
+      });
+    };
+    if (typeof document !== "undefined" && document.startViewTransition) {
+      document.startViewTransition(apply);
+    } else {
+      apply();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 flex ${isDarkMode ? "admin-dark" : ""} ${themeTween ? "theme-transition" : ""}`}>
       <AdminSidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -87,7 +125,10 @@ export default function AdminDashboard() {
           sidebarCollapsed ? "ml-[72px]" : "ml-64"
         }`}
       >
-        <AdminTopbar />
+        <AdminTopbar
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={toggleDarkMode}
+        />
 
         <main className="flex-1 p-5 overflow-y-auto">
           <Routes>
@@ -112,6 +153,7 @@ export default function AdminDashboard() {
             <Route path="logs" element={<AdminLogsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="profile" element={<AdminProfilePage />} />
+            <Route path="*" element={<AdminNotFoundPage />} />
           </Routes>
         </main>
       </div>

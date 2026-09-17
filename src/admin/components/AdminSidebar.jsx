@@ -79,7 +79,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
         </div>
         {!collapsed && (
           <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">
-            Smart Tourism Admin Panel
+            SovannDomNour Admin Panel
           </span>
         )}
       </div>
