@@ -1,20 +1,54 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* Light-only brand: neutralise dark variant so nothing can accidentally go dark. */
+@custom-variant dark (&:where(.never-dark, .never-dark *));
 
 @theme {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #3b82f6;
-  --color-secondary: #f59e0b;
-  --color-accent: #10b981;
-  --color-surface: #ffffff;
-  --color-surface-dark: #0f172a;
-  --color-surface-secondary: #f8fafc;
-  --color-surface-secondary-dark: #1e293b;
-  --color-border: #e2e8f0;
-  --color-border-dark: #334155;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Brand green — primary */
+  --color-brand-50: #eef5f1;
+  --color-brand-100: #d6e7dd;
+  --color-brand-200: #aecfbf;
+  --color-brand-300: #7fb099;
+  --color-brand-400: #4f8d70;
+  --color-brand-500: #2f6d51;
+  --color-brand-600: #1c5a40;
+  --color-brand-700: #02462e;
+  --color-brand-800: #013724;
+  --color-brand-900: #012a1c;
+  --color-brand-950: #00150e;
+
+  /* Khmer gold — accent */
+  --color-gold-50: #fffbe6;
+  --color-gold-100: #fff3bf;
+  --color-gold-200: #ffe885;
+  --color-gold-300: #ffd94a;
+  --color-gold-400: #fec700;
+  --color-gold-500: #e0ac00;
+  --color-gold-600: #b98a00;
+  --color-gold-700: #8f6a00;
+
+  /* Neutrals / surfaces */
+  --color-canvas: #f8faf8;
+  --color-cream: #fffdf7;
+  --color-cream-soft: #fbf7ee;
+  --color-ink: #14201a;
+  --color-muted: #68736d;
+  --color-line: #e5eae7;
+
+  /* Semantic */
+  --color-success: #1c8a5a;
+  --color-warning: #d98a00;
+  --color-danger: #d1483b;
+  --color-info: #2f6d9e;
+
+  --font-display: "DM Sans", "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-sans: "DM Sans", "Kantumruy Pro", "Noto Sans Khmer", system-ui, sans-serif;
+  /* Force Khmer type on a specific element: className="font-khmer" */
+  --font-khmer: "Kantumruy Pro", "Noto Serif Khmer", "Noto Sans Khmer", sans-serif;
+
+  --shadow-soft: 0 1px 2px rgba(20, 32, 26, 0.04), 0 10px 30px rgba(20, 32, 26, 0.06);
+  --shadow-lift: 0 16px 44px rgba(2, 70, 46, 0.16);
 }
 
 html {
@@ -22,38 +56,15 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-html.dark {
-  color-scheme: dark;
-}
-
-html.dark body {
-  background-color: var(--color-gray-950);
-  color: var(--color-gray-200);
-}
-
-/* Smooth color transitions */
-*,
-*::before,
-*::after {
-  transition-property: background-color, border-color, color, box-shadow, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0s;
-  }
-}
-
 body {
   margin: 0;
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -63,17 +74,42 @@ body {
   min-height: 100vh;
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+/* Khmer subscripts (coeng) stack below the baseline and get clipped by the
+   tight utility leading used elsewhere — give Khmer copy room to breathe.
+   .font-khmer is declared here (not just as a --font-* token) because Tailwind
+   v4 tree-shakes utilities that no component uses yet. */
+.font-khmer {
+  font-family: var(--font-khmer);
+  line-height: 1.9;
+}
+
+[lang="km"] {
+  line-height: 1.9;
+}
+
+*,
+*::before,
+*::after {
+  /* Only animate color-ish properties globally. transform/opacity are left to
+     explicit Tailwind transitions so hover lift + image zoom stay crisp and
+     don't compound with a universal transform tween. */
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-duration: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s;
+    animation-duration: 0s !important;
+  }
 }
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -85,56 +121,58 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
-/* Animations */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
+/* Page-load reveal */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes fadeIn {
+@keyframes fade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(16px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes slowzoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.12); }
 }
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-16px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
+@keyframes scalein {
+  from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
+@keyframes navbarfly {
+  from { opacity: 0; transform: translateY(-100%); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes slidein {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
-.animate-fade-in-up { animation: fadeInUp 0.4s ease-out both; }
-.animate-fade-in { animation: fadeIn 0.3s ease-out both; }
-.animate-slide-right { animation: slideInRight 0.4s ease-out both; }
-.animate-slide-left { animation: slideInLeft 0.3s ease-out both; }
-.animate-scale-in { animation: scaleIn 0.25s ease-out both; }
-.animate-slide-down { animation: slideDown 0.3s ease-out both; }
-.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
-.animate-count-up { animation: countUp 0.5s ease-out both; }
+.animate-rise { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* Spring landing; no fill-mode so the end transform (translateY(0)) isn't kept,
+   which would break position:fixed overlays inside the navbar. */
+.animate-navbarfly { animation: navbarfly 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-fade { animation: fade 0.9s ease both; }
+.animate-slowzoom { animation: slowzoom 24s ease-in-out infinite alternate; }
+.animate-scalein { animation: scalein 0.28s ease-out both; }
+.animate-slidein { animation: slidein 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-.delay-75 { animation-delay: 75ms; }
 .delay-100 { animation-delay: 100ms; }
-.delay-150 { animation-delay: 150ms; }
 .delay-200 { animation-delay: 200ms; }
-.delay-250 { animation-delay: 250ms; }
 .delay-300 { animation-delay: 300ms; }
-.delay-350 { animation-delay: 350ms; }
-.delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
+
+/* Subtle Khmer-inspired geometric motif (behind CTA / cultural bands) */
+.khmer-motif {
+  background-image:
+    radial-gradient(rgba(254, 199, 0, 0.14) 1px, transparent 1.4px),
+    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.4px);
+  background-size: 26px 26px, 26px 26px;
+  background-position: 0 0, 13px 13px;
+}

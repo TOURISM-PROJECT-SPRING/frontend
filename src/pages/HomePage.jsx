@@ -1,23 +1,24 @@
-import HeroSection from "../components/home/HeroSection";
-import BookingWidget from "../components/home/BookingWidget";
-import TrustBar from "../components/home/TrustBar";
-import PopularDestinations from "../components/home/PopularDestinations";
-import HowItWorks from "../components/home/HowItWorks";
-import WhyChooseUs from "../components/home/WhyChooseUs";
-import PopularTours from "../components/home/PopularTours";
-import Newsletter from "../components/home/Newsletter";
+import { useState } from "react";
+import Hero from "../components/home/Hero";
+import EssentialCambodia from "../components/home/EssentialCambodia";
+import ThingsToDoSection from "../components/home/ThingsToDoSection";
+import GreatForSection from "../components/home/GreatForSection";
+import RelatedStories from "../components/home/RelatedStories";
+import FinalCta from "../components/home/FinalCta";
 
 export default function HomePage() {
+  const [activeCategory, setActiveCategory] = useState("Essentials");
+
   return (
     <>
-      <HeroSection />
-      <BookingWidget />
-      <TrustBar />
-      <PopularDestinations />
-      <HowItWorks />
-      <PopularTours />
-      <WhyChooseUs />
-      <Newsletter />
+      <Hero />
+      <section className="bg-cream">
+        <EssentialCambodia active={activeCategory} onChange={setActiveCategory} />
+        <ThingsToDoSection category={activeCategory} />
+      </section>
+      <GreatForSection />
+      <RelatedStories />
+      <FinalCta />
     </>
   );
 }

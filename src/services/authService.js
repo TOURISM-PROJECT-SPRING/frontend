@@ -1,8 +1,12 @@
 import axiosClient from '../api/axiosClient';
 
 export const authService = {
-  login: async ({ usernameOrEmail, password } = {}) => {
-    const response = await axiosClient.post('/auth/login', { usernameOrEmail, password });
+  // Backend LoginRequest expects { username, password }.
+  login: async ({ username, usernameOrEmail, password } = {}) => {
+    const response = await axiosClient.post('/auth/login', {
+      username: username || usernameOrEmail,
+      password,
+    });
     return response.data;
   },
   register: async ({ fullname, username, email, password } = {}) => {
@@ -12,6 +16,10 @@ export const authService = {
       email,
       password,
     });
+    return response.data;
+  },
+  logout: async () => {
+    const response = await axiosClient.post('/auth/logout');
     return response.data;
   },
 };

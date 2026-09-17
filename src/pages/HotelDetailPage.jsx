@@ -1,344 +1,321 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  MapPin,
-  Phone,
-  Mail,
-  Users,
-  CalendarDays,
-  CheckCircle,
-  AlertCircle,
-  Building2,
-} from "lucide-react";
-import { hotelService } from "../services/hotelService";
-import { hotelRoomService } from "../services/hotelRoomService";
-import { hotelAttachmentService } from "../services/hotelAttachmentService";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useHotel, useHotels } from "../hooks/useResource";
 import { roomBookingService } from "../services/roomBookingService";
+import { buildRoomBookingPayload } from "../lib/cartBooking";
 import { useAuth } from "../context/AuthContext";
-import SafeImage from "../components/ui/SafeImage";
-import { LoadingState, ErrorState } from "../components/ui/AsyncState";
-import { HOTEL_IMAGES, pickImage, formatPrice } from "../utils/helpers";
+import { useFavorites } from "../context/FavoritesContext";
+import { useToast } from "../components/ui/Toast";
+import { Modal } from "../components/ui/Modal";
+import Button from "../components/ui/Button";
+import { money } from "../lib/format";
+import { EmptyState, ErrorState } from "../components/ui/feedback";
+import Icon from "../components/ui/Icon";
+import { decorateHotels } from "../data/hotels";
+import { buildHotelDetail, buildNearby } from "../data/hotelDetail";
+
+import HotelHeader from "../components/hotels/detail/HotelHeader";
+import HotelGallery from "../components/hotels/detail/HotelGallery";
+import BookingCard from "../components/hotels/detail/BookingCard";
+import ReviewHighlights from "../components/hotels/detail/ReviewHighlights";
+import AboutSection from "../components/hotels/detail/AboutSection";
+import NearbyHotels from "../components/hotels/detail/NearbyHotels";
+import LocationSection from "../components/hotels/detail/LocationSection";
+import StickyBookingBar from "../components/hotels/detail/StickyBookingBar";
+import DetailSkeleton from "../components/hotels/detail/DetailSkeleton";
+import ReviewModal from "../components/hotels/detail/ReviewModal";
+
+function isoPlus(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function nightsBetween(a, b) {
+  if (!a || !b) return 1;
+  const start = new Date(a);
+  const end = new Date(b);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 1;
+  return Math.max(1, Math.round((end - start) / 86400000));
+}
+
+function scrollToId(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export default function HotelDetailPage() {
-  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { items, loading, error, source } = useHotel(id);
+  const hotelsList = useHotels();
+  const { user, isAuthenticated, userId } = useAuth();
+  const { isSaved, toggle } = useFavorites();
+  const toast = useToast();
 
-  const [hotel, setHotel] = useState(null);
-  const [gallery, setGallery] = useState([]);
-  const [activeImage, setActiveImage] = useState("");
-  const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [openFormFor, setOpenFormFor] = useState(null);
-  const [booking, setBooking] = useState({ checkIn: "", checkOut: "", numGuest: 2, paymentMethod: "" });
-  const [bookingState, setBookingState] = useState("idle");
+  const hotel = useMemo(() => buildHotelDetail(items[0]), [items]);
+  const nearby = useMemo(
+    () => buildNearby(items[0], decorateHotels(hotelsList.items), 4),
+    [items, hotelsList.items]
+  );
 
-  const load = async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const [hotelData, roomList, attachments] = await Promise.all([
-        hotelService.getHotelByIdWithImages(id),
-        hotelRoomService.getHotelRoomsByHotel(id),
-        hotelAttachmentService.getHotelAttachments(id).catch(() => []),
-      ]);
-      setHotel(hotelData || null);
-      setRooms(roomList || []);
+  const [booking, setBooking] = useState(() => ({
+    checkIn: isoPlus(14),
+    checkOut: isoPlus(16),
+    adults: 2,
+    children: 0,
+    rooms: 1,
+  }));
+  const [guestReviews, setGuestReviews] = useState([]);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [pendingDeal, setPendingDeal] = useState(null); // { provider, room } awaiting confirm
+  const [placing, setPlacing] = useState(false);
 
-      const urls = (attachments || [])
-        .map((a) => a.cloudinaryUrl)
-        .filter(Boolean);
-      if (!urls.length && hotelData) {
-        const seed = pickImage(HOTEL_IMAGES, hotelData.id);
-        urls.push(seed, ...HOTEL_IMAGES.filter((u) => u !== seed).slice(0, 3));
-      }
-      setGallery(urls);
-      setActiveImage(urls[0] || hotelData?.imageUrl || pickImage(HOTEL_IMAGES, hotelData?.id));
-    } catch (err) {
-      console.error("Error fetching hotel:", err);
-      if (hotel === null) setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const nights = nightsBetween(booking.checkIn, booking.checkOut);
+  const dateValue = { ...booking, nights };
+  const favorite = hotel ? isSaved("hotel", hotel.id) : false;
 
+  // SEO: dynamic title + meta description for this hotel.
   useEffect(() => {
-    load();
-  }, [id]);
+    if (!hotel) return;
+    document.title = `${hotel.title} | SovannDomNour`;
+    const desc = `Discover ${hotel.title} in ${hotel.city}, Cambodia. View photos, prices, amenities, reviews, location and available booking deals.`;
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "description");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", desc);
+    return () => {
+      document.title = "SovannDomNour";
+    };
+  }, [hotel]);
 
-  const handleBookingSubmit = async (e, roomId) => {
-    e.preventDefault();
-    if (!user) {
-      navigate("/login");
+  const onDeal = (provider) => {
+    if (!hotel) return;
+    if (provider?.url) {
+      window.open(provider.url, "_blank", "noopener,noreferrer");
       return;
     }
-    setBookingState("submitting");
-    try {
-      await roomBookingService.createRoomBooking({
-        userId: user.id,
-        roomId,
-        numGuest: Number(booking.numGuest),
-        checkIn: booking.checkIn,
-        checkOut: booking.checkOut,
-        paymentMethod: booking.paymentMethod || undefined,
-      });
-      setBookingState("success");
-      setOpenFormFor(null);
-      setTimeout(() => setBookingState("idle"), 4000);
-    } catch (err) {
-      console.error("Booking failed:", err);
-      setBookingState("error");
-      setTimeout(() => setBookingState("idle"), 4000);
+    if (!isAuthenticated) {
+      toast.info("Please sign in to book this hotel.");
+      navigate("/login", { state: { from: `/hotels/${id}` } });
+      return;
     }
+    const room =
+      [...(hotel.rooms || [])].sort((a, b) => (a.price ?? 1e9) - (b.price ?? 1e9))[0] || null;
+    setPendingDeal({ provider, room });
   };
 
-  if (loading) {
+  const confirmBooking = async () => {
+    if (!hotel || !pendingDeal) return;
+    const room = pendingDeal.room;
+    const roomId = Number(room?.id ?? hotel.roomId ?? null) || null;
+    if (!roomId) {
+      toast.error("No bookable room was found for this hotel yet.");
+      setPendingDeal(null);
+      return;
+    }
+    setPlacing(true);
+    try {
+      const res = await roomBookingService.createRoomBooking(
+        buildRoomBookingPayload(
+          {
+            meta: {
+              roomId,
+              guests: booking.adults + booking.children,
+              checkIn: booking.checkIn,
+              checkOut: booking.checkOut,
+              nights,
+            },
+          },
+          userId
+        )
+      );
+      if (res) {
+        toast.success(`${hotel.title} booked (${nights} night${nights > 1 ? "s" : ""}) — see your bookings.`);
+        setPendingDeal(null);
+        navigate("/profile");
+      } else {
+        toast.error("The booking was rejected. Please try again.");
+      }
+    } catch {
+      toast.error("Booking couldn't be placed — the backend is unreachable.");
+    }
+    setPlacing(false);
+  };
+
+  const onToggleFavorite = () => {
+    const saved = toggle({
+      kind: "hotel",
+      id: hotel.id,
+      title: hotel.title,
+      image: hotel.image,
+      location: hotel.location || hotel.city,
+      href: `/hotels/${id}`,
+    });
+    toast[saved ? "success" : "info"](saved ? `Saved ${hotel.title} to My trips.` : `Removed ${hotel.title} from My trips.`);
+  };
+
+  const onReview = () => {
+    if (!isAuthenticated) {
+      toast.info("Please sign in to write a review.");
+      navigate("/login", { state: { from: `/hotels/${id}` } });
+      return;
+    }
+    setReviewOpen(true);
+  };
+
+  /* ------------------------- states ------------------------- */
+  if (loading) return <DetailSkeleton />;
+
+  if (!hotel) {
+    const container = "mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8";
+    if (error && source !== "demo") {
+      return (
+        <div className={container}>
+          <div className="mx-auto max-w-md">
+            <ErrorState message="Unable to load this hotel. Please try again." retry={() => window.location.reload()} />
+          </div>
+        </div>
+      );
+    }
     return (
-      <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <LoadingState rows={4} />
+      <div className={container}>
+        <div className="mx-auto max-w-md">
+          <EmptyState
+            title="Hotel not found"
+            message="The hotel you're looking for may have been removed or is no longer available."
+            icon="bed"
+            action={
+              <Link to="/hotel" className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800">
+                Back to hotels
+              </Link>
+            }
+          />
         </div>
       </div>
     );
   }
-
-  if (error || !hotel) {
-    return (
-      <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <ErrorState onRetry={load} />
-        </div>
-      </div>
-    );
-  }
-
-  const mainImage = activeImage || hotel.imageUrl || pickImage(HOTEL_IMAGES, hotel.id);
 
   return (
-    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-900">
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
-        <Link
-          to="/stays"
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors mb-4 sm:mb-6"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          {t("common.backToList")}
-        </Link>
+    <div className="min-h-screen bg-white pb-24 lg:pb-0">
+      <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-6 lg:px-8">
+        <div className="pt-5">
+        </div>
 
-        <div className="bg-white dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
-          <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
-            <SafeImage
-              src={mainImage}
-              alt={hotel.hotelName}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-            <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
-                {hotel.hotelName}
-              </h1>
-              {hotel.locationName && (
-                <p className="flex items-center gap-1.5 text-white/90 text-xs sm:text-sm mt-1.5 sm:mt-2">
-                  <MapPin className="w-4 h-4 shrink-0" />
-                  {hotel.locationName}
-                </p>
-              )}
-            </div>
-          </div>
+        <HotelHeader
+          hotel={hotel}
+          favorite={favorite}
+          onToggleFavorite={onToggleFavorite}
+          onReview={onReview}
+          onJumpReviews={() => scrollToId("reviews")}
+          onJumpPrices={() => scrollToId("prices")}
+        />
 
-          {gallery.length > 1 && (
-            <div className="flex gap-2 p-3 sm:p-4 overflow-x-auto hide-scrollbar">
-              {gallery.map((url, i) => (
-                <button
-                  key={`${url}-${i}`}
-                  onClick={() => setActiveImage(url)}
-                  className={`w-20 sm:w-28 h-14 sm:h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-colors ${
-                    activeImage === url
-                      ? "border-primary"
-                      : "border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                  }`}
-                >
-                  <SafeImage src={url} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="mt-6">
+          <HotelGallery images={hotel.galleryImages} award={hotel.award} title={hotel.title} />
+        </div>
 
-          <div className="p-4 sm:p-6 lg:p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-              <div className="lg:col-span-2">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
-                  {t("hotelDetail.rooms")}
-                </h2>
+        <div className="space-y-14 py-10 sm:py-12 lg:space-y-20 lg:py-14">
+          <BookingCard providers={hotel.bookingProviders} dateValue={dateValue} onDateChange={(p) => setBooking((b) => ({ ...b, ...p }))} onDeal={onDeal} />
 
-                {rooms.length === 0 ? (
-                  <p className="mt-3 text-sm text-gray-400 dark:text-gray-500">
-                    {t("hotelDetail.noRooms")}
-                  </p>
-                ) : (
-                  <div className="mt-4 space-y-3 sm:space-y-4">
-                    {rooms.map((room) => (
-                      <div
-                        key={room.id}
-                        className="border border-gray-100 dark:border-gray-800 rounded-xl p-3.5 sm:p-5"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                            <div className="min-w-0">
-                              <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
-                                {room.roomType}
-                              </h3>
-                              <p className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                <Users className="w-3 h-3 shrink-0" />
-                                {t("hotelDetail.capacity")}: {room.capacity}
-                                <span className="ml-2 inline-flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3 text-emerald-500 shrink-0" />
-                                  {room.totalRoom} {t("hotelDetail.total")}
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0">
-                            <div className="text-right">
-                              <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                                {formatPrice(room.pricePerNight)}
-                              </p>
-                              <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
-                                {t("hotelDetail.pricePerNight")}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => {
-                                setOpenFormFor(openFormFor === room.id ? null : room.id);
-                                setBookingState("idle");
-                              }}
-                              className="px-3.5 sm:px-5 py-2 bg-primary text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-primary-dark transition-colors shrink-0"
-                            >
-                              {t("hotelDetail.book")}
-                            </button>
-                          </div>
-                        </div>
+          <ReviewHighlights
+            reviews={[...guestReviews, ...hotel.reviewsList]}
+            rating={hotel.rating}
+            reviewCount={hotel.reviews}
+            onSeeAll={() => scrollToId("reviews")}
+          />
 
-                        {openFormFor === room.id && (
-                          <form
-                            onSubmit={(e) => handleBookingSubmit(e, room.id)}
-                            className="mt-3.5 sm:mt-4 pt-3.5 sm:pt-4 border-t border-gray-100 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-                          >
-                            <label className="block">
-                              <span className="block text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                {t("hotelDetail.checkIn")}
-                              </span>
-                              <input
-                                type="date"
-                                required
-                                value={booking.checkIn}
-                                min={new Date().toISOString().split("T")[0]}
-                                onChange={(e) => setBooking({ ...booking, checkIn: e.target.value })}
-                                className="w-full px-2.5 sm:px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary"
-                              />
-                            </label>
-                            <label className="block">
-                              <span className="block text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                {t("hotelDetail.checkOut")}
-                              </span>
-                              <input
-                                type="date"
-                                required
-                                value={booking.checkOut}
-                                min={booking.checkIn || new Date().toISOString().split("T")[0]}
-                                onChange={(e) => setBooking({ ...booking, checkOut: e.target.value })}
-                                className="w-full px-2.5 sm:px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary"
-                              />
-                            </label>
-                            <label className="block">
-                              <span className="block text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                {t("hotelDetail.guests")}
-                              </span>
-                              <input
-                                type="number"
-                                min="1"
-                                max={room.capacity}
-                                required
-                                value={booking.numGuest}
-                                onChange={(e) =>
-                                  setBooking({ ...booking, numGuest: e.target.value })
-                                }
-                                className="w-full px-2.5 sm:px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs sm:text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:border-primary"
-                              />
-                            </label>
-                            <div className="flex items-end">
-                              <button
-                                type="submit"
-                                disabled={bookingState === "submitting"}
-                                className="w-full px-3.5 sm:px-5 py-2 bg-emerald-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-60"
-                              >
-                                {bookingState === "submitting"
-                                  ? t("common.loading")
-                                  : t("hotelDetail.book")}
-                              </button>
-                            </div>
-                          </form>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <AboutSection
+            rating={hotel.rating}
+            reviews={hotel.reviews}
+            ranking={hotel.ranking}
+            totalHotels={hotel.totalHotelsInCity}
+            city={hotel.city}
+            ratingBreakdown={hotel.ratingBreakdown}
+            amenities={hotel.amenities}
+            roomFeatures={hotel.roomFeatures}
+            onReviewsClick={() => scrollToId("reviews")}
+          />
 
-                {bookingState === "success" && (
-                  <p className="mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                    <CheckCircle className="w-4 h-4" /> {t("hotelDetail.bookingSuccess")}
-                  </p>
-                )}
-                {bookingState === "error" && (
-                  <p className="mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm text-red-500 font-medium">
-                    <AlertCircle className="w-4 h-4" /> {t("hotelDetail.bookingError")}
-                  </p>
-                )}
-              </div>
+          <NearbyHotels
+            hotels={nearby}
+            isFavorite={(id) => isSaved("hotel", id)}
+            onToggleFavorite={(h) => {
+              const saved = toggle({ kind: "hotel", id: h.id, title: h.name, image: h.image, location: h.location, href: h.href || `/hotels/${h.id}` });
+              toast[saved ? "success" : "info"](saved ? `Saved ${h.name} to My trips.` : `Removed ${h.name} from My trips.`);
+            }}
+          />
 
-              <aside className="space-y-4">
-                <div className="border border-gray-100 dark:border-gray-800 rounded-xl p-4 sm:p-5">
-                  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-                    <CalendarDays className="w-4 h-4 text-primary" />
-                    {t("hotelDetail.capacity")}
-                  </h3>
-                  <ul className="mt-3 space-y-2.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                    {hotel.locationName && (
-                      <li className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                        <span>{hotel.locationName}</span>
-                      </li>
-                    )}
-                    {hotel.phoneContact && (
-                      <li className="flex items-start gap-2">
-                        <Phone className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                        <span dir="ltr">{hotel.phoneContact}</span>
-                      </li>
-                    )}
-                    {hotel.emailContact && (
-                      <li className="flex items-start gap-2">
-                        <Mail className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                        <span className="break-all" dir="ltr">{hotel.emailContact}</span>
-                      </li>
-                    )}
-                    {!isAuthenticated && (
-                      <li className="flex items-start gap-2 pt-2 text-[11px] text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-800">
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                        {t("hotelDetail.loginToBook")}
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              </aside>
-            </div>
-          </div>
+          <LocationSection
+            address={hotel.address}
+            city={hotel.city}
+            country={hotel.country}
+            email={hotel.email}
+            lat={hotel.latitude}
+            lng={hotel.longitude}
+            name={hotel.title}
+            rating={hotel.rating}
+            price={hotel.price}
+          />
         </div>
       </div>
+
+      <StickyBookingBar price={hotel.price} />
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        author={user?.name || user?.fullName || "You"}
+        onSubmit={(r) => { setGuestReviews((prev) => [r, ...prev]); toast.success("Thanks! Your review was published."); scrollToId("reviews"); }}
+      />
+
+      <Modal open={!!pendingDeal} onClose={() => (placing ? null : setPendingDeal(null))} title="Confirm your stay" size="lg">
+        {pendingDeal && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted">
+              Review the details and confirm — this places the booking on your account
+              {user?.email ? ` (${user.email})` : ""}. Payment is collected at check-in.
+            </p>
+            <div className="rounded-xl border border-line bg-canvas p-4">
+              <p className="font-display text-lg font-bold text-brand-800">{hotel.title}</p>
+              {hotel.location && (
+                <p className="mt-0.5 flex items-center gap-1 text-sm text-muted">
+                  <Icon name="map-pin" size={13} className="text-brand-400" /> {hotel.location}
+                </p>
+              )}
+              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <Detail label="Rate" value={pendingDeal.provider?.name || "Best deal"} />
+                <Detail label="Room" value={pendingDeal.room?.roomType || "Standard room"} />
+                <Detail label="Check-in" value={booking.checkIn} />
+                <Detail label="Check-out" value={booking.checkOut} />
+                <Detail label="Guests" value={`${booking.adults + booking.children} · ${booking.rooms} room${booking.rooms > 1 ? "s" : ""}`} />
+                <Detail label="Nights" value={`${nights} night${nights > 1 ? "s" : ""}`} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-brand-700 px-4 py-3 text-white">
+              <span className="text-sm font-bold">Estimated total</span>
+              <span className="font-display text-xl font-bold text-gold-400">
+                {money((Number(pendingDeal.provider?.price ?? hotel.price) || 0) * nights)}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1 justify-center" disabled={placing} onClick={() => setPendingDeal(null)}>Back</Button>
+              <Button variant="primary" className="flex-1 justify-center" disabled={placing} onClick={confirmBooking}>
+                {placing ? "Placing booking…" : "Confirm & Pay"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function Detail({ label, value }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{label}</p>
+      <p className="font-semibold text-brand-800">{value}</p>
     </div>
   );
 }

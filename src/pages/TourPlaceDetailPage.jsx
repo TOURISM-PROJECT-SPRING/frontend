@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -26,7 +26,7 @@ export default function TourPlaceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
@@ -41,11 +41,11 @@ export default function TourPlaceDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     load();
-  }, [id]);
+  }, [load]);
 
   if (loading) {
     return (
