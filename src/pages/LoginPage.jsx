@@ -39,24 +39,29 @@ export default function LoginPage({ mode = "login" }) {
   const [form, setForm] = useState({ fullname: "", username: "", email: "", password: "" });
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-  const redirectTo = location.state?.from || "/";
+
+  // Where to send the user after a successful sign-in: back to the page that
+  // required auth, an admin to the dashboard, everyone else to the home page.
+  const landingFor = (user) => {
+    if (location.state?.from) return location.state.from;
+    if (Array.isArray(user?.roles) && user.roles.includes(ROLES.ADMIN)) return "/admin";
+    return "/";
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      if (isLogin) {
-        await login({ username: form.username || form.email, password: form.password });
-      } else {
-        await register({
-          fullname: form.fullname,
-          username: form.username,
-          email: form.email,
-          password: form.password,
-        });
-      }
-      navigate(redirectTo, { replace: true });
+      const result = isLogin
+        ? await login({ username: form.username || form.email, password: form.password })
+        : await register({
+            fullname: form.fullname,
+            username: form.username,
+            email: form.email,
+            password: form.password,
+          });
+      navigate(landingFor(result?.user), { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -205,8 +210,8 @@ export default function LoginPage({ mode = "login" }) {
                   setError(null);
                   setLoading(true);
                   try {
-                    await login({ username: "demo", password: "demo", role: ROLES.OWNER });
-                    navigate(redirectTo, { replace: true });
+                    const result = await login({ username: "demo", password: "demo", role: ROLES.OWNER });
+                    navigate(landingFor(result?.user), { replace: true });
                   } catch (err) {
                     setError(err.message || "Could not start the demo.");
                   } finally {
@@ -225,8 +230,8 @@ export default function LoginPage({ mode = "login" }) {
                   setError(null);
                   setLoading(true);
                   try {
-                    await login({ username: "demo", password: "demo", role: ROLES.ADMIN });
-                    navigate(redirectTo, { replace: true });
+                    const result = await login({ username: "demo", password: "demo", role: ROLES.ADMIN });
+                    navigate(landingFor(result?.user), { replace: true });
                   } catch (err) {
                     setError(err.message || "Could not start the demo.");
                   } finally {

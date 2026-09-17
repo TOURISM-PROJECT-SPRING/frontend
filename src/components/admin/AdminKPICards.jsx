@@ -1,4 +1,4 @@
-import { MapPin, Building2, BedDouble, CalendarCheck, Wallet, UtensilsCrossed, TrendingUp } from "lucide-react";
+import { Users, Building2, BedDouble, CalendarCheck, Wallet, UtensilsCrossed, TrendingUp } from "lucide-react";
 import useDashboardData from "../../hooks/useDashboardData";
 
 export default function AdminKPICards() {
@@ -6,7 +6,7 @@ export default function AdminKPICards() {
 
   const metrics = data
     ? [
-        { label: "Total Places", value: String(data.totalPlaces), footer: "tour places live", icon: MapPin, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
+        { label: "Total Users", value: String(data.totalUsers ?? 0), footer: "registered accounts", icon: Users, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-500/10" },
         { label: "Total Hotels", value: String(data.totalHotels), footer: `${data.totalRooms} rooms`, icon: Building2, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
         { label: "Total Restaurants", value: String(data.totalRestaurants), footer: `${data.totalFoods} dishes`, icon: UtensilsCrossed, color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
         { label: "Total Bookings", value: String(data.totalBookings), footer: `${data.roomBookings.length} rooms / ${data.ticketBookings.length} tickets / ${data.foodOrders.length} food`, icon: CalendarCheck, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10" },

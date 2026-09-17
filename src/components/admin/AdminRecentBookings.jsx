@@ -13,11 +13,13 @@ const typeStyle = {
   Room: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
   Ticket: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400",
   Food: "bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400",
+  Tour: "bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
 };
 
 export default function AdminRecentBookings() {
   const { data } = useDashboardData();
-  const bookings = (data?.allBookings || []).slice(0, 5);
+  const source = data?.recentBookings?.length ? data.recentBookings : data?.allBookings || [];
+  const bookings = source.slice(0, 5);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 animate-fade-in-up delay-200">

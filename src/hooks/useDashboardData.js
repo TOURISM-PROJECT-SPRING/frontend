@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { roomBookingService } from "../services/roomBookingService";
 import { ticketBookingService } from "../services/ticketBookingService";
 import { orderService } from "../services/orderService";
@@ -8,6 +8,8 @@ import { roomService } from "../services/roomService";
 import { restaurantService } from "../services/restaurantService";
 import { ticketService } from "../services/ticketService";
 import { foodService } from "../services/foodService";
+import { adminService } from "../services/adminService";
+import { managementService } from "../services/managementService";
 
 let sharedPromise = null;
 let sharedData = null;
@@ -220,45 +222,170 @@ function computeDashboard([roomBookings, ticketBookings, foodOrders, tourPlaces,
   };
 }
 
+const BOOKING_TYPE_LABEL = { ROOM: "Room", TICKET: "Ticket", FOOD_ORDER: "Food", TOUR: "Tour" };
+const BREAKDOWN_LABEL = { ROOM: "Hotel Rooms", TICKET: "Tickets", FOOD_ORDER: "Food Orders", TOUR: "Tours" };
+const BREAKDOWN_COLOR = { ROOM: "#3b82f6", TICKET: "#22c55e", FOOD_ORDER: "#f59e0b", TOUR: "#a855f7" };
+
+// Overlay the backend's dedicated admin dashboard endpoint
+// (GET /api/admin/dashboard-stats) on top of the aggregated fallback data so
+// the overview reflects the server's authoritative totals.
+function mergeAdminStats(dashboard, stats) {
+  dashboard.backendConnected = Boolean(stats);
+  if (!stats) return;
+
+  dashboard.totalUsers = Number(stats.totalUsers) || 0;
+  dashboard.pendingOrders = Number(stats.pendingOrders) || 0;
+  dashboard.activePromotions = Number(stats.activePromotions) || 0;
+
+  if (stats.totalBookings != null) {
+    dashboard.totalBookings = Number(stats.totalBookings) || 0;
+  }
+  if (stats.totalRevenue != null) {
+    dashboard.totalRevenue = Number(stats.totalRevenue) || 0;
+    dashboard.revenueText = money(dashboard.totalRevenue);
+  }
+
+  if (Array.isArray(stats.revenueTrend) && stats.revenueTrend.length) {
+    dashboard.revenueByMonth = stats.revenueTrend.map((m) => ({
+      month: m.label,
+      revenue: Number(m.revenue) || 0,
+    }));
+  }
+
+  if (stats.bookingBreakdown && typeof stats.bookingBreakdown === "object") {
+    const breakdown = Object.entries(stats.bookingBreakdown)
+      .map(([key, value]) => ({
+        name: BREAKDOWN_LABEL[key] || key,
+        value: Number(value) || 0,
+        color: BREAKDOWN_COLOR[key] || "#94a3b8",
+      }))
+      .filter((x) => x.value > 0);
+    if (breakdown.length) {
+      dashboard.bookingsByType = breakdown;
+      dashboard.totalChannel = breakdown.reduce((sum, x) => sum + x.value, 0);
+    }
+  }
+
+  if (Array.isArray(stats.recentBookings) && stats.recentBookings.length) {
+    dashboard.recentBookings = stats.recentBookings.map((b) => ({
+      id: b.id,
+      type: BOOKING_TYPE_LABEL[b.bookingType] || b.bookingType || "Room",
+      guest: b.customerName || "Guest",
+      property: b.serviceName || "",
+      date: shortDate(b.bookingDate || b.createdAt),
+      amount: money(b.totalAmount),
+      status: b.status || "PENDING",
+      createdAt: new Date(b.createdAt || 0),
+    }));
+  }
+}
+
+const SOURCES = [
+  ["room bookings", roomBookingService.getAllRoomBookings],
+  ["ticket bookings", ticketBookingService.getAllTicketBookings],
+  ["food orders", orderService.getAllOrders],
+  ["tour places", tourPlaceService.getAllTourPlaces],
+  ["hotels", hotelService.getAllHotels],
+  ["rooms", roomService.getAllRooms],
+  ["restaurants", restaurantService.getAllRestaurants],
+  ["tickets", ticketService.getAllTickets],
+  ["foods", foodService.getAllFoods],
+  ["users", managementService.getUsers],
+  ["admin stats", adminService.getDashboardStats],
+];
+
+const AGGREGATE_KEYS = [
+  "room bookings",
+  "ticket bookings",
+  "food orders",
+  "tour places",
+  "hotels",
+  "rooms",
+  "restaurants",
+  "tickets",
+  "foods",
+];
+
+// Turn an axios error into something readable in the UI so a failed backend
+// call is obvious instead of silently rendering zeros.
+function describeError(e) {
+  if (!e) return null;
+  const status = e.response?.status;
+  const detail = e.response?.data?.message || e.response?.data?.error;
+  if (status) return detail ? `HTTP ${status} — ${detail}` : `HTTP ${status}`;
+  if (e.request) return "No response from the API (is the backend running on localhost:8080?)";
+  return e.message || "Unknown error";
+}
+
 async function fetchAll() {
   if (sharedPromise) return sharedPromise;
-  sharedPromise = Promise.all([
-    roomBookingService.getAllRoomBookings(),
-    ticketBookingService.getAllTicketBookings(),
-    orderService.getAllOrders(),
-    tourPlaceService.getAllTourPlaces(),
-    hotelService.getAllHotels(),
-    roomService.getAllRooms(),
-    restaurantService.getAllRestaurants(),
-    ticketService.getAllTickets(),
-    foodService.getAllFoods(),
-  ])
-    .then((results) => {
-      sharedData = computeDashboard(results);
+  sharedPromise = Promise.allSettled(SOURCES.map(([, request]) => request())).then((settled) => {
+    const byLabel = {};
+    const failed = [];
+    let firstError = null;
+    settled.forEach((result, i) => {
+      const label = SOURCES[i][0];
+      if (result.status === "fulfilled") {
+        byLabel[label] = result.value;
+      } else {
+        failed.push(label);
+        if (!firstError) firstError = result.reason;
+      }
+    });
+    if (failed.length) {
+      console.warn(`Dashboard: ${failed.length}/${settled.length} sources failed (${failed.join(", ")}). Showing partial data.`);
+    }
+    const dashboard = computeDashboard(AGGREGATE_KEYS.map((key) => byLabel[key]));
+    mergeAdminStats(dashboard, byLabel["admin stats"]);
+    // Fallback: if the admin-stats endpoint is unavailable, still report the
+    // user count from the management users endpoint.
+    if (dashboard.totalUsers == null && Array.isArray(byLabel["users"])) {
+      dashboard.totalUsers = byLabel["users"].length;
+    }
+    dashboard.partial = failed.length > 0;
+    dashboard.failedSources = failed;
+    dashboard.error = describeError(firstError);
+    dashboard.loadedAt = Date.now();
+
+    // Only cache a load that actually reached the backend, so a total
+    // failure doesn't stick for two minutes and block a retry.
+    if (failed.length < settled.length) {
+      sharedData = dashboard;
       setTimeout(() => {
         sharedPromise = null;
         sharedData = null;
       }, 120000);
-      return sharedData;
-    })
-    .catch((err) => {
-      console.error("Failed to load dashboard data:", err);
+    } else {
       sharedPromise = null;
-      throw err;
-    });
+    }
+    return dashboard;
+  });
   return sharedPromise;
 }
 
 export default function useDashboardData() {
   const [data, setData] = useState(sharedData);
   const [loading, setLoading] = useState(!sharedData);
+  const [error, setError] = useState(null);
+  const [tick, setTick] = useState(0);
+
+  const reload = useCallback(() => {
+    sharedPromise = null;
+    sharedData = null;
+    setData(null);
+    setError(null);
+    setLoading(true);
+    setTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     if (sharedData) {
+      setData(sharedData);
       setLoading(false);
       return;
     }
     let cancelled = false;
+    setLoading(true);
     fetchAll()
       .then((d) => {
         if (!cancelled) {
@@ -266,13 +393,17 @@ export default function useDashboardData() {
           setLoading(false);
         }
       })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
+      .catch((err) => {
+        console.error("Failed to load dashboard data:", err);
+        if (!cancelled) {
+          setError(describeError(err) || "Could not load dashboard data.");
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tick]);
 
-  return { data, loading };
+  return { data, loading, error, reload };
 }

@@ -1,4 +1,4 @@
-import { MapPin, Building2, CalendarCheck, UtensilsCrossed, Ticket as TicketIcon } from "lucide-react";
+import { MapPin, Building2, CalendarCheck, UtensilsCrossed, Ticket as TicketIcon, Users, Clock, Tag } from "lucide-react";
 import useDashboardData from "../../hooks/useDashboardData";
 
 export default function AdminSystemStats() {
@@ -6,6 +6,9 @@ export default function AdminSystemStats() {
 
   const stats = data
     ? [
+        { label: "Registered Users", value: data.totalUsers ?? "—", icon: Users, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-500/10" },
+        { label: "Pending Orders", value: data.pendingOrders ?? "—", icon: Clock, color: "text-red-500", bg: "bg-red-50 dark:bg-red-500/10" },
+        { label: "Active Promotions", value: data.activePromotions ?? "—", icon: Tag, color: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-500/10" },
         { label: "Tour Places", value: data.totalPlaces, icon: MapPin, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
         { label: "Hotels", value: data.totalHotels, icon: Building2, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
         { label: "Rooms", value: data.totalRooms, icon: CalendarCheck, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10" },

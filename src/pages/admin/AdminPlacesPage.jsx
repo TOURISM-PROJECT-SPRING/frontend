@@ -4,6 +4,7 @@ import { tourPlaceService } from "../../services/tourPlaceService";
 import { placeCategoryService } from "../../services/placeCategoryService";
 import { districtService } from "../../services/districtService";
 import { useAuth } from "../../context/AuthContext";
+import ImageUpload from "../../components/ui/ImageUpload";
 import { primaryPlaceImage, pickImage, TRAVEL_IMAGES } from "../../utils/helpers";
 
 const norm = (s) => String(s || "").toUpperCase();
@@ -27,6 +28,9 @@ export default function AdminPlacesPage() {
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
+  const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +61,33 @@ export default function AdminPlacesPage() {
     return matchSearch && matchFilter;
   });
 
+  const refreshPlaces = async () => {
+    const data = await tourPlaceService.getAllTourPlaces();
+    setPlaces(data);
+  };
+
+  const openForm = async (item) => {
+    setEditItem(item || null);
+    setImages([]);
+    setExistingImages([]);
+    setFormOpen(true);
+    if (item) {
+      const imgs = await tourPlaceService.getTourPlaceImages(item.id).catch(() => []);
+      setExistingImages(
+        (imgs || []).map((img) => ({ id: img.id, url: img.imageUrl, isPrimary: img.isPrimary }))
+      );
+    }
+  };
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditItem(null);
+    setImages([]);
+    setExistingImages([]);
+  };
+
   const handleSave = async (data) => {
+    setSaving(true);
     try {
       const payload = {
         name: data.name,
@@ -69,16 +99,27 @@ export default function AdminPlacesPage() {
         userId: user?.id || 1,
       };
       if (editItem) {
-        const updated = await tourPlaceService.updateTourPlace(editItem.id, payload);
-        setPlaces((prev) => prev.map((p) => (p.id === editItem.id ? updated : p)));
+        await tourPlaceService.updateTourPlace(editItem.id, payload, images);
       } else {
-        const created = await tourPlaceService.createTourPlace(payload);
-        setPlaces((prev) => [created, ...prev]);
+        await tourPlaceService.createTourPlace(payload, images);
       }
-      setFormOpen(false);
-      setEditItem(null);
+      await refreshPlaces();
+      closeForm();
     } catch (error) {
       console.error("Error saving place:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveExistingImage = async (image) => {
+    if (!editItem) return;
+    try {
+      await tourPlaceService.removeTourPlaceImage(editItem.id, image.id);
+      setExistingImages((prev) => prev.filter((img) => img.id !== image.id));
+      await refreshPlaces();
+    } catch (error) {
+      console.error("Error removing image:", error);
     }
   };
 
@@ -104,7 +145,7 @@ export default function AdminPlacesPage() {
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Manage all tourist destinations and attractions</p>
         </div>
         <button
-          onClick={() => { setEditItem(null); setFormOpen(true); }}
+          onClick={() => openForm(null)}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition"
         >
           <Plus className="w-4 h-4" /> Add Place
@@ -146,7 +187,7 @@ export default function AdminPlacesPage() {
                   <span className="text-[11px] text-gray-400 truncate">{p.address || "N/A"}</span>
                   <div className="flex items-center gap-1">
                     <button onClick={() => setViewTarget(p)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"><Eye className="w-3.5 h-3.5 text-gray-400" /></button>
-                    <button onClick={() => { setEditItem(p); setFormOpen(true); }} className="p-1.5 rounded-lg hover:bg-primary/5 transition"><Edit3 className="w-3.5 h-3.5 text-primary" /></button>
+                    <button onClick={() => openForm(p)} className="p-1.5 rounded-lg hover:bg-primary/5 transition"><Edit3 className="w-3.5 h-3.5 text-primary" /></button>
                     <button onClick={() => setDeleteTarget(p)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition"><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
                   </div>
                 </div>
@@ -178,7 +219,7 @@ export default function AdminPlacesPage() {
                 <div className="flex justify-between text-sm"><span className="text-gray-400">Address</span><span className="text-gray-600 dark:text-gray-300">{viewTarget.address || "N/A"}</span></div>
               </div>
               <div className="flex gap-3 mt-6">
-                <button onClick={() => { setViewTarget(null); setEditItem(viewTarget); setFormOpen(true); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition"><Edit3 className="w-4 h-4" /> Edit</button>
+                <button onClick={() => { setViewTarget(null); openForm(viewTarget); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition"><Edit3 className="w-4 h-4" /> Edit</button>
                 <button onClick={() => setViewTarget(null)} className="flex-1 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition">Close</button>
               </div>
             </div>

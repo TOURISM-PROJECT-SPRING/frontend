@@ -29,14 +29,39 @@ import AdminLogsPage from "./admin/AdminLogsPage";
 import AdminSettingsPage from "./admin/AdminSettingsPage";
 import AdminProfilePage from "./admin/AdminProfilePage";
 import AdminContactMessagesPage from "./admin/AdminContactMessagesPage";
+import useDashboardData from "../hooks/useDashboardData";
 
 function AdminOverview() {
+  const { loading, error, data, reload } = useDashboardData();
+  const problem = error || data?.error;
+
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">Welcome back, Admin!</h1>
         <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Here's what's happening with your system.</p>
       </div>
+      {loading && (
+        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
+          Loading dashboard from the server...
+        </div>
+      )}
+      {(problem || data?.partial) && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+          <span>
+            {problem
+              ? `Backend: ${problem}`
+              : `Some dashboard data could not be loaded (${data.failedSources.join(", ")}). Showing partial results.`}
+          </span>
+          <button
+            type="button"
+            onClick={reload}
+            className="shrink-0 rounded-lg border border-amber-300 dark:border-amber-500/40 px-3 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       <AdminKPICards />
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="xl:col-span-2">

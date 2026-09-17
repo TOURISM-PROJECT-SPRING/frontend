@@ -1,10 +1,11 @@
-import { BedDouble, Ticket, UtensilsCrossed } from "lucide-react";
+import { BedDouble, Ticket, UtensilsCrossed, Package } from "lucide-react";
 import useDashboardData from "../../hooks/useDashboardData";
 
 const typeConfig = {
   Room: { icon: BedDouble, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10" },
   Ticket: { icon: Ticket, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
   Food: { icon: UtensilsCrossed, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
+  Tour: { icon: Package, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
 };
 
 function timeAgo(date) {
@@ -19,7 +20,8 @@ function timeAgo(date) {
 
 export default function AdminRecentActivities() {
   const { data } = useDashboardData();
-  const activities = (data?.allBookings || []).slice(0, 6).map((b) => {
+  const source = data?.recentBookings?.length ? data.recentBookings : data?.allBookings || [];
+  const activities = source.slice(0, 6).map((b) => {
     const cfg = typeConfig[b.type] || typeConfig.Room;
     return {
       ...cfg,

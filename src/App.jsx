@@ -12,6 +12,7 @@ import HotelDetailPage from "./pages/HotelDetailPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import CheckoutPage from "./pages/CheckoutPage";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function PublicLayout() {
   return (
@@ -50,6 +51,14 @@ function App() {
       <Route path="/login" element={<LoginPage mode="login" />} />
       <Route path="/register" element={<LoginPage mode="register" />} />
       <Route path="/checkout" element={<CheckoutPage />} />
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/*" element={<PublicLayout />} />
     </Routes>
   );
