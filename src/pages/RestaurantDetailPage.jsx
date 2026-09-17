@@ -1,320 +1,304 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import Icon from "../components/ui/Icon";
-import SmartImage from "../components/ui/SmartImage";
-import Rating from "../components/ui/Rating";
-import { Skeleton, EmptyState, DemoNote } from "../components/ui/feedback";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { useRestaurant } from "../hooks/useResource";
+import { buildRestaurantDetail } from "../data/restaurantDetail";
+import { useAuth } from "../context/AuthContext";
+import { useFavorites } from "../context/FavoritesContext";
 import { useToast } from "../components/ui/Toast";
-import { useRestaurants } from "../hooks/useResource";
+import { EmptyState, ErrorState } from "../components/ui/feedback";
+import Icon from "../components/ui/Icon";
+
+import RestaurantBreadcrumb from "../components/restaurants/detail/RestaurantBreadcrumb";
+import RestaurantHeader from "../components/restaurants/detail/RestaurantHeader";
+import RestaurantGallery from "../components/restaurants/detail/RestaurantGallery";
+import AwardBadge from "../components/restaurants/detail/AwardBadge";
+import RestaurantDescription from "../components/restaurants/detail/RestaurantDescription";
+import FeaturesList from "../components/restaurants/detail/FeaturesList";
+import OpeningHours from "../components/restaurants/detail/OpeningHours";
+import LocationSection from "../components/restaurants/detail/LocationSection";
+import ReviewsSection from "../components/restaurants/detail/ReviewsSection";
+import ReviewModal from "../components/restaurants/detail/ReviewModal";
+import DetailSkeleton from "../components/restaurants/detail/DetailSkeleton";
+
+function scrollToId(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export default function RestaurantDetailPage() {
   const { id } = useParams();
-  const { items: restaurants, loading, source } = useRestaurants();
+  const navigate = useNavigate();
+  const { items, loading, error, source } = useRestaurant(id);
+  const { user, isAuthenticated } = useAuth();
+  const { isSaved, toggle } = useFavorites();
   const toast = useToast();
 
-  const [showReservePrompt, setShowReservePrompt] = useState(false);
-  const [reserveDate, setReserveDate] = useState("");
-  const [reserveTime, setReserveTime] = useState("");
-  const [reserveGuests, setReserveGuests] = useState(2);
+  const restaurant = useMemo(() => buildRestaurantDetail(items[0]), [items]);
+  const [guestReviews, setGuestReviews] = useState([]);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reserveOpen, setReserveOpen] = useState(false);
 
-  const restaurant = restaurants.find((r) => String(r.id) === String(id));
+  const favorite = restaurant ? isSaved("restaurant", restaurant.id) : false;
 
-  const handleReserve = () => {
-    setShowReservePrompt(true);
+  useEffect(() => {
+    if (!restaurant) return;
+    document.title = `${restaurant.title} | SovannDomNour`;
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "description");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute(
+      "content",
+      `${restaurant.title} in ${restaurant.city}, Cambodia — photos, reviews, menu, opening hours, features and location.`
+    );
+    return () => {
+      document.title = "SovannDomNour";
+    };
+  }, [restaurant]);
+
+  const onToggleFavorite = () => {
+    const saved = toggle({
+      kind: "restaurant",
+      id: restaurant.id,
+      title: restaurant.title,
+      image: restaurant.galleryImages[0]?.url || restaurant.image,
+      location: restaurant.city,
+      href: `/restaurants/${id}`,
+    });
+    toast[saved ? "success" : "info"](
+      saved ? `Saved ${restaurant.title} to My trips.` : `Removed ${restaurant.title} from My trips.`
+    );
   };
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <Skeleton className="aspect-[3/1] w-full" />
-        <Skeleton className="mt-6 h-10 w-1/3" />
-        <Skeleton className="mt-4 h-6 w-2/3" />
-      </div>
-    );
-  }
+  const onReview = () => {
+    if (!isAuthenticated) {
+      toast.info("Please sign in to write a review.");
+      navigate("/login", { state: { from: `/restaurants/${id}` } });
+      return;
+    }
+    setReviewOpen(true);
+  };
+
+  /* --------------------------- states --------------------------- */
+  if (loading) return <DetailSkeleton />;
 
   if (!restaurant) {
+    const container = "mx-auto w-full max-w-[1240px] px-4 py-16 sm:px-6 lg:px-8";
+    if (error && source !== "demo") {
+      return (
+        <div className={container}>
+          <div className="mx-auto max-w-md">
+            <ErrorState message="Unable to load this restaurant. Please try again." retry={() => window.location.reload()} />
+          </div>
+        </div>
+      );
+    }
     return (
-      <div className="mx-auto max-w-3xl px-4 py-20">
-        <EmptyState title="Restaurant not found" message="This restaurant may have been removed or is unavailable." icon="utensils" />
-        <div className="mt-6 text-center">
-          <Link to="/restaurant" className="font-bold text-brand-700 hover:text-brand-800">
-            ← Back to restaurants
-          </Link>
+      <div className={container}>
+        <div className="mx-auto max-w-md">
+          <EmptyState
+            title="Restaurant not found"
+            message="This restaurant may have been removed or is no longer available."
+            icon="utensils"
+            action={
+              <Link to="/restaurant" className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800">
+                Back to restaurants
+              </Link>
+            }
+          />
         </div>
       </div>
     );
   }
 
+  const full = [restaurant.address, restaurant.city, restaurant.country].filter(Boolean).join(", ");
+  const mapsUrl =
+    restaurant.latitude != null && restaurant.longitude != null
+      ? `https://www.google.com/maps/search/?api=1&query=${restaurant.latitude},${restaurant.longitude}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${restaurant.title} ${full}`.trim())}`;
+
   return (
-    <div className="min-h-screen bg-canvas">
-      {/* Hero */}
-      <div className="relative isolate">
-        {restaurant.image ? (
-          <div className="relative h-[50vh] min-h-[360px] w-full overflow-hidden">
-            <SmartImage src={restaurant.image} alt={restaurant.title} className="h-full w-full" />
-            <div className="absolute inset-0 bg-gradient-to-t from-brand-950/80 via-brand-950/20 to-transparent" />
-          </div>
-        ) : (
-          <div className="relative h-[50vh] min-h-[360px] w-full bg-gradient-to-br from-brand-700 to-brand-500" />
-        )}
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto w-full max-w-[1320px] px-4 pt-5 sm:px-6 lg:px-8">
+        <RestaurantBreadcrumb city={restaurant.city} title={restaurant.title} />
 
-        <div className="absolute inset-x-0 bottom-0">
-          <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-            <nav className="mb-3 flex items-center gap-1.5 text-sm text-white/70">
-              <Link to="/" className="hover:text-white">Home</Link>
-              <Icon name="chevron-right" size={14} />
-              <Link to="/restaurant" className="hover:text-white">Restaurants</Link>
-              <Icon name="chevron-right" size={14} />
-              <span className="font-semibold text-white">{restaurant.title}</span>
-            </nav>
+        <RestaurantHeader
+          restaurant={restaurant}
+          favorite={favorite}
+          onToggleFavorite={onToggleFavorite}
+          onReview={onReview}
+          onJumpReviews={() => scrollToId("reviews")}
+        />
 
-            <div className="flex flex-wrap items-center gap-2">
-              {restaurant.open != null && (
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                  restaurant.open
-                    ? "bg-success/90 text-white"
-                    : "bg-white/15 text-white/80 backdrop-blur ring-1 ring-white/20"
-                }`}>
-                  {restaurant.open ? "Open Now" : "Closed"}
-                </span>
-              )}
-              {restaurant.category && (
-                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur ring-1 ring-white/20">
-                  {restaurant.category}
-                </span>
-              )}
-            </div>
+        {/* Two-column information section */}
+        <div className="grid gap-10 py-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-14">
+          <div className="min-w-0 space-y-14">
+            <RestaurantGallery images={restaurant.galleryImages} award={restaurant.award} title={restaurant.title} />
 
-            <h1 className="mt-3 font-display text-4xl font-bold text-white sm:text-5xl">{restaurant.title}</h1>
-
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-white/80">
-              {restaurant.rating != null && <Rating value={restaurant.rating} reviews={restaurant.reviews} light />}
-              {restaurant.location && (
-                <span className="flex items-center gap-1.5">
-                  <Icon name="map-pin" size={15} className="text-gold-300" />
-                  {restaurant.location}
-                </span>
+            <section>
+              {restaurant.award && (
+                <div className="mb-6">
+                  <AwardBadge award={restaurant.award} variant="tile" />
+                </div>
               )}
-              {restaurant.openLabel && (
-                <span className="flex items-center gap-1.5">
-                  <Icon name="clock" size={15} className="text-gold-300" />
-                  {restaurant.openLabel}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-          <div className="space-y-8">
-            {/* Description */}
-            {restaurant.description && (
-              <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
-                <h2 className="font-display text-xl font-bold text-brand-800">About this restaurant</h2>
-                <p className="mt-3 leading-relaxed text-muted">{restaurant.description}</p>
-              </section>
-            )}
-
-            {/* Quick Info */}
-            <div className="flex flex-wrap gap-3">
-              {restaurant.category && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                  <Icon name="utensils" size={16} /> {restaurant.category}
-                </span>
-              )}
-              {restaurant.location && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                  <Icon name="map-pin" size={16} /> {restaurant.location}
-                </span>
-              )}
-              {restaurant.openLabel && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-                  <Icon name="clock" size={16} /> {restaurant.openLabel}
-                </span>
-              )}
-            </div>
-
-            {/* Contact Info */}
-            <section className="rounded-2xl border border-line bg-white p-6 shadow-soft">
-              <h2 className="font-display text-xl font-bold text-brand-800">Contact information</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {restaurant.phone && (
-                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
-                    <Icon name="phone" size={17} className="text-brand-500" />
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Phone</p>
-                      <p className="text-sm font-semibold text-brand-800">{restaurant.phone}</p>
-                    </div>
-                  </div>
-                )}
-                {restaurant.email && (
-                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
-                    <Icon name="mail" size={17} className="text-brand-500" />
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Email</p>
-                      <p className="text-sm font-semibold text-brand-800">{restaurant.email}</p>
-                    </div>
-                  </div>
-                )}
-                {restaurant.location && (
-                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
-                    <Icon name="map-pin" size={17} className="text-brand-500" />
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Location</p>
-                      <p className="text-sm font-semibold text-brand-800">{restaurant.location}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <RestaurantDescription text={restaurant.description} />
             </section>
 
-            {source === "demo" && <DemoNote />}
+            <FeaturesList
+              rows={restaurant.featureRows}
+              groups={restaurant.allFeatures}
+              title={restaurant.title}
+            />
           </div>
 
-          {/* Reservation Sidebar */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-gold-300 bg-white p-6 shadow-lift">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Reserve a table</p>
-                  <p className="font-display text-xl font-bold text-brand-800">
-                    {restaurant.open != null ? (restaurant.open ? "Open now" : "Currently closed") : "Reserve"}
-                  </p>
-                </div>
-                {restaurant.rating != null && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1.5">
-                    <Icon name="star" size={14} className="text-gold-500" fill="currentColor" stroke="none" />
-                    <span className="text-sm font-bold text-brand-800">{Number(restaurant.rating).toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
+          <aside className="space-y-6 self-start lg:sticky lg:top-[124px]">
+            <OpeningHours hours={restaurant.openingHours} open={restaurant.open !== false} />
 
-              <div className="mt-5 space-y-3">
-                <label className="block">
-                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
-                    <Icon name="calendar" size={14} className="text-brand-500" /> Date
-                  </span>
-                  <input
-                    type="date"
-                    value={reserveDate}
-                    onChange={(e) => setReserveDate(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
-                    <Icon name="clock" size={14} className="text-brand-500" /> Time
-                  </span>
-                  <select
-                    value={reserveTime}
-                    onChange={(e) => setReserveTime(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10"
-                  >
-                    <option value="">Select time</option>
-                    {["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"].map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
-                    <Icon name="users" size={14} className="text-brand-500" /> Guests
-                  </span>
-                  <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-3">
-                    <button
-                      type="button"
-                      onClick={() => setReserveGuests((g) => Math.max(1, g - 1))}
-                      className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 hover:bg-brand-50"
-                    >
-                      <Icon name="minus" size={16} />
-                    </button>
-                    <span className="min-w-[3ch] text-center text-lg font-bold text-brand-800">{reserveGuests}</span>
-                    <button
-                      type="button"
-                      onClick={() => setReserveGuests((g) => Math.min(20, g + 1))}
-                      className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800"
-                    >
-                      <Icon name="plus" size={16} />
-                    </button>
-                  </div>
-                </label>
-              </div>
-
+            <div className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Reserve</p>
+              <p className="mt-1 font-display text-lg font-bold text-brand-900">Book a table</p>
+              <p className="mt-1 text-sm text-muted">
+                {restaurant.open !== false ? "Open now — reserve your spot for tonight." : "Send a reservation request and we'll confirm by phone."}
+              </p>
               <button
                 type="button"
-                onClick={handleReserve}
-                className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md"
+                onClick={() => setReserveOpen(true)}
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md active:scale-[0.99]"
               >
-                <Icon name="utensils" size={18} />
-                Reserve Table
+                <Icon name="utensils" size={17} />
+                Reserve a Table
               </button>
-
-              <div className="mt-4 space-y-1.5 text-[11px] font-medium text-muted">
-                <p className="flex items-center gap-1.5">
-                  <Icon name="check-circle" size={13} className="text-success" /> Instant confirmation
-                </p>
-                <p className="flex items-center gap-1.5">
-                  <Icon name="check-circle" size={13} className="text-success" /> No pre-payment required
-                </p>
-              </div>
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+              >
+                <Icon name="map-pin" size={17} />
+                Get Directions
+              </a>
             </div>
-          </div>
+          </aside>
+        </div>
+
+        <div className="pb-12">
+          <LocationSection
+            address={restaurant.address}
+            city={restaurant.city}
+            country={restaurant.country}
+            lat={restaurant.latitude}
+            lng={restaurant.longitude}
+            name={restaurant.title}
+            phone={restaurant.phone}
+            email={restaurant.email}
+            parking={restaurant.parking}
+          />
+        </div>
+
+        <div className="border-t border-line py-12">
+          <ReviewsSection
+            title={restaurant.title}
+            rating={restaurant.rating}
+            reviews={restaurant.reviews}
+            ratingBreakdown={restaurant.ratingBreakdown}
+            reviewList={[...guestReviews, ...restaurant.reviewsList]}
+            onReviewsClick={() => scrollToId("reviews")}
+          />
         </div>
       </div>
 
-      {/* Reservation Prompt Modal */}
-      {showReservePrompt && (
-        <div
-          className="fixed inset-0 z-[100] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm"
-          onClick={() => setShowReservePrompt(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-line bg-white p-6 shadow-lift animate-scalein"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-600">
-              <Icon name="utensils" size={22} />
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        author={user?.name || user?.fullName || "You"}
+        title={restaurant.title}
+        onSubmit={(r) => {
+          setGuestReviews((prev) => [r, ...prev]);
+          toast.success("Thanks! Your review was published.");
+          scrollToId("reviews");
+        }}
+      />
+
+      <ReserveModal
+        open={reserveOpen}
+        onClose={() => setReserveOpen(false)}
+        title={restaurant.title}
+        onConfirm={(payload) => {
+          setReserveOpen(false);
+          toast.success(
+            `Reservation requested for ${payload.guests} guest${payload.guests > 1 ? "s" : ""}${
+              payload.date ? ` on ${payload.date}` : ""
+            }${payload.time ? ` at ${payload.time}` : ""}.`
+          );
+        }}
+      />
+    </div>
+  );
+}
+
+/* --------------------- Compact reservation request --------------------- */
+function ReserveModal({ open, onClose, title, onConfirm }) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("19:00");
+  const [guests, setGuests] = useState(2);
+  if (!open) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label="Reserve a table">
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md animate-scalein rounded-2xl border border-line bg-white p-6 shadow-lift">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-display text-xl font-bold text-brand-900">Reserve a table</h3>
+            {title && <p className="mt-0.5 text-sm text-muted">{title}</p>}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-brand-50 hover:text-brand-700">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          <label className="block">
+            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+              <Icon name="calendar" size={14} className="text-brand-500" /> Date
             </span>
-            <h3 className="mt-4 font-display text-xl font-bold text-brand-800">Reserve a table?</h3>
-            <p className="mt-2 text-sm text-muted">
-              You&apos;re reserving a table at <strong>{restaurant.title}</strong> for {reserveGuests} guest{reserveGuests > 1 ? "s" : ""}
-              {reserveDate ? ` on ${new Date(reserveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}` : ""}
-              {reserveTime ? ` at ${reserveTime}` : ""}.
-            </p>
-            <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
-              <div className="flex items-center gap-2 text-sm text-brand-800">
-                <Icon name="check-circle" size={16} className="text-success" />
-                <span className="font-semibold">Reservation is free — no payment required</span>
-              </div>
-            </div>
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowReservePrompt(false)}
-                className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
-              >
-                Cancel
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400" />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+              <Icon name="clock" size={14} className="text-brand-500" /> Time
+            </span>
+            <select value={time} onChange={(e) => setTime(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400">
+              {["11:00", "12:00", "13:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"].map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+              <Icon name="users" size={14} className="text-brand-500" /> Guests
+            </span>
+            <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-3">
+              <button type="button" onClick={() => setGuests((g) => Math.max(1, g - 1))} aria-label="Fewer guests" className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 hover:bg-brand-50">
+                <Icon name="minus" size={16} />
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReservePrompt(false);
-                  toast.success(`Table reserved at ${restaurant.title}!`);
-                }}
-                className="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800"
-              >
-                Confirm Reservation
+              <span className="min-w-[3ch] text-center text-lg font-bold text-brand-800">{guests}</span>
+              <button type="button" onClick={() => setGuests((g) => Math.min(20, g + 1))} aria-label="More guests" className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800">
+                <Icon name="plus" size={16} />
               </button>
             </div>
           </div>
         </div>
-      )}
-    </div>
+
+        <div className="mt-6 flex gap-3">
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50">Cancel</button>
+          <button type="button" onClick={() => onConfirm({ date, time, guests })} className="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800">
+            Confirm Reservation
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }

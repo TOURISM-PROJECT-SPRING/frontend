@@ -46,17 +46,20 @@ export function FavoritesProvider({ children }) {
   );
 
   // Add a place to the list (idempotent). Returns true when something was added.
-  const add = useCallback((item) => {
-    const key = item.key || `${item.kind}-${item.id}`;
-    let added = false;
-    setItems((prev) => {
-      if (prev.some((i) => i.key === key)) return prev;
-      added = true;
-      return [...prev, { kind: item.kind, id: item.id, key, title: item.title, image: item.image, location: item.location, href: item.href }];
-    });
-    if (added) setFlashed((v) => !v);
-    return added;
-  }, []);
+  const add = useCallback(
+    (item) => {
+      const key = item.key || `${item.kind}-${item.id}`;
+      if (items.some((i) => i.key === key)) return false;
+      setItems((prev) =>
+        prev.some((i) => i.key === key)
+          ? prev
+          : [...prev, { kind: item.kind, id: item.id, key, title: item.title, image: item.image, location: item.location, href: item.href }]
+      );
+      setFlashed((v) => !v);
+      return true;
+    },
+    [items]
+  );
 
   // Heart toggle: saves the item or removes it if already saved.
   // Returns true when the item ended up saved, false when removed.

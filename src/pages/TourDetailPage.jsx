@@ -53,6 +53,7 @@ export default function TourDetailPage() {
       state: {
         kind: "tour",
         id: tour.id,
+        ticketId: tour.ticketId ?? null,
         title: tour.title,
         subtitle: tour.category || "Guided tour",
         image: tour.image,

@@ -7,6 +7,10 @@ export const paymentService = {
     });
     return response.data;
   },
+  processPayment: async (data) => {
+    const response = await axiosClient.post('/payments/process', data);
+    return response.data;
+  },
   handleCallback: async (data) => {
     const response = await axiosClient.post('/payments/callback', data);
     return response.data;

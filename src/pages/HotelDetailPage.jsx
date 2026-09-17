@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useHotel, useHotels } from "../hooks/useResource";
-import { roomBookingService } from "../services/roomBookingService";
-import { buildRoomBookingPayload } from "../lib/cartBooking";
 import { useAuth } from "../context/AuthContext";
 import { useFavorites } from "../context/FavoritesContext";
 import { useToast } from "../components/ui/Toast";
@@ -48,7 +46,7 @@ export default function HotelDetailPage() {
   const navigate = useNavigate();
   const { items, loading, error, source } = useHotel(id);
   const hotelsList = useHotels();
-  const { user, isAuthenticated, userId } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
 
@@ -68,7 +66,6 @@ export default function HotelDetailPage() {
   const [guestReviews, setGuestReviews] = useState([]);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [pendingDeal, setPendingDeal] = useState(null); // { provider, room } awaiting confirm
-  const [placing, setPlacing] = useState(false);
 
   const nights = nightsBetween(booking.checkIn, booking.checkOut);
   const dateValue = { ...booking, nights };
@@ -116,33 +113,25 @@ export default function HotelDetailPage() {
       setPendingDeal(null);
       return;
     }
-    setPlacing(true);
-    try {
-      const res = await roomBookingService.createRoomBooking(
-        buildRoomBookingPayload(
-          {
-            meta: {
-              roomId,
-              guests: booking.adults + booking.children,
-              checkIn: booking.checkIn,
-              checkOut: booking.checkOut,
-              nights,
-            },
-          },
-          userId
-        )
-      );
-      if (res) {
-        toast.success(`${hotel.title} booked (${nights} night${nights > 1 ? "s" : ""}) — see your bookings.`);
-        setPendingDeal(null);
-        navigate("/profile");
-      } else {
-        toast.error("The booking was rejected. Please try again.");
-      }
-    } catch {
-      toast.error("Booking couldn't be placed — the backend is unreachable.");
-    }
-    setPlacing(false);
+    navigate("/checkout", {
+      state: {
+        kind: "hotel",
+        id: hotel.id,
+        roomId,
+        roomType: room?.roomType || "Room",
+        title: hotel.title,
+        subtitle: hotel.location || hotel.city,
+        image: hotel.image,
+        location: hotel.location || hotel.city,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        guests: booking.adults + booking.children,
+        price: Number(pendingDeal.provider?.price ?? hotel.price) || 0,
+        priceUnit: "/night",
+        cancelCutoff: "Free before check-in",
+      },
+    });
+    setPendingDeal(null);
   };
 
   const onToggleFavorite = () => {
@@ -270,12 +259,12 @@ export default function HotelDetailPage() {
         onSubmit={(r) => { setGuestReviews((prev) => [r, ...prev]); toast.success("Thanks! Your review was published."); scrollToId("reviews"); }}
       />
 
-      <Modal open={!!pendingDeal} onClose={() => (placing ? null : setPendingDeal(null))} title="Confirm your stay" size="lg">
+      <Modal open={!!pendingDeal} onClose={() => setPendingDeal(null)} title="Confirm your stay" size="lg">
         {pendingDeal && (
           <div className="space-y-4">
             <p className="text-sm text-muted">
-              Review the details and confirm — this places the booking on your account
-              {user?.email ? ` (${user.email})` : ""}. Payment is collected at check-in.
+              Review the details and confirm — this takes you to secure checkout
+              {user?.email ? ` for ${user.email}` : ""}. Payment is collected securely there.
             </p>
             <div className="rounded-xl border border-line bg-canvas p-4">
               <p className="font-display text-lg font-bold text-brand-800">{hotel.title}</p>
@@ -300,9 +289,9 @@ export default function HotelDetailPage() {
               </span>
             </div>
             <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1 justify-center" disabled={placing} onClick={() => setPendingDeal(null)}>Back</Button>
-              <Button variant="primary" className="flex-1 justify-center" disabled={placing} onClick={confirmBooking}>
-                {placing ? "Placing booking…" : "Confirm & Pay"}
+              <Button variant="secondary" className="flex-1 justify-center" onClick={() => setPendingDeal(null)}>Back</Button>
+              <Button variant="primary" className="flex-1 justify-center" onClick={confirmBooking}>
+                Proceed to Checkout
               </Button>
             </div>
           </div>

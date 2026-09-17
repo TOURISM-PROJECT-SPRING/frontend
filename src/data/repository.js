@@ -31,6 +31,7 @@ import {
   fallbackBookings,
 } from "./fallbacks";
 import { demoExtraHotels } from "./hotels";
+import { demoRestaurants, decorateRestaurants } from "./restaurants";
 import { toNumber } from "../lib/format";
 
 // Each fetcher returns { items, source } where source is "api" or "demo".
@@ -157,7 +158,7 @@ export const repository = {
       const card = normalizeRestaurant(r);
       card.menu = (foods || []).map(normalizeFood);
       return [card];
-    }, fallbackRestaurants.filter((x) => String(x.id) === String(id)));
+    }, [...fallbackRestaurants, ...decorateRestaurants(demoRestaurants)].filter((x) => String(x.id) === String(id)));
     if (res.source === "demo" && res.items[0] && !res.items[0].menu) res.items[0].menu = fallbackFoods;
     return res;
   },
