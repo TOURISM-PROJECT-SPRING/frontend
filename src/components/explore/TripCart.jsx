@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Drawer, Modal } from "../ui/Modal";
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
@@ -13,7 +14,10 @@ import { money } from "../../lib/format";
 
 const KIND_ICON = { tour: "luggage", hotel: "bed", restaurant: "utensils" };
 
+const KIND_KEY = { tour: "cart.kindTour", hotel: "cart.kindHotel", restaurant: "cart.kindRestaurant" };
+
 function ItemRow({ item, onQty, onRemove }) {
+  const { t } = useTranslation();
   return (
     <div className="flex gap-3 rounded-xl border border-line bg-white p-3">
       <span className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg">
@@ -25,7 +29,7 @@ function ItemRow({ item, onQty, onRemove }) {
           </span>
         )}
         <span className="absolute left-1 top-1 rounded bg-brand-900/80 px-1.5 py-0.5 text-[9px] font-bold uppercase text-gold-300">
-          {item.kind}
+          {t(KIND_KEY[item.kind] || "cart.kindTour")}
         </span>
       </span>
 
@@ -33,10 +37,10 @@ function ItemRow({ item, onQty, onRemove }) {
         <p className="truncate text-sm font-bold text-brand-800">{item.title}</p>
         {item.location && <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted"><Icon name="map-pin" size={11} className="text-brand-400 shrink-0" /> {item.location}</p>}
         {item.kind === "hotel" && item.meta?.roomType && (
-          <p className="mt-0.5 text-xs font-medium text-muted">{item.meta.roomType} · {item.meta.nights || item.qty} night{item.qty > 1 ? "s" : ""}</p>
+          <p className="mt-0.5 text-xs font-medium text-muted">{item.meta.roomType} · {t("hotelModal.nightCount", { count: item.meta?.nights || item.qty })}</p>
         )}
         {item.kind === "tour" && item.meta?.date && (
-          <p className="mt-0.5 text-xs font-medium text-muted">Trip date {item.meta.date}</p>
+          <p className="mt-0.5 text-xs font-medium text-muted">{t("cart.tripDate", { date: item.meta.date })}</p>
         )}
         {item.price != null && (
           <p className="mt-1 text-sm font-bold text-brand-700">{money((item.price || 0) * item.qty)} <span className="text-[11px] font-medium text-muted">({money(item.price)}{item.priceUnit})</span></p>
@@ -44,15 +48,15 @@ function ItemRow({ item, onQty, onRemove }) {
       </div>
 
       <div className="flex shrink-0 flex-col items-end justify-between gap-2">
-        <button type="button" onClick={() => onRemove(item.key)} aria-label="Remove" className="grid h-7 w-7 place-items-center rounded-lg text-muted transition-colors hover:bg-danger/10 hover:text-danger">
+        <button type="button" onClick={() => onRemove(item.key)} aria-label={t("cart.remove")} className="grid h-7 w-7 place-items-center rounded-lg text-muted transition-colors hover:bg-danger/10 hover:text-danger">
           <Icon name="trash" size={15} />
         </button>
         <div className="flex items-center gap-1.5">
-          <button type="button" onClick={() => onQty(item.key, item.qty - 1)} aria-label="Decrease" className="grid h-7 w-7 place-items-center rounded-lg border border-line text-brand-700 hover:bg-brand-50">
+          <button type="button" onClick={() => onQty(item.key, item.qty - 1)} aria-label={t("cart.decrease")} className="grid h-7 w-7 place-items-center rounded-lg border border-line text-brand-700 hover:bg-brand-50">
             <Icon name="minus" size={13} />
           </button>
           <span className="min-w-[1.5ch] text-center text-sm font-bold text-brand-800">{item.qty}</span>
-          <button type="button" onClick={() => onQty(item.key, item.qty + 1)} aria-label="Increase" className="grid h-7 w-7 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800">
+          <button type="button" onClick={() => onQty(item.key, item.qty + 1)} aria-label={t("cart.increase")} className="grid h-7 w-7 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800">
             <Icon name="plus" size={13} />
           </button>
         </div>
@@ -62,12 +66,13 @@ function ItemRow({ item, onQty, onRemove }) {
 }
 
 export function CartButton() {
+  const { t } = useTranslation();
   const { count, flashed, openCart } = useTripCart();
   return (
     <button
       type="button"
       onClick={openCart}
-      aria-label={`Open trip cart, ${count} items`}
+      aria-label={t("cart.openLabel", { count })}
       className="relative grid h-10 w-10 place-items-center rounded-xl text-ink/70 transition-colors hover:bg-brand-50 hover:text-brand-700"
     >
       <Icon name="luggage" size={19} />
@@ -84,6 +89,7 @@ export function CartButton() {
 }
 
 export default function TripCart() {
+  const { t } = useTranslation();
   const { items, isOpen, closeCart, setQty, removeItem, clear, province, subtotal, count } = useTripCart();
   const { isAuthenticated, user, userId } = useAuth();
   const toast = useToast();
@@ -134,21 +140,21 @@ export default function TripCart() {
 
     const failed = results.fail.length;
     if (failed === 0 && results.ok.length > 0) {
-      toast.success(`Booking confirmed — ${results.ok.length} item${results.ok.length > 1 ? "s" : ""} on your trip.`);
+      toast.success(t("cart.bookedToast", { count: results.ok.length }));
       clear();
       closeCart();
     } else if (results.ok.length > 0) {
-      toast.success(`${results.ok.length} booking confirmed.`);
+      toast.success(t("cart.partialToast", { count: results.ok.length }));
       removeFailed(results.fail);
     } else {
-      toast.error("Booking couldn't be placed right now — the backend is offline. Please try again shortly.");
+      toast.error(t("cart.errorToast"));
     }
   };
 
   const removeFailed = (keys) => keys.forEach((k) => removeItem(k));
 
   return (
-    <Drawer open={isOpen} onClose={closeCart} title="Your trip" width="max-w-md">
+    <Drawer open={isOpen} onClose={closeCart} title={t("cart.title")} width="max-w-md">
       {/* Header meta */}
       <div className="mb-4 flex items-center gap-2">
         {province ? (
@@ -156,12 +162,12 @@ export default function TripCart() {
             <Icon name="map-pin" size={13} className="text-gold-600" /> {province}
           </span>
         ) : (
-          <span className="inline-flex items-center rounded-full bg-canvas px-3 py-1.5 text-xs font-bold text-muted">No province selected</span>
+          <span className="inline-flex items-center rounded-full bg-canvas px-3 py-1.5 text-xs font-bold text-muted">{t("cart.noProvince")}</span>
         )}
-        <span className="ml-auto rounded-full bg-canvas px-3 py-1.5 text-xs font-bold text-brand-800">{count} item{count === 1 ? "" : "s"}</span>
+        <span className="ml-auto rounded-full bg-canvas px-3 py-1.5 text-xs font-bold text-brand-800">{t("cart.itemCount", { count })}</span>
         {items.length > 0 && (
           <button type="button" onClick={clear} className="inline-flex items-center gap-1 text-xs font-bold text-danger hover:underline">
-            <Icon name="trash" size={13} /> Clear
+            <Icon name="trash" size={13} /> {t("cart.clear")}
           </button>
         )}
       </div>
@@ -171,20 +177,20 @@ export default function TripCart() {
           <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-400">
             <Icon name="luggage" size={26} />
           </span>
-          <h3 className="mt-4 font-display text-lg font-bold text-brand-800">Your trip is empty</h3>
-          <p className="mt-1 max-w-xs text-sm text-muted">Add a tour or a hotel to start planning your journey.</p>
+          <h3 className="mt-4 font-display text-lg font-bold text-brand-800">{t("cart.emptyTitle")}</h3>
+          <p className="mt-1 max-w-xs text-sm text-muted">{t("cart.emptyMessage")}</p>
         </div>
       ) : (
         <div className="space-y-3">
           {tours.length > 0 && (
             <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted"><Icon name="luggage" size={14} className="text-brand-500" /> Tours</p>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted"><Icon name="luggage" size={14} className="text-brand-500" /> {t("cart.toursGroup")}</p>
               <div className="space-y-2">{tours.map((i) => <ItemRow key={i.key} item={i} onQty={setQty} onRemove={removeItem} />)}</div>
             </div>
           )}
           {hotels.length > 0 && (
             <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted"><Icon name="bed" size={14} className="text-brand-500" /> Hotels</p>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted"><Icon name="bed" size={14} className="text-brand-500" /> {t("cart.hotelsGroup")}</p>
               <div className="space-y-2">{hotels.map((i) => <ItemRow key={i.key} item={i} onQty={setQty} onRemove={removeItem} />)}</div>
             </div>
           )}
@@ -194,37 +200,37 @@ export default function TripCart() {
       {/* Footer summary */}
       <div className="mt-5 rounded-2xl border border-line bg-canvas p-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted">Subtotal</span>
+          <span className="text-muted">{t("cart.subtotal")}</span>
           <span className="font-bold text-brand-800">{money(subtotal)}</span>
         </div>
         <div className="mt-1 flex items-center justify-between text-sm">
-          <span className="text-muted">Estimated total</span>
+          <span className="text-muted">{t("cart.estimatedTotal")}</span>
           <span className="flex items-center gap-1 font-display text-lg font-bold text-brand-700">
             <Icon name="star" size={13} className="text-gold-400" fill="currentColor" stroke="none" />
             {money(subtotal)}
           </span>
         </div>
-        <p className="mt-1 text-[11px] text-muted">Taxes and fees may apply at check-in.</p>
+        <p className="mt-1 text-[11px] text-muted">{t("cart.taxesNote")}</p>
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
         <Button variant="primary" className="w-full justify-center" onClick={() => (isAuthenticated ? setCheckout(true) : navigate("/login"))}>
-          {isAuthenticated ? <>Continue to booking <Icon name="arrow-right" size={16} /></> : <>Sign in to book</>}
+          {isAuthenticated ? <>{t("cart.continueBooking")} <Icon name="arrow-right" size={16} /></> : <>{t("cart.signInBook")}</>}
         </Button>
-        {!isAuthenticated && <p className="text-center text-xs text-muted">You'll need an account to place a booking.</p>}
+        {!isAuthenticated && <p className="text-center text-xs text-muted">{t("cart.needAccount")}</p>}
       </div>
 
       {/* Checkout modal */}
-      <Modal open={checkout} onClose={() => setCheckout(false)} title="Confirm your booking" size="lg">
+      <Modal open={checkout} onClose={() => setCheckout(false)} title={t("cart.confirmTitle")} size="lg">
         <div className="space-y-4">
-          <p className="text-sm text-muted">Review your trip and place the booking. It uses your logged-in account ({user?.email || user?.username}).</p>
+          <p className="text-sm text-muted">{t("cart.review", { account: user?.email || user?.username })}</p>
           <div className="space-y-2">
             {items.map((i) => (
               <div key={i.key} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-brand-800">{i.title}</p>
                   <p className="text-xs text-muted">
-                    {i.kind === "hotel" ? `${i.meta?.roomType || "Room"} · ${i.qty} night(s)` : `${i.qty} guest(s)`}
+                    {i.kind === "hotel" ? t("cart.itemMetaHotel", { room: i.meta?.roomType || t("hotelModal.room"), count: i.qty }) : t("cart.itemMetaTour", { count: i.qty })}
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-bold text-brand-700">{money((i.price || 0) * i.qty)}</span>
@@ -232,13 +238,13 @@ export default function TripCart() {
             ))}
           </div>
           <div className="flex items-center justify-between rounded-xl bg-brand-700 px-4 py-3 text-white">
-            <span className="text-sm font-bold">Total</span>
+            <span className="text-sm font-bold">{t("cart.total")}</span>
             <span className="font-display text-xl font-bold text-gold-400">{money(subtotal)}</span>
           </div>
           <div className="flex gap-3">
-            <Button variant="secondary" className="flex-1 justify-center" onClick={() => setCheckout(false)}>Back</Button>
+            <Button variant="secondary" className="flex-1 justify-center" onClick={() => setCheckout(false)}>{t("cart.back")}</Button>
             <Button variant="primary" className="flex-1 justify-center" disabled={placing} onClick={placeBooking}>
-              {placing ? "Placing booking…" : "Place booking"}
+              {placing ? t("cart.placing") : t("cart.placeBooking")}
             </Button>
           </div>
         </div>

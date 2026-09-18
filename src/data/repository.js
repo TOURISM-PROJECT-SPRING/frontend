@@ -30,6 +30,8 @@ import {
   fallbackRooms,
   fallbackBookings,
 } from "./fallbacks";
+import { demoExtraHotels } from "./hotels";
+import { demoRestaurants, decorateRestaurants } from "./restaurants";
 import { toNumber } from "../lib/format";
 
 // Each fetcher returns { items, source } where source is "api" or "demo".
@@ -58,7 +60,9 @@ async function ticketPriceByPlace() {
       const pid = t.tourismPlaceId;
       const price = toNumber(t.price);
       if (pid == null || price == null) continue;
-      if (map[pid] == null || price < map[pid]) map[pid] = price;
+      if (map[pid] == null || price < map[pid].price) {
+        map[pid] = { price, ticketId: t.id };
+      }
     }
   } catch {
     /* ignore — prices optional */
@@ -74,7 +78,9 @@ async function hotelPriceByHotel() {
       const hid = r.hotelId;
       const price = toNumber(r.pricePerNight);
       if (hid == null || price == null) continue;
-      if (map[hid] == null || price < map[hid]) map[hid] = price;
+      if (map[hid] == null || price < map[hid].price) {
+        map[hid] = { price, roomId: r.id, roomType: r.roomType };
+      }
     }
   } catch {
     /* ignore */
@@ -128,7 +134,7 @@ export const repository = {
         card.priceUnit = "/night";
       }
       return [card];
-    }, fallbackHotels.filter((x) => String(x.id) === String(id)));
+    }, [...fallbackHotels, ...demoExtraHotels].filter((x) => String(x.id) === String(id)));
     if (res.source === "demo" && res.items[0] && !res.items[0].rooms) res.items[0].rooms = fallbackRooms;
     return res;
   },
@@ -152,7 +158,7 @@ export const repository = {
       const card = normalizeRestaurant(r);
       card.menu = (foods || []).map(normalizeFood);
       return [card];
-    }, fallbackRestaurants.filter((x) => String(x.id) === String(id)));
+    }, [...fallbackRestaurants, ...decorateRestaurants(demoRestaurants)].filter((x) => String(x.id) === String(id)));
     if (res.source === "demo" && res.items[0] && !res.items[0].menu) res.items[0].menu = fallbackFoods;
     return res;
   },

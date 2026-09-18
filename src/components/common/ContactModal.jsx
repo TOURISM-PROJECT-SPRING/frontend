@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { contactService } from "../../services/contactService";
 import Icon from "../ui/Icon";
 
@@ -7,6 +8,7 @@ export default function ContactModal({ isOpen, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const { t } = useTranslation();
 
   if (!isOpen) return null;
 
@@ -25,7 +27,7 @@ export default function ContactModal({ isOpen, onClose }) {
         onClose();
       }, 2500);
     } catch (err) {
-      setErrorMessage(err?.response?.data?.message || err?.message || "Failed to send message. Please try again.");
+      setErrorMessage(err?.response?.data?.message || err?.message || t("contact.failed"));
     } finally {
       setSubmitting(false);
     }
@@ -47,9 +49,9 @@ export default function ContactModal({ isOpen, onClose }) {
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-600 text-2xl">
               ✓
             </div>
-            <h3 className="text-xl font-bold text-brand-800">Message Received!</h3>
+            <h3 className="text-xl font-bold text-brand-800">{t("contact.successTitle")}</h3>
             <p className="text-sm text-muted max-w-xs mx-auto">
-              Thank you for contacting SovannDomNour. Our support team will get back to you shortly.
+              {t("contact.successBody")}
             </p>
           </div>
         ) : (
@@ -59,8 +61,8 @@ export default function ContactModal({ isOpen, onClose }) {
                 <Icon name="mail" size={20} />
               </span>
               <div>
-                <h3 className="text-xl font-display font-bold text-brand-800">Contact Us</h3>
-                <p className="text-xs text-muted">We'd love to hear from you. Send us your inquiry.</p>
+                <h3 className="text-xl font-display font-bold text-brand-800">{t("contact.title")}</h3>
+                <p className="text-xs text-muted">{t("contact.subtitle")}</p>
               </div>
             </div>
 
@@ -72,48 +74,48 @@ export default function ContactModal({ isOpen, onClose }) {
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Your Name</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">{t("contact.name")}</label>
                 <input
                   type="text"
                   required
                   value={form.name}
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g. Sokha Chan"
+                  placeholder={t("contact.namePh")}
                   className="h-11 w-full rounded-xl border border-line bg-canvas px-3.5 text-sm text-ink outline-none transition focus:border-brand-400 focus:bg-white dark:focus:bg-card"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Email Address</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">{t("contact.email")}</label>
                 <input
                   type="email"
                   required
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder="name@example.com"
+                  placeholder={t("contact.emailPh")}
                   className="h-11 w-full rounded-xl border border-line bg-canvas px-3.5 text-sm text-ink outline-none transition focus:border-brand-400 focus:bg-white dark:focus:bg-card"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Subject</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">{t("contact.subject")}</label>
                 <input
                   type="text"
                   value={form.subject}
                   onChange={(e) => setForm((prev) => ({ ...prev, subject: e.target.value }))}
-                  placeholder="Trip inquiry, booking support, or feedback"
+                  placeholder={t("contact.subjectPh")}
                   className="h-11 w-full rounded-xl border border-line bg-canvas px-3.5 text-sm text-ink outline-none transition focus:border-brand-400 focus:bg-white dark:focus:bg-card"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Message</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">{t("contact.message")}</label>
                 <textarea
                   required
                   rows={3}
                   value={form.message}
                   onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
-                  placeholder="How can we help your Cambodian adventure?"
+                  placeholder={t("contact.messagePh")}
                   className="w-full rounded-xl border border-line bg-canvas p-3 text-sm text-ink outline-none transition focus:border-brand-400 focus:bg-white dark:focus:bg-card"
                 />
               </div>
@@ -124,14 +126,14 @@ export default function ContactModal({ isOpen, onClose }) {
                   onClick={onClose}
                   className="flex-1 py-2.5 rounded-xl border border-line text-sm font-bold text-ink/70 hover:bg-brand-50/50 transition"
                 >
-                  Cancel
+                  {t("contact.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="flex-1 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-sm font-bold shadow-sm transition disabled:opacity-50"
                 >
-                  {submitting ? "Sending..." : "Send Message"}
+                  {submitting ? t("contact.sending") : t("contact.send")}
                 </button>
               </div>
             </form>

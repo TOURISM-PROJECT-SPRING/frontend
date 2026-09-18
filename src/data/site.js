@@ -11,9 +11,7 @@ export const brand = {
 
 export const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Tours", href: "/tours" },
-  { label: "Hotels", href: "/hotels" },
-  { label: "Restaurants", href: "/restaurants" },
+  { label: "Explore", href: "/explore" },
   { label: "Destinations", href: "/destinations" },
 ];
 
@@ -24,12 +22,12 @@ export const services = [
   {
     key: "tours",
     label: "TOURS",
-    icon: "compass",
+    icon: "binoculars",
     title: "Explore Tours",
     description: "Discover temples, beaches, nature and unforgettable experiences.",
     cta: "Explore Tours",
     image: img("Angkor_Wat.jpg", 1000),
-    href: "/tours",
+    href: "/explore?section=tours",
   },
   {
     key: "hotels",
@@ -39,7 +37,7 @@ export const services = [
     description: "Discover comfortable hotels and beautiful places to stay.",
     cta: "Explore Hotels",
     image: img("Palm Paradise Pool.jpg", 1000),
-    href: "/hotels",
+    href: "/explore?section=hotels",
   },
   {
     key: "restaurants",
@@ -49,7 +47,7 @@ export const services = [
     description: "Discover authentic Khmer cuisine and local restaurants.",
     cta: "Explore Restaurants",
     image: img("Fish Amok.jpg", 1000),
-    href: "/restaurants",
+    href: "/explore?section=restaurants",
   },
 ];
 
@@ -154,7 +152,7 @@ export const dishes = [
 /* Footer                                                              */
 /* ------------------------------------------------------------------ */
 export const footerColumns = [
-  { title: "Explore", links: ["Tours", "Hotels", "Restaurants", "Destinations"] },
+  { title: "Explore", links: ["Explore", "Destinations"] },
   { title: "Company", links: ["About us", "Careers", "Press", "Blog"] },
   { title: "Support", links: ["Help center", "Contact", "Privacy", "Terms"] },
 ];

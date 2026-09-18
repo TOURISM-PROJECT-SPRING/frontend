@@ -1,6 +1,10 @@
+import AdminLoading from "../../components/admin/AdminLoading";
+import TotalBadge from "../../components/admin/TotalBadge";
+import AdminPagination from "../../components/admin/AdminPagination";
 import { useEffect, useState } from "react";
 import { Search, Plus, Eye, Edit3, Trash2 } from "lucide-react";
 import { foodService } from "../../services/foodService";
+import { useToast } from "../../components/ui/Toast";
 
 const statusColors = {
   Pending: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/15 dark:text-yellow-400",
@@ -10,10 +14,13 @@ const statusColors = {
 };
 
 export default function AdminFoodOrdersPage() {
+  const toast = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -42,11 +49,16 @@ export default function AdminFoodOrdersPage() {
     return matchSearch && matchFilter;
   });
 
+  const totalItems = filtered.length;
+  const paginatedItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const handleSave = (data) => {
     if (editItem) {
       setOrders((prev) => prev.map((o) => (o.id === editItem.id ? { ...o, ...data } : o)));
+      toast.success("Order updated successfully");
     } else {
       setOrders((prev) => [{ ...data, id: `FO-${String(Date.now()).slice(-3)}` }, ...prev]);
+      toast.success("Order created successfully");
     }
     setFormOpen(false);
     setEditItem(null);
@@ -55,17 +67,19 @@ export default function AdminFoodOrdersPage() {
   const handleDelete = () => {
     setOrders((prev) => prev.filter((o) => o.id !== deleteTarget.id));
     setDeleteTarget(null);
+    toast.success("Order deleted successfully");
   };
 
-  if (loading) {
-    return <div className="p-6 text-center text-gray-500">Loading data from server...</div>;
-  }
+  if (loading) return <AdminLoading message="Loading food orders from the server..." />;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Food & Orders</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Food &amp; Orders</h1>
+            <TotalBadge count={orders.length} />
+          </div>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Manage restaurant orders and deliveries</p>
         </div>
         <button
@@ -79,11 +93,11 @@ export default function AdminFoodOrdersPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-          <input type="text" placeholder="Search by customer or restaurant..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
+          <input type="text" placeholder="Search by customer or restaurant..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
         </div>
         <div className="flex gap-2 flex-wrap">
           {["All", "Pending", "Preparing", "Delivered", "Cancelled"].map((s) => (
-            <button key={s} onClick={() => setFilter(s)} className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filter === s ? "bg-primary text-white" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}>{s}</button>
+            <button key={s} onClick={() => { setFilter(s); setCurrentPage(1); }} className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filter === s ? "bg-primary text-white" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}>{s}</button>
           ))}
         </div>
       </div>
@@ -105,7 +119,7 @@ export default function AdminFoodOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((o) => (
+              {paginatedItems.map((o) => (
                 <tr key={o.id || o.name} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                   <td className="px-4 py-3 text-sm font-mono font-semibold text-primary">{o.id || "N/A"}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{o.customer || o.name}</td>
@@ -132,6 +146,7 @@ export default function AdminFoodOrdersPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination currentPage={currentPage} pageSize={pageSize} totalItems={totalItems} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} itemLabel="orders" />
       </div>
 
       {viewTarget && (

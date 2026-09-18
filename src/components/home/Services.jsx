@@ -17,7 +17,7 @@ export default function Services() {
           <Link
             key={s.key}
             to={s.href}
-            className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-white shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform hover:-translate-y-1.5 hover:border-brand-300/50 hover:shadow-lift"
+            className="group flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-soft transition-[transform,box-shadow,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform hover:-translate-y-1.5 hover:border-brand-300/50 hover:shadow-lift"
           >
             <div className="relative aspect-[4/3] overflow-hidden">
               <img

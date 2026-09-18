@@ -30,14 +30,14 @@ export const provinceService = {
     const response = await axiosClient.get('/locations/search', { params: { keyword } });
     return toProvinces(response.data);
   },
-  createProvince: async (data, image) => {
+  createProvince: async (data, _image) => {
     const response = await axiosClient.post('/locations', {
       province: data.name,
       district: data.name,
     });
     return toProvince(response.data);
   },
-  updateProvince: async (id, data, image) => {
+  updateProvince: async (id, data, _image) => {
     const current = await axiosClient.get(`/locations/${id}`);
     const response = await axiosClient.put(`/locations/${id}`, {
       province: data.name,

@@ -13,7 +13,8 @@ export const fallbackTours = [
     location: "Siem Reap", address: "Angkor Archaeological Park, Siem Reap",
     category: "Culture", badge: "Best Seller", badgeTone: "gold",
     rating: 4.9, reviews: 486, price: 45, priceUnit: "/person", duration: "1 Day",
-    href: "/tours/t1",
+    ticketId: "tk1",
+    href: "/explore?section=tours",
   },
   {
     id: "t2", kind: "tour", title: "Koh Rong Island Escape",
@@ -24,7 +25,8 @@ export const fallbackTours = [
     location: "Sihanoukville", address: "Koh Rong, Sihanoukville",
     category: "Nature", badge: "Nature", badgeTone: "green",
     rating: 4.8, reviews: 230, price: 120, priceUnit: "/person", duration: "2 Days",
-    href: "/tours/t2",
+    ticketId: "tk2",
+    href: "/explore?section=tours",
   },
   {
     id: "t3", kind: "tour", title: "Phnom Penh City Tour",
@@ -35,7 +37,8 @@ export const fallbackTours = [
     location: "Phnom Penh", address: "Phnom Penh",
     category: "Culture", badge: "Culture", badgeTone: "green",
     rating: 4.7, reviews: 180, price: 35, priceUnit: "/person", duration: "1 Day",
-    href: "/tours/t3",
+    ticketId: "tk3",
+    href: "/explore?section=tours",
   },
   {
     id: "t4", kind: "tour", title: "Mondulkiri Elephant Tour",
@@ -46,22 +49,23 @@ export const fallbackTours = [
     location: "Mondulkiri", address: "Mondulkiri",
     category: "Adventure", badge: "Adventure", badgeTone: "green",
     rating: 4.9, reviews: 156, price: 95, priceUnit: "/person", duration: "2 Days",
-    href: "/tours/t4",
+    ticketId: "tk4",
+    href: "/explore?section=tours",
   },
 ];
 
 export const fallbackHotels = [
-  { id: "h1", kind: "hotel", title: "Sofitel Angkor Phokeethra", subtitle: "Siem Reap", description: "Colonial-style luxury resort steps from the Angkor park, with a large pool and spa.", image: img("Palm Paradise Pool.jpg", 900), images: [img("Palm Paradise Pool.jpg", 1200)], location: "Siem Reap", badge: "Luxury", badgeTone: "green", rating: 4.8, price: 120, priceUnit: "/night", phone: "+855 63 963 963", email: "reservations@sofitel-kh.com", href: "/hotels/h1" },
-  { id: "h2", kind: "hotel", title: "The Royal Sands", subtitle: "Sihanoukville", description: "Beachfront resort with lagoon pools and easy access to the coast.", image: img("Swimming pool and Makuti-thatched villa in Malindi.jpg", 900), images: [img("Swimming pool and Makuti-thatched villa in Malindi.jpg", 1200)], location: "Sihanoukville", badge: "Popular", badgeTone: "green", rating: 4.6, price: 85, priceUnit: "/night", href: "/hotels/h2" },
-  { id: "h3", kind: "hotel", title: "Kampot Riverside Villa", subtitle: "Kampot", description: "Calm riverside stay near the old market and pepper hills.", image: img("Main swimming pool at Paradisus by Meliá Bali.jpg", 900), images: [img("Main swimming pool at Paradisus by Meliá Bali.jpg", 1200)], location: "Kampot", badge: "Best Value", badgeTone: "green", rating: 4.7, price: 60, priceUnit: "/night", href: "/hotels/h3" },
-  { id: "h4", kind: "hotel", title: "Kep Garden Resort", subtitle: "Kep", description: "Laid-back garden resort a short walk from the crab market.", image: img("Negombo Beach resort pool (Unsplash).jpg", 900), images: [img("Negombo Beach resort pool (Unsplash).jpg", 1200)], location: "Kep", badge: "Recommended", badgeTone: "green", rating: 4.5, price: 55, priceUnit: "/night", href: "/hotels/h4" },
+  { id: "h1", kind: "hotel", title: "Sofitel Angkor Phokeethra", subtitle: "Siem Reap", description: "Colonial-style luxury resort steps from the Angkor park, with a large pool and spa.", image: img("Palm Paradise Pool.jpg", 900), images: [img("Palm Paradise Pool.jpg", 1200)], location: "Siem Reap", badge: "Luxury", badgeTone: "green", rating: 4.8, price: 120, priceUnit: "/night", roomId: "rm1", roomType: "Deluxe King", phone: "+855 63 963 963", email: "reservations@sofitel-kh.com", href: "/explore?section=hotels" },
+  { id: "h2", kind: "hotel", title: "The Royal Sands", subtitle: "Sihanoukville", description: "Beachfront resort with lagoon pools and easy access to the coast.", image: img("Swimming pool and Makuti-thatched villa in Malindi.jpg", 900), images: [img("Swimming pool and Makuti-thatched villa in Malindi.jpg", 1200)], location: "Sihanoukville", badge: "Popular", badgeTone: "green", rating: 4.6, price: 85, priceUnit: "/night", roomId: "rm2", roomType: "Twin Garden", href: "/explore?section=hotels" },
+  { id: "h3", kind: "hotel", title: "Kampot Riverside Villa", subtitle: "Kampot", description: "Calm riverside stay near the old market and pepper hills.", image: img("Main swimming pool at Paradisus by Meliá Bali.jpg", 900), images: [img("Main swimming pool at Paradisus by Meliá Bali.jpg", 1200)], location: "Kampot", badge: "Best Value", badgeTone: "green", rating: 4.7, price: 60, priceUnit: "/night", roomId: "rm3", roomType: "Family Suite", href: "/explore?section=hotels" },
+  { id: "h4", kind: "hotel", title: "Kep Garden Resort", subtitle: "Kep", description: "Laid-back garden resort a short walk from the crab market.", image: img("Negombo Beach resort pool (Unsplash).jpg", 900), images: [img("Negombo Beach resort pool (Unsplash).jpg", 1200)], location: "Kep", badge: "Recommended", badgeTone: "green", rating: 4.5, price: 55, priceUnit: "/night", roomId: "rm1", roomType: "Deluxe King", href: "/explore?section=hotels" },
 ];
 
 export const fallbackRestaurants = [
-  { id: "r1", kind: "restaurant", title: "Khmer Kitchen", subtitle: "Phnom Penh", description: "Classic Khmer dishes in a warm, modern setting.", image: img("Fish Amok.jpg", 900), images: [img("Fish Amok.jpg", 1200)], location: "Phnom Penh", category: "Khmer", badge: "Khmer", badgeTone: "green", rating: 4.8, price: null, priceUnit: "", open: true, openLabel: "10:00 AM – 10:00 PM", href: "/restaurants/r1" },
-  { id: "r2", kind: "restaurant", title: "Romdeng", subtitle: "Siem Reap", description: "Renowned grill house serving traditional Khmer cooking.", image: img("Beef Lok Lak.jpg", 900), images: [img("Beef Lok Lak.jpg", 1200)], location: "Siem Reap", category: "Traditional", badge: "Traditional", badgeTone: "green", rating: 4.7, price: null, priceUnit: "", open: true, openLabel: "5:00 PM – 10:30 PM", href: "/restaurants/r2" },
-  { id: "r3", kind: "restaurant", title: "Chanry Noodles", subtitle: "Phnom Penh", description: "Beloved local spot for num banh chok and noodle soups.", image: img("Num Banh Chok Somlar Kari.jpg", 900), images: [img("Num Banh Chok Somlar Kari.jpg", 1200)], location: "Phnom Penh", category: "Street Food", badge: "Street Food", badgeTone: "green", rating: 4.6, price: null, priceUnit: "", open: false, openLabel: "6:00 AM – 1:00 PM", href: "/restaurants/r3" },
-  { id: "r4", kind: "restaurant", title: "Night Market BBQ", subtitle: "Siem Reap", description: "Sizzling skewers and fresh seafood at the old market.", image: img("Kabobs at Phnom Penh Night Market.jpg", 900), images: [img("Kabobs at Phnom Penh Night Market.jpg", 1200)], location: "Siem Reap", category: "BBQ", badge: "BBQ", badgeTone: "green", rating: 4.5, price: null, priceUnit: "", open: true, openLabel: "4:00 PM – 11:00 PM", href: "/restaurants/r4" },
+  { id: "r1", kind: "restaurant", title: "Khmer Kitchen", subtitle: "Phnom Penh", description: "Classic Khmer dishes in a warm, modern setting.", image: img("Fish Amok.jpg", 900), images: [img("Fish Amok.jpg", 1200)], location: "Phnom Penh", category: "Khmer", badge: "Khmer", badgeTone: "green", rating: 4.8, price: null, priceUnit: "", open: true, openLabel: "10:00 AM – 10:00 PM", href: "/explore?section=restaurants" },
+  { id: "r2", kind: "restaurant", title: "Romdeng", subtitle: "Siem Reap", description: "Renowned grill house serving traditional Khmer cooking.", image: img("Beef Lok Lak.jpg", 900), images: [img("Beef Lok Lak.jpg", 1200)], location: "Siem Reap", category: "Traditional", badge: "Traditional", badgeTone: "green", rating: 4.7, price: null, priceUnit: "", open: true, openLabel: "5:00 PM – 10:30 PM", href: "/explore?section=restaurants" },
+  { id: "r3", kind: "restaurant", title: "Chanry Noodles", subtitle: "Phnom Penh", description: "Beloved local spot for num banh chok and noodle soups.", image: img("Num Banh Chok Somlar Kari.jpg", 900), images: [img("Num Banh Chok Somlar Kari.jpg", 1200)], location: "Phnom Penh", category: "Street Food", badge: "Street Food", badgeTone: "green", rating: 4.6, price: null, priceUnit: "", open: false, openLabel: "6:00 AM – 1:00 PM", href: "/explore?section=restaurants" },
+  { id: "r4", kind: "restaurant", title: "Night Market BBQ", subtitle: "Siem Reap", description: "Sizzling skewers and fresh seafood at the old market.", image: img("Kabobs at Phnom Penh Night Market.jpg", 900), images: [img("Kabobs at Phnom Penh Night Market.jpg", 1200)], location: "Siem Reap", category: "BBQ", badge: "BBQ", badgeTone: "green", rating: 4.5, price: null, priceUnit: "", open: true, openLabel: "4:00 PM – 11:00 PM", href: "/explore?section=restaurants" },
 ];
 
 export const fallbackDestinations = [

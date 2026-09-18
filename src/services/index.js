@@ -31,3 +31,4 @@ export { userAttachmentService } from './userAttachmentService';
 export { bakongService } from './bakongService';
 export { ownerService } from './ownerService';
 export { aiService } from './aiService';
+export { tourBookingService } from './tourBookingService';

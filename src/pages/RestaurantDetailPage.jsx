@@ -1,129 +1,304 @@
-import { useMemo } from "react";
-import { Link, useParams } from "react-router-dom";
-import Icon from "../components/ui/Icon";
-import SmartImage from "../components/ui/SmartImage";
-import Rating from "../components/ui/Rating";
-import { OpenBadge } from "../components/ui/StatusBadge";
-import { Skeleton, EmptyState, DemoNote } from "../components/ui/feedback";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { useRestaurant } from "../hooks/useResource";
-import { money } from "../lib/format";
+import { buildRestaurantDetail } from "../data/restaurantDetail";
+import { useAuth } from "../context/AuthContext";
+import { useFavorites } from "../context/FavoritesContext";
+import { useToast } from "../components/ui/Toast";
+import { EmptyState, ErrorState } from "../components/ui/feedback";
+import Icon from "../components/ui/Icon";
+
+import RestaurantBreadcrumb from "../components/restaurants/detail/RestaurantBreadcrumb";
+import RestaurantHeader from "../components/restaurants/detail/RestaurantHeader";
+import RestaurantGallery from "../components/restaurants/detail/RestaurantGallery";
+import AwardBadge from "../components/restaurants/detail/AwardBadge";
+import RestaurantDescription from "../components/restaurants/detail/RestaurantDescription";
+import FeaturesList from "../components/restaurants/detail/FeaturesList";
+import OpeningHours from "../components/restaurants/detail/OpeningHours";
+import LocationSection from "../components/restaurants/detail/LocationSection";
+import ReviewsSection from "../components/restaurants/detail/ReviewsSection";
+import ReviewModal from "../components/restaurants/detail/ReviewModal";
+import DetailSkeleton from "../components/restaurants/detail/DetailSkeleton";
+
+function scrollToId(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export default function RestaurantDetailPage() {
   const { id } = useParams();
-  const { items, loading, source } = useRestaurant(id);
-  const r = items[0];
+  const navigate = useNavigate();
+  const { items, loading, error, source } = useRestaurant(id);
+  const { user, isAuthenticated } = useAuth();
+  const { isSaved, toggle } = useFavorites();
+  const toast = useToast();
 
-  const grouped = useMemo(() => {
-    const map = {};
-    for (const f of r?.menu || []) {
-      const key = f.category || "Menu";
-      (map[key] ||= []).push(f);
+  const restaurant = useMemo(() => buildRestaurantDetail(items[0]), [items]);
+  const [guestReviews, setGuestReviews] = useState([]);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reserveOpen, setReserveOpen] = useState(false);
+
+  const favorite = restaurant ? isSaved("restaurant", restaurant.id) : false;
+
+  useEffect(() => {
+    if (!restaurant) return;
+    document.title = `${restaurant.title} | SovannDomNour`;
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "description");
+      document.head.appendChild(meta);
     }
-    return map;
-  }, [r]);
+    meta.setAttribute(
+      "content",
+      `${restaurant.title} in ${restaurant.city}, Cambodia — photos, reviews, menu, opening hours, features and location.`
+    );
+    return () => {
+      document.title = "SovannDomNour";
+    };
+  }, [restaurant]);
 
-  if (loading) {
+  const onToggleFavorite = () => {
+    const saved = toggle({
+      kind: "restaurant",
+      id: restaurant.id,
+      title: restaurant.title,
+      image: restaurant.galleryImages[0]?.url || restaurant.image,
+      location: restaurant.city,
+      href: `/restaurants/${id}`,
+    });
+    toast[saved ? "success" : "info"](
+      saved ? `Saved ${restaurant.title} to My trips.` : `Removed ${restaurant.title} from My trips.`
+    );
+  };
+
+  const onReview = () => {
+    if (!isAuthenticated) {
+      toast.info("Please sign in to write a review.");
+      navigate("/login", { state: { from: `/restaurants/${id}` } });
+      return;
+    }
+    setReviewOpen(true);
+  };
+
+  /* --------------------------- states --------------------------- */
+  if (loading) return <DetailSkeleton />;
+
+  if (!restaurant) {
+    const container = "mx-auto w-full max-w-[1240px] px-4 py-16 sm:px-6 lg:px-8";
+    if (error && source !== "demo") {
+      return (
+        <div className={container}>
+          <div className="mx-auto max-w-md">
+            <ErrorState message="Unable to load this restaurant. Please try again." retry={() => window.location.reload()} />
+          </div>
+        </div>
+      );
+    }
     return (
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="mt-4 aspect-[16/9] w-full" />
-        <Skeleton className="mt-6 h-10 w-2/3" />
+      <div className={container}>
+        <div className="mx-auto max-w-md">
+          <EmptyState
+            title="Restaurant not found"
+            message="This restaurant may have been removed or is no longer available."
+            icon="utensils"
+            action={
+              <Link to="/restaurant" className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800">
+                Back to restaurants
+              </Link>
+            }
+          />
+        </div>
       </div>
     );
   }
 
-  if (!r) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20">
-        <EmptyState title="Restaurant not found" message="This place may no longer be listed." icon="utensils" />
-        <div className="mt-6 text-center"><Link to="/restaurants" className="font-bold text-brand-700 hover:text-brand-800">← Back to restaurants</Link></div>
-      </div>
-    );
-  }
-
-  const gallery = r.images?.length ? r.images : [r.image].filter(Boolean);
+  const full = [restaurant.address, restaurant.city, restaurant.country].filter(Boolean).join(", ");
+  const mapsUrl =
+    restaurant.latitude != null && restaurant.longitude != null
+      ? `https://www.google.com/maps/search/?api=1&query=${restaurant.latitude},${restaurant.longitude}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${restaurant.title} ${full}`.trim())}`;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <nav className="mb-5 flex items-center gap-1.5 text-sm text-muted">
-        <Link to="/" className="hover:text-brand-700">Home</Link>
-        <Icon name="chevron-right" size={14} />
-        <Link to="/restaurants" className="hover:text-brand-700">Restaurants</Link>
-        <Icon name="chevron-right" size={14} />
-        <span className="font-semibold text-brand-700">{r.title}</span>
-      </nav>
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto w-full max-w-[1320px] px-4 pt-5 sm:px-6 lg:px-8">
+        <RestaurantBreadcrumb city={restaurant.city} title={restaurant.title} />
 
-      <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        <div>
-          <div className="overflow-hidden rounded-[24px] border border-line shadow-soft">
-            <SmartImage src={gallery[0]} alt={r.title} className="aspect-[16/10] w-full" />
+        <RestaurantHeader
+          restaurant={restaurant}
+          favorite={favorite}
+          onToggleFavorite={onToggleFavorite}
+          onReview={onReview}
+          onJumpReviews={() => scrollToId("reviews")}
+        />
+
+        {/* Two-column information section */}
+        <div className="grid gap-10 py-12 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-14">
+          <div className="min-w-0 space-y-14">
+            <RestaurantGallery images={restaurant.galleryImages} award={restaurant.award} title={restaurant.title} />
+
+            <section>
+              {restaurant.award && (
+                <div className="mb-6">
+                  <AwardBadge award={restaurant.award} variant="tile" />
+                </div>
+              )}
+              <RestaurantDescription text={restaurant.description} />
+            </section>
+
+            <FeaturesList
+              rows={restaurant.featureRows}
+              groups={restaurant.allFeatures}
+              title={restaurant.title}
+            />
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <OpenBadge open={r.open} label={r.openLabel} />
-            {r.rating != null && <Rating value={r.rating} reviews={r.reviews} />}
-          </div>
-          <h1 className="mt-3 font-display text-3xl font-bold text-brand-800 sm:text-4xl">{r.title}</h1>
-          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-            <Icon name="map-pin" size={16} className="text-brand-400" /> {r.location || "Cambodia"}
-          </p>
-          {r.description && <p className="mt-4 leading-relaxed text-muted">{r.description}</p>}
+          <aside className="space-y-6 self-start lg:sticky lg:top-[124px]">
+            <OpeningHours hours={restaurant.openingHours} open={restaurant.open !== false} />
 
-          <div className="mt-8">
-            <h2 className="font-display text-xl font-bold text-brand-800">Menu</h2>
-            {Object.keys(grouped).length ? (
-              <div className="mt-4 space-y-6">
-                {Object.entries(grouped).map(([cat, foods]) => (
-                  <div key={cat}>
-                    <h3 className="text-sm font-bold uppercase tracking-wide text-gold-600">{cat}</h3>
-                    <div className="mt-2 divide-y divide-line rounded-xl border border-line bg-white">
-                      {foods.map((f) => (
-                        <div key={f.id} className="flex items-center gap-4 p-3">
-                          <SmartImage src={f.image} alt={f.title} className="h-14 w-14 shrink-0 rounded-lg" />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-brand-800">{f.title}</p>
-                            {!f.available && <p className="text-xs text-danger">Sold out</p>}
-                          </div>
-                          <span className="text-sm font-bold text-brand-700">{money(f.price)}</span>
-                          <button
-                            disabled={!f.available}
-                            className="grid h-8 w-8 place-items-center rounded-lg bg-brand-700 text-white disabled:opacity-40 hover:bg-brand-800"
-                            aria-label={`Add ${f.title}`}
-                          >
-                            <Icon name="arrow-right" size={16} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 rounded-xl border border-dashed border-line py-8 text-center text-sm text-muted">
-                Menu coming soon.
+            <div className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Reserve</p>
+              <p className="mt-1 font-display text-lg font-bold text-brand-900">Book a table</p>
+              <p className="mt-1 text-sm text-muted">
+                {restaurant.open !== false ? "Open now — reserve your spot for tonight." : "Send a reservation request and we'll confirm by phone."}
               </p>
-            )}
+              <button
+                type="button"
+                onClick={() => setReserveOpen(true)}
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md active:scale-[0.99]"
+              >
+                <Icon name="utensils" size={17} />
+                Reserve a Table
+              </button>
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+              >
+                <Icon name="map-pin" size={17} />
+                Get Directions
+              </a>
+            </div>
+          </aside>
+        </div>
+
+        <div className="pb-12">
+          <LocationSection
+            address={restaurant.address}
+            city={restaurant.city}
+            country={restaurant.country}
+            lat={restaurant.latitude}
+            lng={restaurant.longitude}
+            name={restaurant.title}
+            phone={restaurant.phone}
+            email={restaurant.email}
+            parking={restaurant.parking}
+          />
+        </div>
+
+        <div className="border-t border-line py-12">
+          <ReviewsSection
+            title={restaurant.title}
+            rating={restaurant.rating}
+            reviews={restaurant.reviews}
+            ratingBreakdown={restaurant.ratingBreakdown}
+            reviewList={[...guestReviews, ...restaurant.reviewsList]}
+            onReviewsClick={() => scrollToId("reviews")}
+          />
+        </div>
+      </div>
+
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        author={user?.name || user?.fullName || "You"}
+        title={restaurant.title}
+        onSubmit={(r) => {
+          setGuestReviews((prev) => [r, ...prev]);
+          toast.success("Thanks! Your review was published.");
+          scrollToId("reviews");
+        }}
+      />
+
+      <ReserveModal
+        open={reserveOpen}
+        onClose={() => setReserveOpen(false)}
+        title={restaurant.title}
+        onConfirm={(payload) => {
+          setReserveOpen(false);
+          toast.success(
+            `Reservation requested for ${payload.guests} guest${payload.guests > 1 ? "s" : ""}${
+              payload.date ? ` on ${payload.date}` : ""
+            }${payload.time ? ` at ${payload.time}` : ""}.`
+          );
+        }}
+      />
+    </div>
+  );
+}
+
+/* --------------------- Compact reservation request --------------------- */
+function ReserveModal({ open, onClose, title, onConfirm }) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("19:00");
+  const [guests, setGuests] = useState(2);
+  if (!open) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label="Reserve a table">
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md animate-scalein rounded-2xl border border-line bg-white p-6 shadow-lift">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-display text-xl font-bold text-brand-900">Reserve a table</h3>
+            {title && <p className="mt-0.5 text-sm text-muted">{title}</p>}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-brand-50 hover:text-brand-700">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          <label className="block">
+            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+              <Icon name="calendar" size={14} className="text-brand-500" /> Date
+            </span>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400" />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+              <Icon name="clock" size={14} className="text-brand-500" /> Time
+            </span>
+            <select value={time} onChange={(e) => setTime(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400">
+              {["11:00", "12:00", "13:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"].map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
+              <Icon name="users" size={14} className="text-brand-500" /> Guests
+            </span>
+            <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-3">
+              <button type="button" onClick={() => setGuests((g) => Math.max(1, g - 1))} aria-label="Fewer guests" className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 hover:bg-brand-50">
+                <Icon name="minus" size={16} />
+              </button>
+              <span className="min-w-[3ch] text-center text-lg font-bold text-brand-800">{guests}</span>
+              <button type="button" onClick={() => setGuests((g) => Math.min(20, g + 1))} aria-label="More guests" className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800">
+                <Icon name="plus" size={16} />
+              </button>
+            </div>
           </div>
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-[22px] border border-line bg-white p-6 shadow-soft">
-            <h3 className="font-display text-lg font-bold text-brand-800">Visit {r.title}</h3>
-            <div className="mt-4 space-y-3 text-sm text-muted">
-              {r.openLabel && <p className="flex items-center gap-2"><Icon name="clock" size={16} className="text-brand-400" /> {r.openLabel}</p>}
-              {r.location && <p className="flex items-center gap-2"><Icon name="map-pin" size={16} className="text-brand-400" /> {r.location}</p>}
-              {r.category && <p className="flex items-center gap-2"><Icon name="utensils" size={16} className="text-brand-400" /> {r.category}</p>}
-            </div>
-            <button className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold-400 text-sm font-bold text-brand-900 hover:bg-gold-300">
-              <Icon name="ticket" size={18} /> Book a Table
-            </button>
-            <button className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-line text-sm font-bold text-brand-700 hover:bg-brand-50">
-              <Icon name="heart" size={17} /> Save
-            </button>
-          </div>
-          {source === "demo" && <div className="mt-4"><DemoNote /></div>}
-        </aside>
+        <div className="mt-6 flex gap-3">
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50">Cancel</button>
+          <button type="button" onClick={() => onConfirm({ date, time, guests })} className="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800">
+            Confirm Reservation
+          </button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

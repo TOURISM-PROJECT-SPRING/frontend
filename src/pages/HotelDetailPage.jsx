@@ -1,127 +1,311 @@
-import { Link, useParams } from "react-router-dom";
-import Icon from "../components/ui/Icon";
-import SmartImage from "../components/ui/SmartImage";
-import Rating from "../components/ui/Rating";
-import { Pill } from "../components/ui/StatusBadge";
-import { Skeleton, EmptyState, DemoNote } from "../components/ui/feedback";
-import { useHotel } from "../hooks/useResource";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useHotel, useHotels } from "../hooks/useResource";
+import { useAuth } from "../context/AuthContext";
+import { useFavorites } from "../context/FavoritesContext";
+import { useToast } from "../components/ui/Toast";
+import { Modal } from "../components/ui/Modal";
+import Button from "../components/ui/Button";
 import { money } from "../lib/format";
+import { EmptyState, ErrorState } from "../components/ui/feedback";
+import Icon from "../components/ui/Icon";
+import { decorateHotels } from "../data/hotels";
+import { buildHotelDetail, buildNearby } from "../data/hotelDetail";
+
+import HotelBreadcrumb from "../components/hotels/detail/HotelBreadcrumb";
+import HotelHeader from "../components/hotels/detail/HotelHeader";
+import HotelGallery from "../components/hotels/detail/HotelGallery";
+import BookingCard from "../components/hotels/detail/BookingCard";
+import ReviewHighlights from "../components/hotels/detail/ReviewHighlights";
+import AboutSection from "../components/hotels/detail/AboutSection";
+import NearbyHotels from "../components/hotels/detail/NearbyHotels";
+import LocationSection from "../components/hotels/detail/LocationSection";
+import StickyBookingBar from "../components/hotels/detail/StickyBookingBar";
+import DetailSkeleton from "../components/hotels/detail/DetailSkeleton";
+import ReviewModal from "../components/hotels/detail/ReviewModal";
+
+function isoPlus(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function nightsBetween(a, b) {
+  if (!a || !b) return 1;
+  const start = new Date(a);
+  const end = new Date(b);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 1;
+  return Math.max(1, Math.round((end - start) / 86400000));
+}
+
+function scrollToId(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export default function HotelDetailPage() {
   const { id } = useParams();
-  const { items, loading, source } = useHotel(id);
-  const hotel = items[0];
+  const navigate = useNavigate();
+  const { items, loading, error, source } = useHotel(id);
+  const hotelsList = useHotels();
+  const { user, isAuthenticated } = useAuth();
+  const { isSaved, toggle } = useFavorites();
+  const toast = useToast();
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="mt-4 aspect-[16/9] w-full" />
-        <Skeleton className="mt-6 h-10 w-2/3" />
-      </div>
-    );
-  }
+  const hotel = useMemo(() => buildHotelDetail(items[0]), [items]);
+  const nearby = useMemo(
+    () => buildNearby(items[0], decorateHotels(hotelsList.items), 4),
+    [items, hotelsList.items]
+  );
+
+  const [booking, setBooking] = useState(() => ({
+    checkIn: isoPlus(14),
+    checkOut: isoPlus(16),
+    adults: 2,
+    children: 0,
+    rooms: 1,
+  }));
+  const [guestReviews, setGuestReviews] = useState([]);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [pendingDeal, setPendingDeal] = useState(null); // { provider, room } awaiting confirm
+
+  const nights = nightsBetween(booking.checkIn, booking.checkOut);
+  const dateValue = { ...booking, nights };
+  const favorite = hotel ? isSaved("hotel", hotel.id) : false;
+
+  // SEO: dynamic title + meta description for this hotel.
+  useEffect(() => {
+    if (!hotel) return;
+    document.title = `${hotel.title} | SovannDomNour`;
+    const desc = `Discover ${hotel.title} in ${hotel.city}, Cambodia. View photos, prices, amenities, reviews, location and available booking deals.`;
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "description");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", desc);
+    return () => {
+      document.title = "SovannDomNour";
+    };
+  }, [hotel]);
+
+  const onDeal = (provider) => {
+    if (!hotel) return;
+    if (provider?.url) {
+      window.open(provider.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (!isAuthenticated) {
+      toast.info("Please sign in to book this hotel.");
+      navigate("/login", { state: { from: `/hotels/${id}` } });
+      return;
+    }
+    const room =
+      [...(hotel.rooms || [])].sort((a, b) => (a.price ?? 1e9) - (b.price ?? 1e9))[0] || null;
+    setPendingDeal({ provider, room });
+  };
+
+  const confirmBooking = async () => {
+    if (!hotel || !pendingDeal) return;
+    const room = pendingDeal.room;
+    const roomId = Number(room?.id ?? hotel.roomId ?? null) || null;
+    if (!roomId) {
+      toast.error("No bookable room was found for this hotel yet.");
+      setPendingDeal(null);
+      return;
+    }
+    navigate("/checkout", {
+      state: {
+        kind: "hotel",
+        id: hotel.id,
+        roomId,
+        roomType: room?.roomType || "Room",
+        title: hotel.title,
+        subtitle: hotel.location || hotel.city,
+        image: hotel.image,
+        location: hotel.location || hotel.city,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        guests: booking.adults + booking.children,
+        price: Number(pendingDeal.provider?.price ?? hotel.price) || 0,
+        priceUnit: "/night",
+        cancelCutoff: "Free before check-in",
+      },
+    });
+    setPendingDeal(null);
+  };
+
+  const onToggleFavorite = () => {
+    const saved = toggle({
+      kind: "hotel",
+      id: hotel.id,
+      title: hotel.title,
+      image: hotel.image,
+      location: hotel.location || hotel.city,
+      href: `/hotels/${id}`,
+    });
+    toast[saved ? "success" : "info"](saved ? `Saved ${hotel.title} to My trips.` : `Removed ${hotel.title} from My trips.`);
+  };
+
+  const onReview = () => {
+    if (!isAuthenticated) {
+      toast.info("Please sign in to write a review.");
+      navigate("/login", { state: { from: `/hotels/${id}` } });
+      return;
+    }
+    setReviewOpen(true);
+  };
+
+  /* ------------------------- states ------------------------- */
+  if (loading) return <DetailSkeleton />;
 
   if (!hotel) {
+    const container = "mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8";
+    if (error && source !== "demo") {
+      return (
+        <div className={container}>
+          <div className="mx-auto max-w-md">
+            <ErrorState message="Unable to load this hotel. Please try again." retry={() => window.location.reload()} />
+          </div>
+        </div>
+      );
+    }
     return (
-      <div className="mx-auto max-w-3xl px-4 py-20">
-        <EmptyState title="Hotel not found" message="This stay may no longer be listed." icon="bed" />
-        <div className="mt-6 text-center"><Link to="/hotels" className="font-bold text-brand-700 hover:text-brand-800">← Back to hotels</Link></div>
+      <div className={container}>
+        <div className="mx-auto max-w-md">
+          <EmptyState
+            title="Hotel not found"
+            message="The hotel you're looking for may have been removed or is no longer available."
+            icon="bed"
+            action={
+              <Link to="/hotel" className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800">
+                Back to hotels
+              </Link>
+            }
+          />
+        </div>
       </div>
     );
   }
 
-  const gallery = hotel.images?.length ? hotel.images : [hotel.image].filter(Boolean);
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <nav className="mb-5 flex items-center gap-1.5 text-sm text-muted">
-        <Link to="/" className="hover:text-brand-700">Home</Link>
-        <Icon name="chevron-right" size={14} />
-        <Link to="/hotels" className="hover:text-brand-700">Hotels</Link>
-        <Icon name="chevron-right" size={14} />
-        <span className="font-semibold text-brand-700">{hotel.title}</span>
-      </nav>
-
-      <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        <div>
-          <div className="overflow-hidden rounded-[24px] border border-line shadow-soft">
-            <SmartImage src={gallery[0]} alt={hotel.title} className="aspect-[16/10] w-full" />
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {hotel.badge && <Pill tone="neutral">{hotel.badge}</Pill>}
-            {hotel.rating != null && <Rating value={hotel.rating} reviews={hotel.reviews} />}
-          </div>
-          <h1 className="mt-3 font-display text-3xl font-bold text-brand-800 sm:text-4xl">{hotel.title}</h1>
-          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-            <Icon name="map-pin" size={16} className="text-brand-400" /> {hotel.location || "Cambodia"}
-          </p>
-          {hotel.description && <p className="mt-4 leading-relaxed text-muted">{hotel.description}</p>}
-
-          <div className="mt-8">
-            <h2 className="font-display text-xl font-bold text-brand-800">Rooms & rates</h2>
-            {hotel.rooms?.length ? (
-              <div className="mt-3 space-y-3">
-                {hotel.rooms.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between rounded-xl border border-line bg-white p-4">
-                    <div className="flex items-center gap-4">
-                      <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-700"><Icon name="bed" size={20} /></span>
-                      <div>
-                        <p className="text-sm font-bold text-brand-800">{r.roomType}</p>
-                        <p className="text-xs text-muted">
-                          {r.capacity ? `${r.capacity} guests` : "Sleeps guests"}
-                          {r.total != null ? ` · ${r.total} available` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-lg font-bold text-brand-700">{money(r.price)}<span className="text-xs font-medium text-muted">/night</span></span>
-                      <button className="rounded-lg bg-brand-700 px-4 py-2 text-xs font-bold text-white hover:bg-brand-800">Book</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 rounded-xl border border-dashed border-line py-8 text-center text-sm text-muted">
-                Room rates are available when you enquire.
-              </p>
-            )}
-          </div>
+    <div className="min-h-screen bg-white pb-24 lg:pb-0">
+      <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-6 lg:px-8">
+        <div className="pt-5">
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-[22px] border border-line bg-white p-6 shadow-soft">
-            <p className="text-xs text-muted">Starting from</p>
-            <p className="font-display text-3xl font-bold text-brand-700">
-              {hotel.price != null ? money(hotel.price) : "—"}
-              {hotel.price != null && <span className="text-sm font-medium text-muted"> /night</span>}
-            </p>
+        <HotelHeader
+          hotel={hotel}
+          favorite={favorite}
+          onToggleFavorite={onToggleFavorite}
+          onReview={onReview}
+          onJumpReviews={() => scrollToId("reviews")}
+          onJumpPrices={() => scrollToId("prices")}
+        />
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">Check-in</span>
-                <input type="date" className="h-11 w-full rounded-xl border border-line px-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/15" />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">Check-out</span>
-                <input type="date" className="h-11 w-full rounded-xl border border-line px-3 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/15" />
-              </label>
-            </div>
+        <div className="mt-6">
+          <HotelGallery images={hotel.galleryImages} award={hotel.award} title={hotel.title} />
+        </div>
 
-            <button className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold-400 text-sm font-bold text-brand-900 hover:bg-gold-300">
-              <Icon name="bed" size={18} /> Check availability
-            </button>
+        <div className="space-y-14 py-10 sm:py-12 lg:space-y-20 lg:py-14">
+          <BookingCard providers={hotel.bookingProviders} dateValue={dateValue} onDateChange={(p) => setBooking((b) => ({ ...b, ...p }))} onDeal={onDeal} />
 
-            <ul className="mt-5 space-y-2 border-t border-line pt-5 text-sm text-muted">
-              {hotel.phone && <li className="flex items-center gap-2"><Icon name="phone" size={16} className="text-brand-400" /> {hotel.phone}</li>}
-              {hotel.email && <li className="flex items-center gap-2"><Icon name="mail" size={16} className="text-brand-400" /> {hotel.email}</li>}
-              <li className="flex items-center gap-2"><Icon name="check" size={16} className="text-success" /> Best-price guarantee</li>
-            </ul>
-          </div>
-          {source === "demo" && <div className="mt-4"><DemoNote /></div>}
-        </aside>
+          <ReviewHighlights
+            reviews={[...guestReviews, ...hotel.reviewsList]}
+            rating={hotel.rating}
+            reviewCount={hotel.reviews}
+            onSeeAll={() => scrollToId("reviews")}
+          />
+
+          <AboutSection
+            rating={hotel.rating}
+            reviews={hotel.reviews}
+            ranking={hotel.ranking}
+            totalHotels={hotel.totalHotelsInCity}
+            city={hotel.city}
+            ratingBreakdown={hotel.ratingBreakdown}
+            amenities={hotel.amenities}
+            roomFeatures={hotel.roomFeatures}
+            onReviewsClick={() => scrollToId("reviews")}
+          />
+
+          <NearbyHotels
+            hotels={nearby}
+            isFavorite={(id) => isSaved("hotel", id)}
+            onToggleFavorite={(h) => {
+              const saved = toggle({ kind: "hotel", id: h.id, title: h.name, image: h.image, location: h.location, href: h.href || `/hotels/${h.id}` });
+              toast[saved ? "success" : "info"](saved ? `Saved ${h.name} to My trips.` : `Removed ${h.name} from My trips.`);
+            }}
+          />
+
+          <LocationSection
+            address={hotel.address}
+            city={hotel.city}
+            country={hotel.country}
+            email={hotel.email}
+            lat={hotel.latitude}
+            lng={hotel.longitude}
+            name={hotel.title}
+            rating={hotel.rating}
+            price={hotel.price}
+          />
+        </div>
       </div>
+
+      <StickyBookingBar price={hotel.price} />
+      <ReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        author={user?.name || user?.fullName || "You"}
+        onSubmit={(r) => { setGuestReviews((prev) => [r, ...prev]); toast.success("Thanks! Your review was published."); scrollToId("reviews"); }}
+      />
+
+      <Modal open={!!pendingDeal} onClose={() => setPendingDeal(null)} title="Confirm your stay" size="lg">
+        {pendingDeal && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted">
+              Review the details and confirm — this takes you to secure checkout
+              {user?.email ? ` for ${user.email}` : ""}. Payment is collected securely there.
+            </p>
+            <div className="rounded-xl border border-line bg-canvas p-4">
+              <p className="font-display text-lg font-bold text-brand-800">{hotel.title}</p>
+              {hotel.location && (
+                <p className="mt-0.5 flex items-center gap-1 text-sm text-muted">
+                  <Icon name="map-pin" size={13} className="text-brand-400" /> {hotel.location}
+                </p>
+              )}
+              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <Detail label="Rate" value={pendingDeal.provider?.name || "Best deal"} />
+                <Detail label="Room" value={pendingDeal.room?.roomType || "Standard room"} />
+                <Detail label="Check-in" value={booking.checkIn} />
+                <Detail label="Check-out" value={booking.checkOut} />
+                <Detail label="Guests" value={`${booking.adults + booking.children} · ${booking.rooms} room${booking.rooms > 1 ? "s" : ""}`} />
+                <Detail label="Nights" value={`${nights} night${nights > 1 ? "s" : ""}`} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-brand-700 px-4 py-3 text-white">
+              <span className="text-sm font-bold">Estimated total</span>
+              <span className="font-display text-xl font-bold text-gold-400">
+                {money((Number(pendingDeal.provider?.price ?? hotel.price) || 0) * nights)}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1 justify-center" onClick={() => setPendingDeal(null)}>Back</Button>
+              <Button variant="primary" className="flex-1 justify-center" onClick={confirmBooking}>
+                Proceed to Checkout
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function Detail({ label, value }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-muted">{label}</p>
+      <p className="font-semibold text-brand-800">{value}</p>
     </div>
   );
 }

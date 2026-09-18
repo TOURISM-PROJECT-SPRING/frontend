@@ -1,8 +1,12 @@
+import AdminLoading from "../../components/admin/AdminLoading";
+import TotalBadge from "../../components/admin/TotalBadge";
+import AdminPagination from "../../components/admin/AdminPagination";
 import { useEffect, useState } from "react";
 import { Search, Plus, Eye, Edit3, Trash2 } from "lucide-react";
 import { ticketService } from "../../services/ticketService";
 import { tourPlaceService } from "../../services/tourPlaceService";
 import { formatPrice } from "../../utils/helpers";
+import { useToast } from "../../components/ui/Toast";
 
 const availableColors = {
   Available: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400",
@@ -12,11 +16,14 @@ const availableColors = {
 const availLabel = (t) => (t.isAvailable ? "Available" : "Sold Out");
 
 export default function AdminTicketsPage() {
+  const toast = useToast();
   const [tickets, setTickets] = useState([]);
   const [tourPlaces, setTourPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -48,6 +55,9 @@ export default function AdminTicketsPage() {
     return matchSearch && matchFilter;
   });
 
+  const totalItems = filtered.length;
+  const paginatedItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const handleSave = async (data) => {
     try {
       const payload = {
@@ -60,14 +70,17 @@ export default function AdminTicketsPage() {
       if (editItem) {
         const updated = await ticketService.updateTicket(editItem.id, payload);
         setTickets((prev) => prev.map((t) => (t.id === editItem.id ? updated : t)));
+        toast.success("Ticket updated successfully");
       } else {
         const created = await ticketService.createTicket(payload);
         setTickets((prev) => [created, ...prev]);
+        toast.success("Ticket created successfully");
       }
       setFormOpen(false);
       setEditItem(null);
     } catch (error) {
       console.error("Error saving ticket:", error);
+      toast.error("Failed to save ticket. Please try again.");
     }
   };
 
@@ -76,20 +89,23 @@ export default function AdminTicketsPage() {
       await ticketService.deleteTicket(deleteTarget.id);
       setTickets((prev) => prev.filter((t) => t.id !== deleteTarget.id));
       setDeleteTarget(null);
+      toast.success("Ticket deleted successfully");
     } catch (error) {
       console.error("Error deleting ticket:", error);
+      toast.error("Failed to delete ticket. Please try again.");
     }
   };
 
-  if (loading) {
-    return <div className="p-12 text-center text-sm text-gray-400">Loading tickets from server...</div>;
-  }
+  if (loading) return <AdminLoading message="Loading tickets from the server..." />;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tickets</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tickets</h1>
+            <TotalBadge count={tickets.length} />
+          </div>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Manage ticket types for attractions and events</p>
         </div>
         <button
@@ -103,11 +119,11 @@ export default function AdminTicketsPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-          <input type="text" placeholder="Search by name or place..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
+          <input type="text" placeholder="Search by name or place..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
         </div>
         <div className="flex gap-2 flex-wrap">
           {["All", "Available", "Sold Out"].map((s) => (
-            <button key={s} onClick={() => setFilter(s)} className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filter === s ? "bg-primary text-white" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}>{s}</button>
+            <button key={s} onClick={() => { setFilter(s); setCurrentPage(1); }} className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filter === s ? "bg-primary text-white" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}>{s}</button>
           ))}
         </div>
       </div>
@@ -125,7 +141,7 @@ export default function AdminTicketsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t) => (
+              {paginatedItems.map((t) => (
                 <tr key={t.id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
                   <td className="px-5 py-3.5 font-medium text-gray-900 dark:text-white">{t.name}</td>
                   <td className="px-5 py-3.5 text-gray-600 dark:text-gray-300">{t.tourismPlaceName || "N/A"}</td>
@@ -144,6 +160,9 @@ export default function AdminTicketsPage() {
           </table>
           {filtered.length === 0 && <div className="text-center py-12 text-sm text-gray-400">No tickets found.</div>}
         </div>
+        {filtered.length > 0 && (
+          <AdminPagination currentPage={currentPage} pageSize={pageSize} totalItems={totalItems} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} itemLabel="tickets" />
+        )}
       </div>
 
       {viewTarget && (

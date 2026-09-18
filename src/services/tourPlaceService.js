@@ -41,7 +41,7 @@ export const tourPlaceService = {
       await axiosClient.delete(`/tour-place-attachments/${image.id}`);
     }
   },
-  setPrimaryTourPlaceImage: async (id, imageId) => {
+  setPrimaryTourPlaceImage: async (id, _imageId) => {
     return getTourPlaceAttachments(id);
   },
   getTourPlaceImages: async (id) => {

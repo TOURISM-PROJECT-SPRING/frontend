@@ -1,7 +1,8 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
 
-/* Light-only brand: neutralise dark variant so nothing can accidentally go dark. */
-@custom-variant dark (&:where(.never-dark, .never-dark *));
+/* Class-based dark mode: `.dark` is toggled on <html> by the theme switcher. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Brand green — primary */
@@ -16,6 +17,10 @@
   --color-brand-800: #013724;
   --color-brand-900: #012a1c;
   --color-brand-950: #00150e;
+
+  /* Console alias — admin/owner dashboards use `primary` utility classes. */
+  --color-primary: #02462e;
+  --color-primary-dark: #013724;
 
   /* Khmer gold — accent */
   --color-gold-50: #fffbe6;
@@ -42,8 +47,10 @@
   --color-danger: #d1483b;
   --color-info: #2f6d9e;
 
-  --font-display: "Playfair Display", ui-serif, Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "DM Sans", "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  --font-sans: "DM Sans", "Kantumruy Pro", "Noto Sans Khmer", system-ui, sans-serif;
+  /* Force Khmer type on a specific element: className="font-khmer" */
+  --font-khmer: "Kantumruy Pro", "Noto Serif Khmer", "Noto Sans Khmer", sans-serif;
 
   --shadow-soft: 0 1px 2px rgba(20, 32, 26, 0.04), 0 10px 30px rgba(20, 32, 26, 0.06);
   --shadow-lift: 0 16px 44px rgba(2, 70, 46, 0.16);
@@ -52,6 +59,19 @@
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
+  background-color: var(--color-canvas);
+  color-scheme: light;
+}
+
+/* Semantic token overrides for dark mode. Components using `bg-canvas`,
+   `text-ink`, `border-line`, etc. adapt automatically, and the canvas-change
+   also drives body/html backgrounds during the theme switch. */
+.dark {
+  color-scheme: dark;
+  --color-canvas: #09120e;
+  --color-ink: #f0f7f3;
+  --color-muted: #8ea398;
+  --color-line: #1d3429;
 }
 
 body {
@@ -59,7 +79,7 @@ body {
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -72,15 +92,36 @@ body {
   min-height: 100vh;
 }
 
-*,
-*::before,
-*::after {
-  /* Only animate color-ish properties globally. transform/opacity are left to
-     explicit Tailwind transitions so hover lift + image zoom stay crisp and
-     don't compound with a universal transform tween. */
-  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  transition-duration: 200ms;
+/* Khmer subscripts (coeng) stack below the baseline and get clipped by the
+   tight utility leading used elsewhere — give Khmer copy room to breathe.
+   .font-khmer is declared here (not just as a --font-* token) because Tailwind
+   v4 tree-shakes utilities that no component uses yet. */
+.font-khmer {
+  font-family: var(--font-khmer);
+  line-height: 1.9;
+}
+
+[lang="km"] {
+  line-height: 1.9;
+}
+
+@layer base {
+  /* Only animate color-ish properties globally. transform and opacity are
+     left to explicit Tailwind transitions so hover lift + image zoom stay
+     crisp and don't compound with a universal transform tween.
+     background-image is included so bg-gradient-* surfaces (e.g. hero bands,
+     CTA overlays) fade between themes instead of snapping. Kept inside a
+     layer so Tailwind's transition / duration utilities still win.
+     NOTE: uses `:where(*)` because Tailwind v4's CSS pipeline strips a plain
+     `*` universal selector authored inside `@layer base` from the build,
+     which silently broke the smooth light/dark theme fade. */
+  :where(*) {
+    transition-property: background-color, background-image, border-color,
+      color, fill, stroke, box-shadow, outline-color, text-decoration-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+    transition-delay: 0s;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -113,6 +154,16 @@ body {
   overflow: hidden;
 }
 
+/* Recharts axes/grid — recharts paints SVG presentation attributes (no CSS
+   transitions), so drive the grid line color with a CSS rule that follows the
+   theme instead of the hard-coded light stroke used as a fallback. */
+.recharts-cartesian-grid line {
+  stroke: #e5eae7;
+}
+.dark .recharts-cartesian-grid line {
+  stroke: #1d3429;
+}
+
 /* Page-load reveal */
 @keyframes rise {
   from { opacity: 0; transform: translateY(18px); }
@@ -130,11 +181,23 @@ body {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+@keyframes navbarfly {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slidein {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
 
 .animate-rise { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* Spring landing; no fill-mode so the end transform (translateY(0)) isn't kept,
+   which would break position:fixed overlays inside the navbar. */
+.animate-navbarfly { animation: navbarfly 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 .animate-fade { animation: fade 0.9s ease both; }
 .animate-slowzoom { animation: slowzoom 24s ease-in-out infinite alternate; }
 .animate-scalein { animation: scalein 0.28s ease-out both; }
+.animate-slidein { animation: slidein 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }

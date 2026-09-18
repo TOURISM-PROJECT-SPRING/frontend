@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   User,
   Mail,
@@ -11,34 +11,98 @@ import {
   Lock,
   Key,
   Smartphone,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
   X,
+  Loader2,
 } from "lucide-react";
-
-const activityLog = [
-  { action: "Updated system settings", time: "2 hours ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Approved new owner: Skyline Resorts", time: "5 hours ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Flagged review #RV-4821", time: "1 day ago", icon: AlertTriangle, color: "text-yellow-500" },
-  { action: "Removed user: spam_account", time: "2 days ago", icon: AlertTriangle, color: "text-red-500" },
-  { action: "Updated payment gateway", time: "3 days ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Created promotion: WELCOME20", time: "5 days ago", icon: CheckCircle, color: "text-green-500" },
-];
-
-const adminStats = [
-  { label: "Users Managed", value: "2,568" },
-  { label: "Owners Approved", value: "356" },
-  { label: "Bookings Reviewed", value: "4,789" },
-  { label: "Reports Generated", value: "124" },
-  { label: "Promotions Created", value: "47" },
-  { label: "System Uptime", value: "99.9%" },
-];
+import { useAuth } from "../../context/AuthContext";
+import { userAttachmentService } from "../../services/userAttachmentService";
+import { useToast } from "../../components/ui/Toast";
 
 export default function AdminProfilePage() {
+  const { user, userId, avatarUrl, setAvatarUrl } = useAuth();
+  const toast = useToast();
+  const fileInputRef = useRef(null);
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [twoFA, setTwoFA] = useState(true);
+  const [preview, setPreview] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const shownAvatar = preview || avatarUrl;
+
+  const initials =
+    (user?.fullname || user?.username || "Admin User")
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "AU";
+
+  const displayName = user?.fullname || user?.username || "Admin User";
+  const displayEmail = user?.email || "Not provided";
+  const roleLabel = user?.role || user?.roles?.[0] || "Administrator";
+  const nameParts = (user?.fullname || "").split(" ").filter(Boolean);
+  const firstName = nameParts[0] || user?.username || "";
+  const lastName = nameParts.slice(1).join(" ");
+  const joinedLabel = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "—";
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    userAttachmentService
+      .getUserAttachments(userId)
+      .then((attachments) => {
+        if (!active) return;
+        const profile =
+          (attachments || []).find((a) => a.type === "PROFILE") || (attachments || [])[0];
+        if (profile?.cloudinaryUrl) setAvatarUrl(profile.cloudinaryUrl);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [userId, setAvatarUrl]);
+
+  const handleAvatarSelect = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.type && !file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB.");
+      return;
+    }
+    if (!userId) {
+      toast.error("You must be signed in to upload a photo.");
+      return;
+    }
+
+    const localPreview = URL.createObjectURL(file);
+    setPreview(localPreview);
+    setUploading(true);
+    try {
+      const uploaded = await userAttachmentService.uploadUserAttachment(userId, file, "PROFILE");
+      const url = uploaded?.[0]?.cloudinaryUrl || uploaded?.cloudinaryUrl || localPreview;
+      setAvatarUrl(url);
+      toast.success("Profile photo updated");
+    } catch (error) {
+      console.error("Error uploading profile photo:", error);
+      toast.error("Failed to upload profile photo. Please try again.");
+    } finally {
+      setUploading(false);
+      setPreview("");
+    }
+  };
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -51,15 +115,37 @@ export default function AdminProfilePage() {
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12">
             <div className="relative">
               <div className="w-24 h-24 bg-white dark:bg-gray-900 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
-                <span className="text-3xl font-bold text-primary">AU</span>
+                {shownAvatar ? (
+                  <img src={shownAvatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-bold text-primary">{initials}</span>
+                )}
               </div>
-              <button className="absolute bottom-1 right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white hover:bg-primary-dark transition shadow-md">
-                <Camera className="w-3.5 h-3.5" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                title="Change profile photo"
+                className="absolute bottom-1 right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white hover:bg-primary-dark transition shadow-md disabled:opacity-60 cursor-pointer"
+              >
+                {uploading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Camera className="w-3.5 h-3.5" />
+                )}
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarSelect}
+                disabled={uploading}
+                className="hidden"
+              />
             </div>
             <div className="flex-1 sm:pb-1">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin User</h1>
-              <p className="text-sm text-gray-400 dark:text-gray-500">Super Administrator</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{roleLabel}</p>
             </div>
             <button
               onClick={() => setEditOpen(true)}
@@ -78,47 +164,18 @@ export default function AdminProfilePage() {
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 animate-fade-in-up delay-75">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Personal Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem icon={User} label="Full Name" value="Admin User" />
-              <InfoItem icon={Mail} label="Email" value="admin@smarttourism.com" />
-              <InfoItem icon={Phone} label="Phone" value="+855 12 345 678" />
-              <InfoItem icon={MapPin} label="Location" value="Phnom Penh, Cambodia" />
-              <InfoItem icon={Calendar} label="Joined" value="January 15, 2023" />
-              <InfoItem icon={Shield} label="Role" value="Super Admin" />
-            </div>
-          </div>
-
-          {/* Activity Log */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 animate-fade-in-up delay-150">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              {activityLog.map((a, i) => (
-                <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-800 last:border-0 animate-slide-right" style={{ animationDelay: `${i * 80 + 200}ms` }}>
-                  <a.icon className={`w-4 h-4 ${a.color} shrink-0`} />
-                  <span className="text-[13px] text-gray-600 dark:text-gray-300 flex-1">{a.action}</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1 shrink-0">
-                    <Clock className="w-3 h-3" /> {a.time}
-                  </span>
-                </div>
-              ))}
+              <InfoItem icon={User} label="Full Name" value={displayName} />
+              <InfoItem icon={Mail} label="Email" value={displayEmail} />
+              <InfoItem icon={Phone} label="Phone" value={user?.phone || user?.phoneNumber || "Not provided"} />
+              <InfoItem icon={MapPin} label="Location" value={user?.address || "Not provided"} />
+              <InfoItem icon={Calendar} label="Joined" value={joinedLabel} />
+              <InfoItem icon={Shield} label="Role" value={roleLabel} />
             </div>
           </div>
         </div>
 
         {/* Right Column */}
         <div className="space-y-5">
-          {/* Stats */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 animate-fade-in-up delay-100">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Admin Statistics</h3>
-            <div className="space-y-3">
-              {adminStats.map((s, i) => (
-                <div key={s.label} className="flex items-center justify-between py-1.5 animate-slide-left" style={{ animationDelay: `${i * 60 + 300}ms` }}>
-                  <span className="text-[13px] text-gray-500 dark:text-gray-400 dark:text-gray-500">{s.label}</span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Security */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 animate-fade-in-up delay-200">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Security</h3>
@@ -169,36 +226,47 @@ export default function AdminProfilePage() {
             </div>
             <form onSubmit={(e) => { e.preventDefault(); setEditOpen(false); }} className="p-6 space-y-4">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  <span className="text-xl font-bold text-primary">AU</span>
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center overflow-hidden">
+                  {shownAvatar ? (
+                    <img src={shownAvatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-bold text-primary">{initials}</span>
+                  )}
                 </div>
-                <button type="button" className="text-sm font-medium text-primary hover:text-primary-dark transition">Change Photo</button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="text-sm font-medium text-primary hover:text-primary-dark transition disabled:opacity-60 cursor-pointer"
+                >
+                  {uploading ? "Uploading..." : "Change Photo"}
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                  <input type="text" defaultValue="Admin" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
+                  <input type="text" defaultValue={firstName} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                  <input type="text" defaultValue="User" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
+                  <input type="text" defaultValue={lastName} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                <input type="email" defaultValue="admin@smarttourism.com" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
+                <input type="email" defaultValue={displayEmail} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
-                <input type="tel" defaultValue="+855 12 345 678" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
+                <input type="tel" defaultValue={user?.phone || user?.phoneNumber || ""} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-                <input type="text" defaultValue="Phnom Penh, Cambodia" className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
+                <input type="text" defaultValue={user?.address || ""} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
-                <textarea rows={3} defaultValue="Super Administrator managing the Smart Tourism Cambodia platform." className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition resize-none" />
+                <textarea rows={3} defaultValue={user?.bio || ""} className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary transition resize-none" />
               </div>
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <button type="button" onClick={() => setEditOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</button>

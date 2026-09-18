@@ -46,7 +46,7 @@ export function ToastProvider({ children }) {
             return (
               <div
                 key={t.id}
-                className={`animate-scalein flex items-start gap-3 rounded-xl border ${tone.ring} bg-white px-4 py-3 shadow-lift`}
+                className={`animate-scalein flex items-start gap-3 rounded-xl border ${tone.ring} bg-white dark:bg-gray-800 px-4 py-3 shadow-lift`}
               >
                 <Icon name={tone.icon} size={18} className={`mt-0.5 shrink-0 ${tone.color}`} />
                 <p className="flex-1 text-sm font-medium text-ink">{t.message}</p>

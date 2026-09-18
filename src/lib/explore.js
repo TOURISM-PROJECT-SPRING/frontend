@@ -1,4 +1,4 @@
-// Pure helpers for the unified Explore page: province enrichment, filtering and
+  // Pure helpers for the unified Explore page: province enrichment, filtering and
 // same-province matching. Uses province NAMES (the only province concept the
 // backend exposes) but tracks the destination/location id as `provinceId` so
 // filtering is still id-driven wherever the API gives us one.

@@ -1,8 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Landmark,
   LayoutDashboard,
   Users,
+  ShieldCheck,
   Building2,
   MapPin,
   Hotel,
@@ -20,11 +21,13 @@ import {
   BarChart3,
   ScrollText,
   Settings,
-  HelpCircle,
   ChevronLeft,
-  ChevronRight,
   UserCircle,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import Logo from "../ui/Logo";
 
 const sections = [
   {
@@ -37,6 +40,7 @@ const sections = [
     label: "Management",
     items: [
       { icon: Users, text: "Users", path: "/admin/users" },
+      { icon: ShieldCheck, text: "Roles & Permissions", path: "/admin/roles" },
       { icon: Building2, text: "Owners / Businesses", path: "/admin/owners" },
       { icon: MapPin, text: "Tourist Places", path: "/admin/places" },
       { icon: Hotel, text: "Hotels", path: "/admin/hotels" },
@@ -66,32 +70,46 @@ const sections = [
 
 export default function AdminSidebar({ collapsed, onToggle }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { isDark } = useTheme();
+sahisoqeno
+  const handleLogout = () => {sahisoqeno
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800 flex flex-col z-40 transition-all duration-300 ${
+      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800 flex flex-col z-40 overflow-hidden transition-[width] duration-300 ease-in-out ${
         collapsed ? "w-[72px]" : "w-64"
       }`}
     >
-      <div className="flex items-center gap-3 px-5 h-14 border-b border-gray-100 dark:border-gray-800 shrink-0">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-          <Landmark className="w-4 h-4 text-white" />
-        </div>
-        {!collapsed && (
-          <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">
-            Smart Tourism Admin Panel
-          </span>
-        )}
+      <div
+        className={`flex items-center h-14 border-b border-gray-100 dark:border-gray-800 shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+          collapsed ? "px-5" : "px-4"
+        }`}
+      >
+        <Link
+          to="/"
+          aria-label="SovannDomNour admin panel"
+          title={collapsed ? "SovannDomNour" : undefined}
+          className="shrink-0 transition-transform active:scale-95"
+        >
+          <Logo tone={isDark ? "light" : "dark"} showText smooth collapsed={collapsed} />
+        </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2.5">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3">
         {sections.map((section) => (
           <div key={section.label} className="mb-4">
-            {!collapsed && (
-              <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-2.5 mb-1.5">
-                {section.label}
-              </p>
-            )}
+            <p
+              className={`text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-2.5 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                collapsed ? "max-h-0 mb-0 opacity-0" : "max-h-5 mb-1.5 opacity-100"
+              }`}
+            >
+              {section.label}
+            </p>
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -99,15 +117,23 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                    className={`flex items-center rounded-lg text-[13px] font-medium overflow-hidden transition-all duration-300 ease-in-out ${
+                      collapsed ? "gap-0 px-[27px] py-2" : "gap-2.5 px-2.5 py-2"
+                    } ${
                       isActive
                         ? "bg-primary/10 text-primary"
                         : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200"
-                    } ${collapsed ? "justify-center" : ""}`}
+                    }`}
                     title={collapsed ? item.text : undefined}
                   >
                     <item.icon className="w-[18px] h-[18px] shrink-0" />
-                    {!collapsed && <span>{item.text}</span>}
+                    <span
+                      className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
+                        collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"
+                      }`}
+                    >
+                      {item.text}
+                    </span>
                   </Link>
                 );
               })}
@@ -116,31 +142,58 @@ export default function AdminSidebar({ collapsed, onToggle }) {
         ))}
       </nav>
 
-      <div className="border-t border-gray-100 dark:border-gray-800 px-2.5 py-2.5 space-y-0.5">
+      <div className="border-t border-gray-100 dark:border-gray-800 py-2.5 space-y-0.5">
         <Link
-          to="/admin/help"
-          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition ${
-            collapsed ? "justify-center" : ""
+          to="/"
+          className={`flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 overflow-hidden transition-all duration-300 ease-in-out ${
+            collapsed ? "gap-0 px-[27px] py-2" : "gap-2.5 px-2.5 py-2"
           }`}
-          title={collapsed ? "Help Center" : undefined}
+          title={collapsed ? "Back to Website" : undefined}
         >
-          <HelpCircle className="w-[18px] h-[18px] shrink-0" />
-          {!collapsed && <span>Help Center</span>}
+          <Landmark className="w-[18px] h-[18px] shrink-0" />
+          <span
+            className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
+              collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"
+            }`}
+          >
+            Back to Website
+          </span>
         </Link>
         <button
+          type="button"
+          onClick={handleLogout}
+          className={`flex items-center rounded-lg text-[13px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 overflow-hidden transition-all duration-300 ease-in-out w-full cursor-pointer ${
+            collapsed ? "gap-0 px-[27px] py-2" : "gap-2.5 px-2.5 py-2"
+          }`}
+          title={collapsed ? "Sign Out" : undefined}
+        >
+          <LogOut className="w-[18px] h-[18px] shrink-0" />
+          <span
+            className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
+              collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"
+            }`}
+          >
+            Sign Out
+          </span>
+        </button>
+        <button
           onClick={onToggle}
-          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition w-full ${
-            collapsed ? "justify-center" : ""
+          className={`flex items-center rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 overflow-hidden transition-all duration-300 ease-in-out w-full ${
+            collapsed ? "gap-0 px-[27px] py-2" : "gap-2.5 px-2.5 py-2"
           }`}
         >
-          {collapsed ? (
-            <ChevronRight className="w-[18px] h-[18px] shrink-0" />
-          ) : (
-            <>
-              <ChevronLeft className="w-[18px] h-[18px] shrink-0" />
-              <span>Collapse</span>
-            </>
-          )}
+          <ChevronLeft
+            className={`w-[18px] h-[18px] shrink-0 transition-transform duration-300 ease-in-out ${
+              collapsed ? "rotate-180" : ""
+            }`}
+          />
+          <span
+            className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
+              collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"
+            }`}
+          >
+            Collapse
+          </span>
         </button>
       </div>
     </aside>
