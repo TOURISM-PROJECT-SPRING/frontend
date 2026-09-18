@@ -16,6 +16,9 @@ import KhmerFood from "../components/home/KhmerFood";
 import GreatForSection from "../components/home/GreatForSection";
 import RelatedStories from "../components/home/RelatedStories";
 import FinalCta from "../components/home/FinalCta";
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 export default function HomePage() {
