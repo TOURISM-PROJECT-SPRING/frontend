@@ -1,3 +1,6 @@
+import AdminLoading from "../../components/admin/AdminLoading";
+import TotalBadge from "../../components/admin/TotalBadge";
+import AdminPagination from "../../components/admin/AdminPagination";
 import { useEffect, useState } from "react";
 import {
   ShieldCheck,
@@ -19,6 +22,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { managementService } from "../../services/managementService";
+import { useToast } from "../../components/ui/Toast";
 
 const PERMISSION_GROUPS = [
   {
@@ -191,9 +195,12 @@ const colorStyles = {
 };
 
 export default function AdminRolesPage() {
+  const toast = useToast();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [expandedRoles, setExpandedRoles] = useState({});
 
   // Modals state
@@ -262,6 +269,9 @@ export default function AdminRolesPage() {
     const matchPerm = (r.permissions || []).some((p) => p.toLowerCase().includes(term));
     return matchName || matchLabel || matchDesc || matchPerm;
   });
+
+  const totalItems = filteredRoles.length;
+  const paginatedRoles = filteredRoles.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Open Create Form
   const handleOpenCreate = () => {
@@ -337,6 +347,7 @@ export default function AdminRolesPage() {
           await managementService.createRole(newRole);
         } catch {}
         setRoles((prev) => [...prev, newRole]);
+        toast.success("Role created successfully");
       } else if (editRole) {
         const updated = {
           ...editRole,
@@ -347,6 +358,7 @@ export default function AdminRolesPage() {
           await managementService.updateRole(editRole.id, updated);
         } catch {}
         setRoles((prev) => prev.map((r) => (r.id === editRole.id ? updated : r)));
+        toast.success("Role updated successfully");
       }
       setIsCreating(false);
       setEditRole(null);
@@ -363,25 +375,23 @@ export default function AdminRolesPage() {
     } catch {}
     setRoles((prev) => prev.filter((r) => r.id !== deleteTarget.id));
     setDeleteTarget(null);
+    toast.success("Role deleted successfully");
   };
 
-  if (loading) {
-    return (
-      <div className="p-12 text-center text-sm text-gray-400">
-        Loading roles and permissions matrix...
-      </div>
-    );
-  }
+  if (loading) return <AdminLoading message="Loading roles and permissions matrix..." />;
 
   return (
     <div className="space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <ShieldCheck className="w-7 h-7 text-[#1b3b2b] dark:text-emerald-400" />
-            Roles & Permissions Management
-          </h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Roles &amp; Permissions Management
+            </h1>
+            <TotalBadge count={roles.length} />
+          </div>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             Define system roles, access capabilities, and operational resource privileges
           </p>
@@ -454,14 +464,14 @@ export default function AdminRolesPage() {
           type="text"
           placeholder="Filter roles by code, title, or permission..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
           className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:border-primary transition"
         />
       </div>
 
       {/* Roles Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {filteredRoles.map((role) => {
+        {paginatedRoles.map((role) => {
           const style = colorStyles[role.color] || colorStyles.blue;
           const isExpanded = expandedRoles[role.id];
           const displayedPerms = isExpanded
@@ -599,6 +609,10 @@ export default function AdminRolesPage() {
           );
         })}
       </div>
+
+      {filteredRoles.length > 0 && (
+        <AdminPagination currentPage={currentPage} pageSize={pageSize} totalItems={totalItems} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} itemLabel="roles" />
+      )}
 
       {filteredRoles.length === 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-12 text-center">

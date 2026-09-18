@@ -21,6 +21,17 @@
         overflow-x: clip;
       }
     </style>
+    <script>
+      (function () {
+        try {
+          var mode = localStorage.getItem("theme");
+          if (mode !== "light" && mode !== "dark" && mode !== "system") mode = "system";
+          var dark = mode === "dark" ||
+            (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

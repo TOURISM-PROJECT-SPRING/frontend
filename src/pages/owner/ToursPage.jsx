@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { Search, Plus, MapPin, Eye, Edit3, Trash2, Compass, Tag, Star, AlertCircle, CheckCircle, X } from "lucide-react";
 import { tourPlaceService } from "../../services/tourPlaceService";
+import { tourPlaceAttachmentService } from "../../services/tourPlaceAttachmentService";
 import { districtService } from "../../services/districtService";
 import { placeCategoryService } from "../../services/placeCategoryService";
+import ImageUpload from "../../components/ui/ImageUpload";
 
 export default function OwnerToursPage() {
   const [places, setPlaces] = useState([]);
@@ -13,6 +15,8 @@ export default function OwnerToursPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -60,6 +64,8 @@ export default function OwnerToursPage() {
   const openCreateModal = () => {
     setEditItem(null);
     setErrorMessage("");
+    setImages([]);
+    setExistingImages([]);
     setFormData({
       name: "",
       description: "",
@@ -71,9 +77,11 @@ export default function OwnerToursPage() {
     setFormOpen(true);
   };
 
-  const openEditModal = (p) => {
+  const openEditModal = async (p) => {
     setEditItem(p);
     setErrorMessage("");
+    setImages([]);
+    setExistingImages([]);
     setFormData({
       name: p.name || "",
       description: p.description || "",
@@ -83,6 +91,8 @@ export default function OwnerToursPage() {
       status: p.status || "OPEN",
     });
     setFormOpen(true);
+    const atts = await tourPlaceAttachmentService.getByTourPlaceId(p.id).catch(() => []);
+    setExistingImages((atts || []).map((a) => ({ id: a.id, url: a.cloudinaryUrl })));
   };
 
   const handleSave = async (e) => {
@@ -106,24 +116,48 @@ export default function OwnerToursPage() {
         return;
       }
 
+      let saved;
       if (editItem) {
-        const updated = await tourPlaceService.updateTourPlace(editItem.id, payload);
-        setPlaces((prev) => prev.map((p) => (p.id === editItem.id ? { ...p, ...payload, ...updated } : p)));
+        saved = await tourPlaceService.updateTourPlace(editItem.id, payload);
+        setPlaces((prev) => prev.map((p) => (p.id === editItem.id ? { ...p, ...payload, ...saved } : p)));
         setSuccessMessage("Attraction updated successfully!");
       } else {
-        const created = await tourPlaceService.createTourPlace(payload);
-        setPlaces((prev) => [created || { ...payload, id: Date.now() }, ...prev]);
+        saved = await tourPlaceService.createTourPlace(payload);
+        setPlaces((prev) => [saved || { ...payload, id: Date.now() }, ...prev]);
         setSuccessMessage("New tourism attraction created!");
+      }
+
+      if (images.length && saved?.id != null) {
+        await tourPlaceAttachmentService.uploadAttachments(saved.id, images);
+      } else if (images.length && saved?.id == null) {
+        const refreshed = await tourPlaceService.getAllTourPlaces().catch(() => []);
+        const match = (refreshed || []).find((p) => p.name === payload.name);
+        if (match?.id != null) {
+          await tourPlaceAttachmentService.uploadAttachments(match.id, images);
+        }
       }
 
       setFormOpen(false);
       setEditItem(null);
+      setImages([]);
+      setExistingImages([]);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error("Error saving tour place:", error);
       setErrorMessage(error.response?.data?.message || "Failed to save attraction.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRemoveExistingImage = async (image) => {
+    try {
+      await tourPlaceAttachmentService.deleteAttachment(image.id);
+      setExistingImages((prev) => prev.filter((i) => i.id !== image.id));
+      setSuccessMessage("Image removed successfully!");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (e) {
+      setErrorMessage("Failed to remove image. Please try again.");
     }
   };
 
@@ -139,6 +173,13 @@ export default function OwnerToursPage() {
       console.error("Failed to delete place:", e);
       setErrorMessage("Failed to delete attraction.");
     }
+  };
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setEditItem(null);
+    setImages([]);
+    setExistingImages([]);
   };
 
   return (

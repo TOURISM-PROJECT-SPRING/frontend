@@ -6,6 +6,7 @@ import { ROLES, hasRole, canUseManager } from "../utils/rbac";
 // `Authorization: Bearer <token>` from that exact key.
 const TOKEN_KEY = "token";
 const USER_KEY = "sdn.user";
+const AVATAR_KEY = "sdn.avatar";
 
 const AuthContext = createContext(null);
 
@@ -50,10 +51,17 @@ const DEMO_USER = {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+  const [avatarUrl, setAvatarUrlState] = useState(() => localStorage.getItem(AVATAR_KEY) || "");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setReady(true);
+  }, []);
+
+  const setAvatarUrl = useCallback((url) => {
+    setAvatarUrlState(url || "");
+    if (url) localStorage.setItem(AVATAR_KEY, url);
+    else localStorage.removeItem(AVATAR_KEY);
   }, []);
 
   const persist = useCallback((jwt, nextUser) => {
@@ -113,14 +121,17 @@ export function AuthProvider({ children }) {
     if (token && token !== "demo-token") {
       authService.logout().catch(() => {});
     }
+    setAvatarUrl("");
     persist(null, null);
-  }, [persist, token]);
+  }, [persist, token, setAvatarUrl]);
 
   const value = useMemo(
     () => ({
       user,
       token,
       userId: user?.id ?? null,
+      avatarUrl,
+      setAvatarUrl,
       isAuthenticated: Boolean(token),
       isDemo: Boolean(user?.demo),
       ready,
@@ -134,7 +145,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
     }),
-    [user, token, ready, login, register, logout]
+    [user, token, ready, avatarUrl, setAvatarUrl, login, register, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

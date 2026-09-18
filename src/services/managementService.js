@@ -57,20 +57,64 @@ export const managementService = {
     const response = await axiosClient.get('/management/reviews');
     return response.data;
   },
+  deleteReview: async (id) => {
+    const response = await axiosClient.delete(`/management/reviews/${id}`);
+    return response.data;
+  },
   getPromotions: async () => {
     const response = await axiosClient.get('/management/promotions');
+    return response.data;
+  },
+  createPromotion: async (data) => {
+    const response = await axiosClient.post('/management/promotions', data);
+    return response.data;
+  },
+  updatePromotion: async (id, data) => {
+    const response = await axiosClient.put(`/management/promotions/${id}`, data);
+    return response.data;
+  },
+  deletePromotion: async (id) => {
+    const response = await axiosClient.delete(`/management/promotions/${id}`);
     return response.data;
   },
   getNotifications: async () => {
     const response = await axiosClient.get('/management/notifications');
     return response.data;
   },
+  createNotification: async (data) => {
+    const response = await axiosClient.post('/management/notifications', data);
+    return response.data;
+  },
+  updateNotification: async (id, data) => {
+    const response = await axiosClient.put(`/management/notifications/${id}`, data);
+    return response.data;
+  },
+  deleteNotification: async (id) => {
+    const response = await axiosClient.delete(`/management/notifications/${id}`);
+    return response.data;
+  },
   getPayments: async () => {
     const response = await axiosClient.get('/management/payments');
     return response.data;
   },
+  deletePayment: async (id) => {
+    const response = await axiosClient.delete(`/management/payments/${id}`);
+    return response.data;
+  },
   getTourPackages: async () => {
     const response = await axiosClient.get('/management/tour-packages');
+    return response.data;
+  },
+  createTourPackage: async (data) => {
+    const response = await axiosClient.post('/management/tour-packages', data);
+    return response.data;
+  },
+  updateTourPackage: async (id, data) => {
+    const response = await axiosClient.put(`/management/tour-packages/${id}`, data);
+    return response.data;
+  },
+  deleteTourPackage: async (id) => {
+    const response = await axiosClient.delete(`/management/tour-packages/${id}`);
     return response.data;
   },
   getTourGuides: async () => {

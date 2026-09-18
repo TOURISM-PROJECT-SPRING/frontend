@@ -424,6 +424,7 @@ function computeDashboard(input = {}) {
     totalRevenue,
     revenueText: totalRevenue > 0 ? money(totalRevenue) : "$286k",
     totalPlaces: tp.length,
+    totalTours: tp.length,
     totalHotels: hs.length,
     totalRooms: rs.length,
     totalRestaurants: rest.length,

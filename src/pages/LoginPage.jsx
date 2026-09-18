@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import Logo from "../components/ui/Logo";
 import Icon from "../components/ui/Icon";
 import { useAuth } from "../context/AuthContext";
-import { ROLES } from "../utils/rbac";
+import { ROLES, homePathFor } from "../utils/rbac";
 import { img } from "../data/site";
 
 const SIDE_IMG = img("Angkor Wat, reflejo 1.jpg", 1400);
@@ -39,24 +39,24 @@ export default function LoginPage({ mode = "login" }) {
   const [form, setForm] = useState({ fullname: "", username: "", email: "", password: "" });
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-  const redirectTo = location.state?.from || "/";
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      if (isLogin) {
-        await login({ username: form.username || form.email, password: form.password });
-      } else {
-        await register({
-          fullname: form.fullname,
-          username: form.username,
-          email: form.email,
-          password: form.password,
-        });
-      }
-      navigate(redirectTo, { replace: true });
+      const auth = isLogin
+        ? await login({ username: form.username || form.email, password: form.password })
+        : await register({
+            fullname: form.fullname,
+            username: form.username,
+            email: form.email,
+            password: form.password,
+          });
+      // Deep links (from ProtectedRoute) win; otherwise route by role so an
+      // admin lands on /admin, an owner on /owner, and a traveler on /.
+      const dest = location.state?.from || homePathFor(auth?.user);
+      navigate(dest, { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -201,43 +201,43 @@ export default function LoginPage({ mode = "login" }) {
               <button
                 type="button"
                 disabled={loading}
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  try {
-                    await login({ username: "demo", password: "demo", role: ROLES.OWNER });
-                    navigate(redirectTo, { replace: true });
-                  } catch (err) {
-                    setError(err.message || "Could not start the demo.");
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
-              >
-                <Icon name="briefcase" size={17} />
-                Owner demo
-              </button>
+onClick={async () => {
+                    setError(null);
+                    setLoading(true);
+                    try {
+                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER });
+                      navigate(homePathFor(auth?.user), { replace: true });
+                    } catch (err) {
+                      setError(err.message || "Could not start the demo.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
+                >
+                  <Icon name="briefcase" size={17} />
+                  Owner demo
+                </button>
               <button
                 type="button"
                 disabled={loading}
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  try {
-                    await login({ username: "demo", password: "demo", role: ROLES.ADMIN });
-                    navigate(redirectTo, { replace: true });
-                  } catch (err) {
-                    setError(err.message || "Could not start the demo.");
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
-              >
-                <Icon name="shield" size={17} />
-                Admin demo
-              </button>
+onClick={async () => {
+                    setError(null);
+                    setLoading(true);
+                    try {
+                      const auth = await login({ username: "demo", password: "demo", role: ROLES.ADMIN });
+                      navigate(homePathFor(auth?.user), { replace: true });
+                    } catch (err) {
+                      setError(err.message || "Could not start the demo.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
+                >
+                  <Icon name="shield" size={17} />
+                  Admin demo
+                </button>
             </div>
           </div>
 

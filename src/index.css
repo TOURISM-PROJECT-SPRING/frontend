@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap");
 
-/* Light-only brand: neutralise dark variant so nothing can accidentally go dark. */
-@custom-variant dark (&:where(.never-dark, .never-dark *));
+/* Class-based dark mode: `.dark` is toggled on <html> by the theme switcher. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Brand green — primary */
@@ -17,6 +17,10 @@
   --color-brand-800: #013724;
   --color-brand-900: #012a1c;
   --color-brand-950: #00150e;
+
+  /* Console alias — admin/owner dashboards use `primary` utility classes. */
+  --color-primary: #02462e;
+  --color-primary-dark: #013724;
 
   /* Khmer gold — accent */
   --color-gold-50: #fffbe6;
@@ -54,6 +58,19 @@
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
+  background-color: var(--color-canvas);
+  color-scheme: light;
+}
+
+/* Semantic token overrides for dark mode. Components using `bg-canvas`,
+   `text-ink`, `border-line`, etc. adapt automatically, and the canvas-change
+   also drives body/html backgrounds during the theme switch. */
+.dark {
+  color-scheme: dark;
+  --color-canvas: #09120e;
+  --color-ink: #f0f7f3;
+  --color-muted: #8ea398;
+  --color-line: #1d3429;
 }
 
 body {
@@ -126,6 +143,16 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Recharts axes/grid — recharts paints SVG presentation attributes (no CSS
+   transitions), so drive the grid line color with a CSS rule that follows the
+   theme instead of the hard-coded light stroke used as a fallback. */
+.recharts-cartesian-grid line {
+  stroke: #e5eae7;
+}
+.dark .recharts-cartesian-grid line {
+  stroke: #1d3429;
 }
 
 /* Page-load reveal */

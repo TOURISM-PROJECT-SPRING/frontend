@@ -3,6 +3,8 @@ import { Search, Plus, Edit3, Trash2, UtensilsCrossed, AlertCircle, CheckCircle,
 import { foodService } from "../../services/foodService";
 import { restaurantService } from "../../services/restaurantService";
 import { foodCategoryService } from "../../services/foodCategoryService";
+import { foodAttachmentService } from "../../services/foodAttachmentService";
+import ImageUpload from "../../components/ui/ImageUpload";
 import { formatPrice } from "../../utils/helpers";
 
 export default function OwnerMenuPage() {
@@ -16,6 +18,8 @@ export default function OwnerMenuPage() {
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -66,6 +70,8 @@ export default function OwnerMenuPage() {
   const openCreateModal = () => {
     setEditItem(null);
     setErrorMessage("");
+    setImages([]);
+    setExistingImages([]);
     setFormData({
       name: "",
       description: "",
@@ -76,9 +82,11 @@ export default function OwnerMenuPage() {
     setFormOpen(true);
   };
 
-  const openEditModal = (f) => {
+  const openEditModal = async (f) => {
     setEditItem(f);
     setErrorMessage("");
+    setImages([]);
+    setExistingImages([]);
     setFormData({
       name: f.name || "",
       description: f.description || "",
@@ -86,6 +94,8 @@ export default function OwnerMenuPage() {
       foodCategoryId: f.foodCategoryId ? String(f.foodCategoryId) : categories[0]?.id ? String(categories[0].id) : "",
       restaurantId: f.restaurantId ? String(f.restaurantId) : restaurants[0]?.id ? String(restaurants[0].id) : "",
     });
+    const atts = await foodAttachmentService.getFoodAttachments(f.id).catch(() => []);
+    setExistingImages((atts || []).map((a) => ({ id: a.id, url: a.cloudinaryUrl })));
     setFormOpen(true);
   };
 
@@ -109,24 +119,52 @@ export default function OwnerMenuPage() {
         return;
       }
 
+      let saved;
       if (editItem) {
-        const updated = await foodService.updateFood(editItem.id, payload);
-        setFoods((prev) => prev.map((f) => (f.id === editItem.id ? { ...f, ...payload, ...updated } : f)));
+        saved = await foodService.updateFood(editItem.id, payload);
+        setFoods((prev) => prev.map((f) => (f.id === editItem.id ? { ...f, ...payload, ...saved } : f)));
         setSuccessMessage("Menu dish updated successfully!");
       } else {
-        const created = await foodService.createFood(payload);
-        setFoods((prev) => [created || { ...payload, id: Date.now() }, ...prev]);
+        saved = await foodService.createFood(payload);
+        setFoods((prev) => [saved || { ...payload, id: Date.now() }, ...prev]);
         setSuccessMessage("New dish added to menu!");
+      }
+
+      let savedId = saved?.id;
+      if (savedId == null && !editItem) {
+        const fresh = await foodService.getAllFoods().catch(() => []);
+        const match = (fresh || []).find(
+          (x) => String(x.name) === String(payload.name) && String(x.restaurantId) === String(payload.restaurantId)
+        );
+        if (match) savedId = match.id;
+      }
+
+      if (images.length && savedId != null) {
+        await foodAttachmentService.uploadFoodAttachments(savedId, images);
       }
 
       setFormOpen(false);
       setEditItem(null);
+      setImages([]);
+      setExistingImages([]);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error("Error saving food dish:", error);
       setErrorMessage(error.response?.data?.message || "Failed to save dish.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRemoveExistingImage = async (image) => {
+    if (!editItem) return;
+    try {
+      await foodAttachmentService.deleteFoodAttachment(editItem.id, image.id);
+      setExistingImages((prev) => prev.filter((i) => i.id !== image.id));
+      setSuccessMessage("Image removed successfully!");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (e) {
+      setErrorMessage("Failed to remove image. Please try again.");
     }
   };
 
@@ -258,11 +296,14 @@ export default function OwnerMenuPage() {
       {/* Modal */}
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !submitting && setFormOpen(false)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !submitting && (setImages([]), setExistingImages([]), setFormOpen(false))} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-gray-800">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">{editItem ? "Edit Dish" : "Add New Dish"}</h2>
-              <button onClick={() => setFormOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+              <button
+                onClick={() => { setImages([]); setExistingImages([]); setFormOpen(false); }}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -337,10 +378,20 @@ export default function OwnerMenuPage() {
                 />
               </div>
 
+              <ImageUpload
+                label="Dish Images"
+                existingImages={existingImages}
+                onRemoveExisting={handleRemoveExistingImage}
+                files={images}
+                onFilesChange={setImages}
+                uploading={submitting}
+                helperText="The first image is used as the cover photo."
+              />
+
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
-                  onClick={() => setFormOpen(false)}
+                  onClick={() => { setImages([]); setExistingImages([]); setFormOpen(false); }}
                   className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl"
                 >
                   Cancel

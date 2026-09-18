@@ -23,6 +23,14 @@ export function canUseManager(user) {
   return hasAnyRole(user, [ROLES.ADMIN, ROLES.OWNER]);
 }
 
+// The landing page a user should be sent to after signing in (or when they
+// revisit a login/register page while already authenticated).
+export function homePathFor(user) {
+  if (hasRole(user, ROLES.ADMIN)) return "/admin";
+  if (hasRole(user, ROLES.OWNER)) return "/owner";
+  return "/";
+}
+
 // Path-based rules. More specific prefixes win (checked first).
 const PATH_RULES = [
   { prefix: "/manager/admin", roles: [ROLES.ADMIN] },

@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { Search, Plus, MapPin, Eye, Edit3, Trash2, UtensilsCrossed, Clock, Building2, AlertCircle, CheckCircle, X, ChevronRight } from "lucide-react";
 import { restaurantService } from "../../services/restaurantService";
+import { restaurantAttachmentService } from "../../services/restaurantAttachmentService";
 import { foodService } from "../../services/foodService";
 import { tourPlaceService } from "../../services/tourPlaceService";
 import { Link } from "react-router-dom";
+import ImageUpload from "../../components/ui/ImageUpload";
 
 export default function OwnerRestaurantsPage() {
   const [restaurants, setRestaurants] = useState([]);
@@ -18,6 +20,8 @@ export default function OwnerRestaurantsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -31,7 +35,7 @@ export default function OwnerRestaurantsPage() {
     setLoading(true);
     try {
       const [restData, placeData, foodData] = await Promise.all([
-        restaurantService.getAllRestaurants().catch(() => []),
+        restaurantService.getAllRestaurantsWithImages().catch(() => []),
         tourPlaceService.getAllTourPlaces().catch(() => []),
         foodService.getAllFoods().catch(() => []),
       ]);
@@ -68,6 +72,8 @@ export default function OwnerRestaurantsPage() {
   const openCreateModal = () => {
     setEditItem(null);
     setErrorMessage("");
+    setImages([]);
+    setExistingImages([]);
     setFormData({
       name: "",
       description: "",
@@ -78,9 +84,11 @@ export default function OwnerRestaurantsPage() {
     setFormOpen(true);
   };
 
-  const openEditModal = (r) => {
+  const openEditModal = async (r) => {
     setEditItem(r);
     setErrorMessage("");
+    setImages([]);
+    setExistingImages([]);
     setFormData({
       name: r.name || "",
       description: r.description || "",
@@ -88,6 +96,8 @@ export default function OwnerRestaurantsPage() {
       closeTime: r.closeTime || r.clossTime || "22:00",
       tourismPlaceId: r.tourismPlaceId ? String(r.tourismPlaceId) : places[0]?.id ? String(places[0].id) : "",
     });
+    const attachments = await restaurantAttachmentService.getRestaurantAttachments(r.id).catch(() => []);
+    setExistingImages((attachments || []).map((a) => ({ id: a.id, url: a.cloudinaryUrl })));
     setFormOpen(true);
   };
 
@@ -111,24 +121,53 @@ export default function OwnerRestaurantsPage() {
         return;
       }
 
+      let saved;
       if (editItem) {
-        const updated = await restaurantService.updateRestaurant(editItem.id, payload);
-        setRestaurants((prev) => prev.map((r) => (r.id === editItem.id ? { ...r, ...payload, ...updated } : r)));
+        saved = await restaurantService.updateRestaurant(editItem.id, payload);
+        if (saved?.id == null) saved = { ...editItem, ...payload };
+        setRestaurants((prev) => prev.map((r) => (r.id === editItem.id ? { ...r, ...payload, ...saved } : r)));
         setSuccessMessage("Restaurant updated successfully!");
       } else {
-        const created = await restaurantService.createRestaurant(payload);
-        setRestaurants((prev) => [created, ...prev]);
+        saved = await restaurantService.createRestaurant(payload);
+        if (saved?.id == null) {
+          const freshList = await restaurantService.getAllRestaurantsWithImages().catch(() => []);
+          const match = (freshList || []).find((r) => r.name === payload.name);
+          saved = match || saved;
+        }
+        if (saved?.id != null) {
+          setRestaurants((prev) => [saved, ...prev]);
+        } else {
+          setRestaurants((prev) => [{ ...payload, id: Date.now() }, ...prev]);
+        }
         setSuccessMessage("Restaurant registered successfully!");
+      }
+
+      if (images.length && saved?.id != null) {
+        await restaurantAttachmentService.uploadRestaurantAttachments(saved.id, images);
       }
 
       setFormOpen(false);
       setEditItem(null);
+      setImages([]);
+      setExistingImages([]);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       console.error("Error saving restaurant:", error);
       setErrorMessage(error.response?.data?.message || "Failed to save restaurant.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRemoveExistingImage = async (image) => {
+    if (!editItem) return;
+    try {
+      await restaurantAttachmentService.deleteRestaurantAttachment(editItem.id, image.id);
+      setExistingImages((prev) => prev.filter((i) => i.id !== image.id));
+      setSuccessMessage("Image removed successfully!");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (e) {
+      setErrorMessage("Failed to remove image. Please try again.");
     }
   };
 
