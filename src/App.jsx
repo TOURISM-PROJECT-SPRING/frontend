@@ -2,8 +2,14 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import { useInbox } from "./context/InboxContext";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import InboxPage from "./pages/InboxPage";
+import InboxDrawer from "./components/inbox/InboxDrawer";
+import BookingVoucherModal from "./components/inbox/BookingVoucherModal";
+import InboxToast from "./components/inbox/InboxToast";
+import SovannAiChat from "./components/ai/SovannAiChat";
 import ToursPage from "./pages/ToursPage";
 import TourDetailPage from "./pages/TourDetailPage";
 import HotelsPage from "./pages/HotelsPage";
@@ -17,6 +23,8 @@ import ManagerArea from "./pages/manager/ManagerArea";
 import AdminDashboard from "./pages/AdminDashboard";
 
 function PublicLayout() {
+  const { selectedBooking, closeBookingDetails } = useInbox();
+
   return (
     <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-canvas font-sans text-ink">
       <Navbar />
@@ -31,6 +39,8 @@ function PublicLayout() {
           <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
           <Route path="/destinations" element={<DestinationsPage />} />
           <Route path="/destinations/:id" element={<DestinationDetailPage />} />
+          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/my-bookings" element={<InboxPage />} />
           <Route
             path="/profile"
             element={
@@ -43,6 +53,12 @@ function PublicLayout() {
         </Routes>
       </main>
       <Footer />
+      {/* Global Tourist Inbox & Booking Alerts */}
+      <InboxDrawer />
+      <BookingVoucherModal booking={selectedBooking} onClose={closeBookingDetails} />
+      <InboxToast />
+      {/* Floating Sovann AI Concierge */}
+      <SovannAiChat />
     </div>
   );
 }

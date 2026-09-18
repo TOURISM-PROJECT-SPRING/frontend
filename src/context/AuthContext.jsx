@@ -72,7 +72,9 @@ export function AuthProvider({ children }) {
         persist(data.accessToken, data.user || null);
         return { user: data.user, demo: false };
       } catch (e) {
-        if (shouldDemoFallback(e)) {
+        // A requested role (demo button) always falls back to a sample account,
+        // even when the backend is up but rejects the demo credentials.
+        if (shouldDemoFallback(e) || role) {
           // Auth endpoint unavailable / backend offline — sign in with a demo account.
           const demo = role ? { ...DEMO_USER, roles: [role] } : DEMO_USER;
           persist("demo-token", demo);

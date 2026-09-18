@@ -149,3 +149,35 @@ body {
   background-size: 26px 26px, 26px 26px;
   background-position: 0 0, 13px 13px;
 }
+
+/* Sovann AI concierge float & wave */
+@keyframes sovannFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes waveHand {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  20%, 60% {
+    transform: rotate(14deg);
+  }
+  40%, 80% {
+    transform: rotate(-10deg);
+  }
+}
+
+.animate-sovann-float {
+  animation: sovannFloat 3s ease-in-out infinite;
+}
+
+.animate-wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: waveHand 1.6s ease-in-out infinite;
+}
