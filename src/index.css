@@ -104,15 +104,23 @@ body {
   line-height: 1.9;
 }
 
-*,
-*::before,
-*::after {
-  /* Only animate color-ish properties globally. transform/opacity are left to
-     explicit Tailwind transitions so hover lift + image zoom stay crisp and
-     don't compound with a universal transform tween. */
-  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  transition-duration: 200ms;
+@layer base {
+  /* Only animate color-ish properties globally. transform and opacity are
+     left to explicit Tailwind transitions so hover lift + image zoom stay
+     crisp and don't compound with a universal transform tween.
+     background-image is included so bg-gradient-* surfaces (e.g. hero bands,
+     CTA overlays) fade between themes instead of snapping. Kept inside a
+     layer so Tailwind's transition / duration utilities still win.
+     NOTE: uses `:where(*)` because Tailwind v4's CSS pipeline strips a plain
+     `*` universal selector authored inside `@layer base` from the build,
+     which silently broke the smooth light/dark theme fade. */
+  :where(*) {
+    transition-property: background-color, background-image, border-color,
+      color, fill, stroke, box-shadow, outline-color, text-decoration-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+    transition-delay: 0s;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

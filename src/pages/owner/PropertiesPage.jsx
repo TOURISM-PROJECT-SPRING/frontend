@@ -445,6 +445,16 @@ export default function OwnerPropertiesPage() {
                 </div>
               </div>
 
+              <ImageUpload
+                label="Property Images"
+                existingImages={existingImages}
+                onRemoveExisting={handleRemoveExistingImage}
+                files={images}
+                onFilesChange={setImages}
+                uploading={submitting}
+                helperText="The first image is used as the cover photo."
+              />
+
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"

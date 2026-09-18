@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
+import ThemeToggle from "../ui/ThemeToggle";
 import { useAuth } from "../../context/AuthContext";
 import { useFavorites } from "../../context/FavoritesContext";
 
@@ -230,6 +231,11 @@ export default function Navbar() {
             )}
           </button>
 
+          {/* Theme Mode Toggle (Light / Dark) */}
+          <span className="hidden sm:inline-flex">
+            <ThemeToggle />
+          </span>
+
           {/* Authenticated User Menu */}
           {isAuthenticated ? (
             <div className="relative">
@@ -404,6 +410,13 @@ export default function Navbar() {
 
           {/* Divider & Account Links */}
           <div className="mt-4 border-t border-line/80 pt-4">
+
+            {/* Theme Mode (visible for smaller screens) */}
+            <div className="flex items-center justify-between rounded-xl border border-line/60 bg-white/80 px-4 py-3 sm:hidden">
+              <span className="text-xs font-bold text-brand-900">Theme</span>
+              <ThemeToggle />
+            </div>
+
             {isAuthenticated ? (
               <div className="space-y-1">
                 <Link

@@ -1,5 +1,6 @@
 # Owner Route Pages
 
-Public route files that lazy-load the owner module.
+Route pages mounted inside the Owner Dashboard portal.
 
-- `OwnerLayout.jsx` - Wraps all owner routes with `ProtectedRoute` + `OwnerLayout`
+- `OwnerDashboard.jsx` (in `src/pages/`) - Wraps all owner routes with `ProtectedRoute` + `RoleGuard(OWNER)` + `OwnerBusinessProvider`
+- This directory contains the individual owner console pages (`/owner/*`).

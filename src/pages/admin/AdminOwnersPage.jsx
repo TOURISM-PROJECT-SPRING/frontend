@@ -55,105 +55,6 @@ const getCategoryInfo = (type) => {
   return BIZ_CATEGORIES[key] || BIZ_CATEGORIES.hotel;
 };
 
-const DEFAULT_OWNERS = [
-  {
-    id: 1,
-    businessName: "Angkor Palace Resort & Spa",
-    businessLicenseNo: "LIC-SR-2024-8841",
-    businessType: "hotel",
-    verificationStatus: "VERIFIED",
-    verifiedAt: "2026-01-15T09:30:00Z",
-    userName: "Sovann Hotel Owner",
-    userEmail: "owner.hotel@smart-tourism.com",
-    phone: "+855 12 345 678",
-    address: "National Road 6, Krong Siem Reap",
-    city: "Siem Reap",
-    propertyCount: 4,
-    description:
-      "Premier 5-star luxury heritage resort offering traditional Khmer architecture, spa facilities, and curated Angkor temple tour itineraries.",
-  },
-  {
-    id: 2,
-    businessName: "Khmer Heritage Cuisine & Riverside Bistro",
-    businessLicenseNo: "LIC-PP-2024-5120",
-    businessType: "restaurant",
-    verificationStatus: "VERIFIED",
-    verifiedAt: "2026-02-10T14:15:00Z",
-    userName: "Chann Restaurant Owner",
-    userEmail: "owner.restaurant@smart-tourism.com",
-    phone: "+855 23 888 999",
-    address: "Sisowath Quay, Daun Penh, Phnom Penh",
-    city: "Phnom Penh",
-    propertyCount: 2,
-    description:
-      "Award-winning traditional dining establishment specializing in authentic royal Khmer recipes and sunset dining overlooking the Tonle Sap.",
-  },
-  {
-    id: 3,
-    businessName: "Kingdom Eco Tours & Guides Co.",
-    businessLicenseNo: "LIC-KK-2024-3392",
-    businessType: "tour",
-    verificationStatus: "VERIFIED",
-    verifiedAt: "2026-03-01T11:00:00Z",
-    userName: "Bopha Tour Owner",
-    userEmail: "owner.tour@smart-tourism.com",
-    phone: "+855 97 777 666",
-    address: "Smach Mean Chey, Krong Khemarak Phoumin, Koh Kong",
-    city: "Koh Kong",
-    propertyCount: 8,
-    description:
-      "Licensed adventure eco-tourism operator providing guided trekking through Cardamom mountains, mangrove kayaking, and wildlife expeditions.",
-  },
-  {
-    id: 4,
-    businessName: "Bokor Mountain Haven Villas",
-    businessLicenseNo: "LIC-KP-2025-1049",
-    businessType: "hotel",
-    verificationStatus: "PENDING",
-    verifiedAt: null,
-    userName: "Seng Visal",
-    userEmail: "visal.seng@bokorhaven.com",
-    phone: "+855 88 444 333",
-    address: "Preah Monivong National Park, Kampot",
-    city: "Kampot",
-    propertyCount: 1,
-    description:
-      "High-altitude boutique eco-villas nestled atop Mount Bokor with panoramic views of the Gulf of Thailand.",
-  },
-  {
-    id: 5,
-    businessName: "Battambang Heritage Cafe & Roasters",
-    businessLicenseNo: "LIC-BB-2025-9921",
-    businessType: "restaurant",
-    verificationStatus: "PENDING",
-    verifiedAt: null,
-    userName: "Keo Phalla",
-    userEmail: "phalla.keo@battambangroasters.kh",
-    phone: "+855 70 222 111",
-    address: "Street 2.5, Krong Battambang",
-    city: "Battambang",
-    propertyCount: 1,
-    description:
-      "Artisan specialty coffee roastery and organic bakery serving single-origin beans sourced directly from Pailin smallholders.",
-  },
-  {
-    id: 6,
-    businessName: "Mekong Dolphin Expeditions",
-    businessLicenseNo: "LIC-KR-2025-6612",
-    businessType: "tour",
-    verificationStatus: "REJECTED",
-    verifiedAt: null,
-    userName: "Vannak Nhem",
-    userEmail: "vannak.nhem@mekongdolphin.com",
-    phone: "+855 92 111 000",
-    address: "Kampi Rapids, Kratie Province",
-    city: "Kratie",
-    propertyCount: 2,
-    description:
-      "River boat excursions for Irrawaddy dolphin watching in the protected Mekong conservation corridor.",
-  },
-];
-
 export default function AdminOwnersPage() {
   const toast = useToast();
   const [owners, setOwners] = useState([]);
@@ -194,11 +95,11 @@ export default function AdminOwnersPage() {
       if (Array.isArray(data) && data.length > 0) {
         setOwners(data);
       } else {
-        setOwners(DEFAULT_OWNERS);
+        setOwners([]);
       }
     } catch (error) {
       console.error("Error fetching owners:", error);
-      setOwners(DEFAULT_OWNERS);
+      setOwners([]);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   User,
   Mail,
@@ -15,15 +15,20 @@ import {
   X,
   Globe,
   Wallet,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { hotelService } from "../../services/hotelService";
 import { authService } from "../../services/authService";
+import { userAttachmentService } from "../../services/userAttachmentService";
 import useDashboardData from "../../hooks/useDashboardData";
+import { useToast } from "../../components/ui/Toast";
 
 export default function OwnerProfilePage() {
-  const { user } = useAuth();
+  const { user, userId, avatarUrl, setAvatarUrl } = useAuth();
+  const toast = useToast();
   const { data: dashboardData } = useDashboardData();
+  const fileInputRef = useRef(null);
   const [properties, setProperties] = useState([]);
   const [loadingProperties, setLoadingProperties] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
@@ -32,6 +37,8 @@ export default function OwnerProfilePage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [submittingPassword, setSubmittingPassword] = useState(false);
+  const [preview, setPreview] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -56,6 +63,58 @@ export default function OwnerProfilePage() {
     .join("")
     .slice(0, 2)
     .toUpperCase() || "BO";
+
+  const shownAvatar = preview || avatarUrl;
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    userAttachmentService
+      .getUserAttachments(userId)
+      .then((attachments) => {
+        if (!active) return;
+        const profile =
+          (attachments || []).find((a) => a.type === "PROFILE") || (attachments || [])[0];
+        if (profile?.cloudinaryUrl) setAvatarUrl(profile.cloudinaryUrl);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [userId, setAvatarUrl]);
+
+  const handleAvatarSelect = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.type && !file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB.");
+      return;
+    }
+    if (!userId) {
+      toast.error("You must be signed in to upload a photo.");
+      return;
+    }
+    const localPreview = URL.createObjectURL(file);
+    setPreview(localPreview);
+    setUploading(true);
+    try {
+      const uploaded = await userAttachmentService.uploadUserAttachment(userId, file, "PROFILE");
+      const url = uploaded?.[0]?.cloudinaryUrl || uploaded?.cloudinaryUrl || localPreview;
+      setAvatarUrl(url);
+      toast.success("Profile photo updated");
+    } catch (error) {
+      console.error("Error uploading profile photo:", error);
+      toast.error("Failed to upload profile photo. Please try again.");
+    } finally {
+      setUploading(false);
+      setPreview("");
+    }
+  };
 
   const ownerStats = [
     { label: "Properties Listed", value: String(properties.length) },
@@ -106,11 +165,33 @@ export default function OwnerProfilePage() {
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12">
             <div className="relative">
               <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg flex items-center justify-center overflow-hidden">
-                <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{initials}</span>
+                {shownAvatar ? (
+                  <img src={shownAvatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{initials}</span>
+                )}
               </div>
-              <button className="absolute bottom-1 right-1 w-7 h-7 bg-emerald-600 rounded-full flex items-center justify-center text-white hover:bg-emerald-700 transition shadow-md">
-                <Camera className="w-3.5 h-3.5" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                title="Change profile photo"
+                className="absolute bottom-1 right-1 w-7 h-7 bg-emerald-600 rounded-full flex items-center justify-center text-white hover:bg-emerald-700 transition shadow-md disabled:opacity-60 cursor-pointer"
+              >
+                {uploading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Camera className="w-3.5 h-3.5" />
+                )}
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarSelect}
+                disabled={uploading}
+                className="hidden"
+              />
             </div>
             <div className="flex-1 sm:pb-1">
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">{displayName}</h1>
@@ -242,6 +323,23 @@ export default function OwnerProfilePage() {
               </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); setEditOpen(false); }} className="p-6 space-y-4">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center overflow-hidden">
+                  {shownAvatar ? (
+                    <img src={shownAvatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{initials}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition disabled:opacity-60 cursor-pointer"
+                >
+                  {uploading ? "Uploading..." : "Change Photo"}
+                </button>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
                 <input

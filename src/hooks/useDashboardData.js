@@ -38,36 +38,6 @@ const monthLabel = (key) => {
 
 const amountOf = (b) => Number(b.amount ?? b.totalPrice) || 0;
 
-// Default fallbacks for sparklines and trends
-const DEFAULT_TREND = [
-  { label: "Nov", value: 120 },
-  { label: "Dec", value: 158 },
-  { label: "Jan", value: 142 },
-  { label: "Feb", value: 190 },
-  { label: "Mar", value: 232 },
-  { label: "Apr", value: 276 },
-];
-
-const DEFAULT_OCCUPANCY = [
-  { label: "Mon", value: 62 },
-  { label: "Tue", value: 70 },
-  { label: "Wed", value: 66 },
-  { label: "Thu", value: 78 },
-  { label: "Fri", value: 90 },
-  { label: "Sat", value: 96 },
-  { label: "Sun", value: 84 },
-];
-
-const DEFAULT_ORDERS_TREND = [
-  { label: "Mon", value: 42 },
-  { label: "Tue", value: 55 },
-  { label: "Wed", value: 48 },
-  { label: "Thu", value: 63 },
-  { label: "Fri", value: 88 },
-  { label: "Sat", value: 104 },
-  { label: "Sun", value: 76 },
-];
-
 function computeDashboard(input = {}) {
   let rb, tb, fo, tp, hs, rs, rest, tks, fds, us, pkgs, guides;
   if (Array.isArray(input)) {
@@ -108,7 +78,7 @@ function computeDashboard(input = {}) {
   const ratings = tp.map((p) => Number(p.rating)).filter((r) => r > 0);
   const avgRating = ratings.length
     ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
-    : "4.8";
+    : null;
 
   const allBookings = [
     ...rb.map((b) => ({
@@ -158,19 +128,10 @@ function computeDashboard(input = {}) {
     const k = monthKey(b.createdAt || new Date());
     monthMap.set(k, (monthMap.get(k) || 0) + amountOf(b));
   });
-  const revenueByMonth = monthMap.size >= 3
-    ? [...monthMap.entries()]
-        .sort()
-        .slice(-6)
-        .map(([k, v]) => ({ month: monthLabel(k), revenue: v }))
-    : [
-        { month: "Jan", revenue: 38000 },
-        { month: "Feb", revenue: 42000 },
-        { month: "Mar", revenue: 47000 },
-        { month: "Apr", revenue: 52000 },
-        { month: "May", revenue: 49000 },
-        { month: "Jun", revenue: 58000 },
-      ];
+  const revenueByMonth = [...monthMap.entries()]
+    .sort()
+    .slice(-6)
+    .map(([k, v]) => ({ month: monthLabel(k), revenue: v }));
 
   // Bookings trend
   const bookingsCountByMonth = new Map();
@@ -178,17 +139,15 @@ function computeDashboard(input = {}) {
     const k = monthKey(b.createdAt || new Date());
     bookingsCountByMonth.set(k, (bookingsCountByMonth.get(k) || 0) + 1);
   });
-  const bookingsTrend = bookingsCountByMonth.size >= 3
-    ? [...bookingsCountByMonth.entries()]
-        .sort()
-        .slice(-6)
-        .map(([k, v]) => ({ label: monthLabel(k), value: v }))
-    : DEFAULT_TREND;
+  const bookingsTrend = [...bookingsCountByMonth.entries()]
+    .sort()
+    .slice(-6)
+    .map(([k, v]) => ({ label: monthLabel(k), value: v }));
 
   // Mix breakdown
-  const tourCount = tb.length || 46;
-  const hotelCount = rb.length || 33;
-  const foodCount = fo.length || 21;
+  const tourCount = tb.length;
+  const hotelCount = rb.length;
+  const foodCount = fo.length;
   const mix = [
     { label: "Tours", value: tourCount, color: "#02462e" },
     { label: "Hotels", value: hotelCount, color: "#fec700" },
@@ -201,10 +160,10 @@ function computeDashboard(input = {}) {
     if (b.userEmail) customerSet.add(b.userEmail);
     else if (b.userName) customerSet.add(b.userName);
   });
-  const totalCustomers = us.length || customerSet.size || 4820;
+  const totalCustomers = us.length || customerSet.size;
 
   // Active listings
-  const activeListings = (hs.length || 4) + (tp.length || 5) + (rest.length || 4);
+  const activeListings = hs.length + tp.length + rest.length;
 
   // ----------------------------------------------------------------
   // HOTEL DOMAIN STATS
@@ -212,37 +171,30 @@ function computeDashboard(input = {}) {
   const hotelRevenue = rb.reduce((sum, b) => sum + amountOf(b), 0);
   const activeRoomBookings = rb.filter((b) => b.status && b.status !== "CANCELLED").length;
   const upcomingReservations = rb.filter((b) => b.status === "PENDING" || b.status === "CONFIRMED").length;
-  const totalRoomsCount = rs.length || 242;
-  const availableRoomsCount = Math.max(0, totalRoomsCount - activeRoomBookings) || 86;
+  const totalRoomsCount = rs.length;
+  const availableRoomsCount = Math.max(0, totalRoomsCount - activeRoomBookings);
 
   const hotelStats = {
-    totalHotels: hs.length || 4,
+    totalHotels: hs.length,
     totalRooms: totalRoomsCount,
     availableRooms: availableRoomsCount,
-    upcomingReservations: upcomingReservations || 54,
-    monthlyRevenue: hotelRevenue > 0 ? money(hotelRevenue) : "$32.5k",
-    occupancy: DEFAULT_OCCUPANCY,
+    upcomingReservations,
+    monthlyRevenue: money(hotelRevenue),
+    occupancy: [],
     availability: [
       { label: "Available", value: availableRoomsCount, tone: "bg-success" },
-      { label: "Occupied", value: activeRoomBookings || 120, tone: "bg-danger" },
-      { label: "Reserved", value: upcomingReservations || 24, tone: "bg-warning" },
-      { label: "Maintenance", value: 12, tone: "bg-brand-300" },
+      { label: "Occupied", value: activeRoomBookings, tone: "bg-danger" },
+      { label: "Reserved", value: upcomingReservations, tone: "bg-warning" },
+      { label: "Maintenance", value: 0, tone: "bg-brand-300" },
     ],
-    hotels: hs.length
-      ? hs.slice(0, 4).map((h) => ({
-          id: h.id,
-          name: h.hotelName,
-          meta: h.locationName || h.district?.name || "Cambodia",
-          price: h.pricePerNight || 85,
-          rating: Number(h.rating ?? h.avgRating ?? 4.8),
-          image: h.imageUrl || img("Palm Paradise Pool.jpg", 600),
-        }))
-      : [
-          { id: 1, name: "Sofitel Angkor Phokeethra", meta: "Siem Reap", price: 120, rating: 4.8, image: img("Palm Paradise Pool.jpg", 600) },
-          { id: 2, name: "The Royal Sands", meta: "Sihanoukville", price: 85, rating: 4.6, image: img("Swimming pool and Makuti-thatched villa in Malindi.jpg", 600) },
-          { id: 3, name: "Kampot Riverside Villa", meta: "Kampot", price: 60, rating: 4.7, image: img("Main swimming pool at Paradisus by Meliá Bali.jpg", 600) },
-          { id: 4, name: "Kep Garden Resort", meta: "Kep", price: 55, rating: 4.5, image: img("Negombo Beach resort pool (Unsplash).jpg", 600) },
-        ],
+    hotels: hs.slice(0, 4).map((h) => ({
+      id: h.id,
+      name: h.hotelName,
+      meta: h.locationName || h.district?.name || "Cambodia",
+      price: h.pricePerNight || 85,
+      rating: Number(h.rating ?? h.avgRating ?? 0),
+      image: h.imageUrl || img("Palm Paradise Pool.jpg", 600),
+    })),
   };
 
   // ----------------------------------------------------------------
@@ -252,27 +204,20 @@ function computeDashboard(input = {}) {
   const upcomingTourBookings = tb.filter((b) => b.status === "PENDING" || b.status === "CONFIRMED").length;
 
   const tourStats = {
-    totalPackages: pkgs.length || tp.length || 5,
-    activeTours: tp.length || 4,
-    upcomingBookings: upcomingTourBookings || 128,
-    totalRevenue: tourRevenue > 0 ? money(tourRevenue) : "$48.2k",
-    availableGuides: guides.length || 3,
-    bookingsTrend: bookingsTrend,
-    packages: tp.length
-      ? tp.slice(0, 4).map((p) => ({
-          id: p.id,
-          name: p.name,
-          meta: p.district?.name || "Cambodia",
-          price: Number(p.ticketPrice || 45),
-          rating: Number(p.rating || 4.9),
-          image: pickPlaceImage(p.placeImages) || img("Angkor Wat, reflejo 2.jpg", 600),
-        }))
-      : [
-          { id: 1, name: "Angkor Sunrise Explorer", meta: "Siem Reap", price: 45, rating: 4.9, image: img("Angkor Wat, reflejo 2.jpg", 600) },
-          { id: 2, name: "Island Escape — Koh Rong", meta: "Sihanoukville", price: 120, rating: 4.8, image: img("Koh_Rong_island.jpg", 600) },
-          { id: 3, name: "Mondulkiri Elephant Trek", meta: "Mondulkiri", price: 95, rating: 4.9, image: img("Elephant conservation and indigenous experiences in Cambodia Project.jpg", 600) },
-          { id: 4, name: "Phnom Penh Highlights", meta: "Phnom Penh", price: 35, rating: 4.7, image: img("Royal Palace, Phnom Penh Cambodia 1.jpg", 600) },
-        ],
+    totalPackages: pkgs.length || tp.length,
+    activeTours: tp.length,
+    upcomingBookings: upcomingTourBookings,
+    totalRevenue: money(tourRevenue),
+    availableGuides: guides.length,
+    bookingsTrend,
+    packages: tp.slice(0, 4).map((p) => ({
+      id: p.id,
+      name: p.name,
+      meta: p.district?.name || "Cambodia",
+      price: Number(p.ticketPrice || 45),
+      rating: Number(p.rating || 0),
+      image: pickPlaceImage(p.placeImages) || img("Angkor Wat, reflejo 2.jpg", 600),
+    })),
   };
 
   // ----------------------------------------------------------------
@@ -282,26 +227,19 @@ function computeDashboard(input = {}) {
   const pendingFoodOrders = fo.filter((o) => o.status === "PENDING").length;
 
   const restaurantStats = {
-    todayOrders: fo.length || 38,
-    pendingOrders: pendingFoodOrders || 6,
-    totalFoods: fds.length || 42,
-    activeTables: 12,
-    todayRevenue: restaurantRevenue > 0 ? money(restaurantRevenue) : "$1.2k",
-    ordersTrend: DEFAULT_ORDERS_TREND,
-    dishes: fds.length
-      ? fds.slice(0, 4).map((f) => ({
-          id: f.id,
-          name: f.name,
-          meta: f.foodCategoryName || "Main",
-          price: Number(f.price || 6.5),
-          image: f.image || img("Amok trey.jpg", 600),
-        }))
-      : [
-          { id: 1, name: "Fish Amok", meta: "Main", price: 6.5, image: img("Amok trey.jpg", 600) },
-          { id: 2, name: "Beef Lok Lak", meta: "Main", price: 7, image: img("Beef Lok Lak.jpg", 600) },
-          { id: 3, name: "Num Banh Chok", meta: "Noodles", price: 3.5, image: img("Num Banh Chok Somlar Kari.jpg", 600) },
-          { id: 4, name: "Nom Koma", meta: "Dessert", price: 2.5, image: img("Chek ktis.jpg", 600) },
-        ],
+    todayOrders: fo.length,
+    pendingOrders: pendingFoodOrders,
+    totalFoods: fds.length,
+    activeTables: 0,
+    todayRevenue: money(restaurantRevenue),
+    ordersTrend: [],
+    dishes: fds.slice(0, 4).map((f) => ({
+      id: f.id,
+      name: f.name,
+      meta: f.foodCategoryName || "Main",
+      price: Number(f.price || 6.5),
+      image: f.image || img("Amok trey.jpg", 600),
+    })),
   };
 
   // ----------------------------------------------------------------
@@ -309,13 +247,13 @@ function computeDashboard(input = {}) {
   // ----------------------------------------------------------------
   const superAdminStats = {
     totalUsers: us.length || totalCustomers,
-    tourPackages: pkgs.length || tp.length || 5,
-    hotels: hs.length || 4,
-    restaurants: rest.length || 4,
-    totalBookings: totalBookings || 1284,
-    totalRevenue: totalRevenue > 0 ? money(totalRevenue) : "$286k",
+    tourPackages: pkgs.length || tp.length,
+    hotels: hs.length,
+    restaurants: rest.length,
+    totalBookings,
+    totalRevenue: money(totalRevenue),
     revenueTrend: revenueByMonth,
-    mix: mix,
+    mix,
   };
 
   // Weekday breakdown
@@ -420,9 +358,9 @@ function computeDashboard(input = {}) {
     tickets: tks,
     foods: fds,
     users: us,
-    totalBookings: totalBookings || 1284,
+    totalBookings,
     totalRevenue,
-    revenueText: totalRevenue > 0 ? money(totalRevenue) : "$286k",
+    revenueText: money(totalRevenue),
     totalPlaces: tp.length,
     totalTours: tp.length,
     totalHotels: hs.length,

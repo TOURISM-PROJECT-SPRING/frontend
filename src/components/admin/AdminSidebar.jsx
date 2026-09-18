@@ -73,8 +73,8 @@ export default function AdminSidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { isDark } = useTheme();
-
-  const handleLogout = () => {
+sahisoqeno
+  const handleLogout = () => {sahisoqeno
     logout();
     navigate("/login", { replace: true });
   };

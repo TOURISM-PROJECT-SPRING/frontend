@@ -29,4 +29,4 @@ export { tourPlaceAttachmentService } from './tourPlaceAttachmentService';
 export { tourPlaceService } from './tourPlaceService';
 export { userAttachmentService } from './userAttachmentService';
 export { bakongService } from './bakongService';
-export { ownerService } from './ownerService';
+export { tourBookingService } from './tourBookingService';

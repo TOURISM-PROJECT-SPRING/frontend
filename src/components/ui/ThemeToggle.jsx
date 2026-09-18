@@ -6,7 +6,9 @@ export default function ThemeToggle({ className = "" }) {
   const { isDark, toggleTheme } = useTheme();
   const { t } = useTranslation();
 
-  const title = isDark ? t("theme.switchToLight") : t("theme.switchToDark");
+  const title = isDark
+    ? t("theme.switchToLight", "Switch to light mode")
+    : t("theme.switchToDark", "Switch to dark mode");
 
   return (
     <button

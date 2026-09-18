@@ -11,33 +11,12 @@ import {
   Lock,
   Key,
   Smartphone,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
   X,
   Loader2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { userAttachmentService } from "../../services/userAttachmentService";
 import { useToast } from "../../components/ui/Toast";
-
-const activityLog = [
-  { action: "Updated system settings", time: "2 hours ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Approved new owner: Skyline Resorts", time: "5 hours ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Flagged review #RV-4821", time: "1 day ago", icon: AlertTriangle, color: "text-yellow-500" },
-  { action: "Removed user: spam_account", time: "2 days ago", icon: AlertTriangle, color: "text-red-500" },
-  { action: "Updated payment gateway", time: "3 days ago", icon: CheckCircle, color: "text-green-500" },
-  { action: "Created promotion: WELCOME20", time: "5 days ago", icon: CheckCircle, color: "text-green-500" },
-];
-
-const adminStats = [
-  { label: "Users Managed", value: "2,568" },
-  { label: "Owners Approved", value: "356" },
-  { label: "Bookings Reviewed", value: "4,789" },
-  { label: "Reports Generated", value: "124" },
-  { label: "Promotions Created", value: "47" },
-  { label: "System Uptime", value: "99.9%" },
-];
 
 export default function AdminProfilePage() {
   const { user, userId, avatarUrl, setAvatarUrl } = useAuth();
@@ -193,39 +172,10 @@ export default function AdminProfilePage() {
               <InfoItem icon={Shield} label="Role" value={roleLabel} />
             </div>
           </div>
-
-          {/* Activity Log */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 animate-fade-in-up delay-150">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              {activityLog.map((a, i) => (
-                <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-800 last:border-0 animate-slide-right" style={{ animationDelay: `${i * 80 + 200}ms` }}>
-                  <a.icon className={`w-4 h-4 ${a.color} shrink-0`} />
-                  <span className="text-[13px] text-gray-600 dark:text-gray-300 flex-1">{a.action}</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1 shrink-0">
-                    <Clock className="w-3 h-3" /> {a.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Right Column */}
         <div className="space-y-5">
-          {/* Stats */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 animate-fade-in-up delay-100">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Admin Statistics</h3>
-            <div className="space-y-3">
-              {adminStats.map((s, i) => (
-                <div key={s.label} className="flex items-center justify-between py-1.5 animate-slide-left" style={{ animationDelay: `${i * 60 + 300}ms` }}>
-                  <span className="text-[13px] text-gray-500 dark:text-gray-400 dark:text-gray-500">{s.label}</span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Security */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 animate-fade-in-up delay-200">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Security</h3>
