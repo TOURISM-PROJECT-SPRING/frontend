@@ -145,8 +145,6 @@ body {
 .delay-350 { animation-delay: 350ms; }
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
-<<<<<<< Updated upstream
-=======
 
 /* Subtle Khmer-inspired geometric motif (behind CTA / cultural bands) */
 .khmer-motif {
@@ -187,8 +185,3 @@ body {
   transform-origin: 70% 70%;
   animation: waveHand 1.6s ease-in-out infinite;
 }
-
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes

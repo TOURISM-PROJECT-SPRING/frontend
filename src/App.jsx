@@ -18,20 +18,12 @@ import ContactPage from "./pages/ContactPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
 import InboxPage from "./pages/InboxPage";
 import InboxDrawer from "./components/inbox/InboxDrawer";
 import BookingVoucherModal from "./components/inbox/BookingVoucherModal";
 import InboxToast from "./components/inbox/InboxToast";
 import { useInbox } from "./context/InboxContext";
-=======
-=======
->>>>>>> Stashed changes
 import SovannAiChat from "./components/ai/SovannAiChat";
-import { ROLES, homePathFor } from "./utils/rbac";
->>>>>>> Stashed changes
 
 function PublicLayout() {
   const { selectedBooking, closeBookingDetails } = useInbox();
@@ -61,21 +53,14 @@ function PublicLayout() {
         </Routes>
       </main>
       <Footer />
-<<<<<<< Updated upstream
 
       {/* Global Tourist Inbox & Booking Alerts Components */}
       <InboxDrawer />
       <BookingVoucherModal booking={selectedBooking} onClose={closeBookingDetails} />
       <InboxToast />
-=======
-      {/* Global "My trips" favorites panel — mounted here so the navbar heart button works on every page. */}
-      <MyTrips />
+
       {/* Floating Sovann AI Concierge */}
       <SovannAiChat />
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
     </div>
   );
 }
