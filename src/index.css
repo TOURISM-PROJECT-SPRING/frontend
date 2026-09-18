@@ -145,3 +145,47 @@ body {
 .delay-350 { animation-delay: 350ms; }
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
+<<<<<<< Updated upstream
+=======
+
+/* Subtle Khmer-inspired geometric motif (behind CTA / cultural bands) */
+.khmer-motif {
+  background-image:
+    radial-gradient(rgba(254, 199, 0, 0.14) 1px, transparent 1.4px),
+    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.4px);
+  background-size: 26px 26px, 26px 26px;
+  background-position: 0 0, 13px 13px;
+}
+
+@keyframes sovannFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes waveHand {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  20%, 60% {
+    transform: rotate(14deg);
+  }
+  40%, 80% {
+    transform: rotate(-10deg);
+  }
+}
+
+.animate-sovann-float {
+  animation: sovannFloat 3s ease-in-out infinite;
+}
+
+.animate-wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: waveHand 1.6s ease-in-out infinite;
+}
+
+>>>>>>> Stashed changes
