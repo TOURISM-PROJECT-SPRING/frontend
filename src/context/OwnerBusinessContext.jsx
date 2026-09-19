@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { useAuth } from "./AuthContext";
 
 const OWNER_BIZ_KEY_PREFIX = "smart_tourism_owner_businesses_";
@@ -9,30 +15,36 @@ export const BUSINESS_TYPES = [
     label: "Hotel & Stays",
     shortLabel: "Hotels",
     icon: "Building2",
-    color: "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-800",
+    color:
+      "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-800",
     badge: "🏨 Hotel",
     tagline: "Properties, Rooms, Reservations & Dynamic Pricing",
-    description: "Manage hotel properties, room categories, night rates, and guest bookings",
+    description:
+      "Manage hotel properties, room categories, night rates, and guest bookings",
   },
   {
     id: "restaurant",
     label: "Restaurant & Dining",
     shortLabel: "Restaurants",
     icon: "UtensilsCrossed",
-    color: "text-amber-500 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-800",
+    color:
+      "text-amber-500 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-800",
     badge: "🍽️ Restaurant",
     tagline: "Outlets, Menus, Dishes & Live Food Orders",
-    description: "Manage restaurant profiles, food dishes, price menus, and food delivery orders",
+    description:
+      "Manage restaurant profiles, food dishes, price menus, and food delivery orders",
   },
   {
     id: "tour",
     label: "Tourists & Tours",
     shortLabel: "Tourists / Tours",
     icon: "Compass",
-    color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-800",
+    color:
+      "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-800",
     badge: "🎫 Tourist & Tour",
     tagline: "Destinations, Attraction Tickets & Packages",
-    description: "Manage tourist attractions, entrance tickets, visitor bookings, and tour packages",
+    description:
+      "Manage tourist attractions, entrance tickets, visitor bookings, and tour packages",
   },
 ];
 
@@ -71,7 +83,8 @@ export const TEST_OWNERS = [
     badge: "🎫 Tourists Owner",
     assignedBusinesses: ["tour"],
     redirect: "/owner",
-    description: "Owns Tourists & Attractions. Hotel and Restaurant are LOCKED.",
+    description:
+      "Owns Tourists & Attractions. Hotel and Restaurant are LOCKED.",
   },
 ];
 
@@ -88,7 +101,8 @@ export const TEST_ALL_ROLES = [
     badge: "👑 Admin",
     type: "admin",
     redirect: "/admin",
-    description: "System Administrator with full management & verification privileges.",
+    description:
+      "System Administrator with full management & verification privileges.",
   },
   {
     id: 201,
@@ -102,7 +116,8 @@ export const TEST_ALL_ROLES = [
     badge: "🎒 Customer / Tourist",
     type: "customer",
     redirect: "/",
-    description: "Customer / Tourist booking hotels, attraction tickets, and food.",
+    description:
+      "Customer / Tourist booking hotels, attraction tickets, and food.",
   },
   {
     id: 101,
@@ -174,12 +189,17 @@ export function OwnerBusinessProvider({ children }) {
     }
 
     // 2. User assignedBusinesses array if explicitly present
-    if (Array.isArray(currentUser.assignedBusinesses) && currentUser.assignedBusinesses.length > 0) {
+    if (
+      Array.isArray(currentUser.assignedBusinesses) &&
+      currentUser.assignedBusinesses.length > 0
+    ) {
       return currentUser.assignedBusinesses;
     }
 
     // 3. Stored in localStorage
-    const saved = localStorage.getItem(`${OWNER_BIZ_KEY_PREFIX}${currentUser.id || uname}`);
+    const saved = localStorage.getItem(
+      `${OWNER_BIZ_KEY_PREFIX}${currentUser.id || uname}`,
+    );
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -191,7 +211,9 @@ export function OwnerBusinessProvider({ children }) {
     return ["hotel"];
   }, []);
 
-  const [businessTypes, setBusinessTypesState] = useState(() => resolveBusinessesForUser(user));
+  const [businessTypes, setBusinessTypesState] = useState(() =>
+    resolveBusinessesForUser(user),
+  );
   const [activeBusinessView, setActiveBusinessView] = useState("all");
 
   // Re-evaluate when user changes
@@ -201,7 +223,9 @@ export function OwnerBusinessProvider({ children }) {
 
   const setAssignedBusinesses = useCallback(
     (types) => {
-      const valid = types.filter((t) => ["hotel", "restaurant", "tour"].includes(t));
+      const valid = types.filter((t) =>
+        ["hotel", "restaurant", "tour"].includes(t),
+      );
       const finalTypes = valid.length > 0 ? valid : ["hotel"];
       setBusinessTypesState(finalTypes);
       try {
@@ -210,7 +234,7 @@ export function OwnerBusinessProvider({ children }) {
         console.error("Failed to save owner business types:", e);
       }
     },
-    [storageKey]
+    [storageKey],
   );
 
   // Expose global helper for browser console testing
@@ -227,7 +251,7 @@ export function OwnerBusinessProvider({ children }) {
     (typeId) => {
       return !businessTypes.includes(typeId);
     },
-    [businessTypes]
+    [businessTypes],
   );
 
   const hasHotel = businessTypes.includes("hotel");
@@ -239,28 +263,27 @@ export function OwnerBusinessProvider({ children }) {
   const lockedCount = 3 - activeCount;
 
   // Find which test owner profile matches currently
-  const currentTestOwner =
-    TEST_OWNERS.find(
-      (o) =>
-        o.username === user?.username ||
-        (user?.username === "owner" && o.username === "owner_hotel")
-    ) || {
-      username: user?.username || "owner",
-      fullname: user?.fullname || "Business Owner",
-      badge: hasHotel
-        ? "🏨 Hotel Owner"
-        : hasRestaurant
+  const currentTestOwner = TEST_OWNERS.find(
+    (o) =>
+      o.username === user?.username ||
+      (user?.username === "owner" && o.username === "owner_hotel"),
+  ) || {
+    username: user?.username || "owner",
+    fullname: user?.fullname || "Business Owner",
+    badge: hasHotel
+      ? "🏨 Hotel Owner"
+      : hasRestaurant
         ? "🍽️ Restaurant Owner"
         : "🎫 Tourists Owner",
-      assignedBusinesses: businessTypes,
-    };
+    assignedBusinesses: businessTypes,
+  };
 
   const statusSummary =
     activeCount === 3
       ? "All 3 Businesses Active"
       : activeCount === 2
-      ? "2 Active • 1 Locked"
-      : "1 Active • 2 Locked";
+        ? "2 Active • 1 Locked"
+        : "1 Active • 2 Locked";
 
   return (
     <OwnerBusinessContext.Provider
@@ -291,7 +314,9 @@ export function OwnerBusinessProvider({ children }) {
 export function useOwnerBusiness() {
   const ctx = useContext(OwnerBusinessContext);
   if (!ctx) {
-    throw new Error("useOwnerBusiness must be used within an OwnerBusinessProvider");
+    throw new Error(
+      "useOwnerBusiness must be used within an OwnerBusinessProvider",
+    );
   }
   return ctx;
 }
