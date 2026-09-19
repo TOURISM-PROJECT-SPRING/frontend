@@ -327,7 +327,7 @@ export default function SovannAiChat() {
   return (
     <>
       {/* Floating Action Button (FAB) on the right side */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+      <div className="fixed bottom-[5.25rem] right-6 z-50 flex items-center gap-3">
         {/* Animated Speech Bubble: Sovann Says Hello! */}
         {!isOpen && showGreeting && (
           <div className="relative flex items-center gap-2.5 rounded-2xl border border-gold-400/50 bg-white/95 px-3.5 py-2 text-xs text-brand-900 shadow-lift backdrop-blur-md dark:bg-[#0d1c15] dark:text-emerald-100 animate-in fade-in slide-in-from-right-3 duration-300">
@@ -363,9 +363,11 @@ export default function SovannAiChat() {
 
         {/* Regular Tooltip if Greeting is not shown */}
         {!isOpen && !showGreeting && (
-          <div className="hidden animate-fade sm:flex items-center gap-2 rounded-full border border-gold-400/40 bg-brand-900/90 px-3.5 py-1.5 text-xs font-semibold text-white shadow-lift backdrop-blur-md">
+          <div className="hidden animate-fade animate-ai-glow animate-sovann-float sm:flex items-center gap-2 rounded-full border border-gold-400/40 bg-brand-900/90 px-3.5 py-1.5 text-xs font-semibold text-white shadow-lift backdrop-blur-md">
             <Sparkles size={13} className="text-gold-400" />
-            <span>Ask Sovann AI</span>
+            <span>
+              <span className="inline-block animate-wave text-sm select-none">👋</span> Hello! Ask Sovann AI
+            </span>
           </div>
         )}
 
@@ -402,7 +404,7 @@ export default function SovannAiChat() {
         <aside
           role="dialog"
           aria-label="Sovann AI Chat Concierge"
-          className="fixed bottom-24 right-4 z-50 flex h-[620px] max-h-[calc(100vh-7rem)] w-[410px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-brand-200/80 bg-white shadow-2xl backdrop-blur-xl dark:border-brand-900/80 dark:bg-[#0b1611] animate-in fade-in slide-in-from-bottom-5 duration-200"
+          className="fixed bottom-[9.5rem] right-4 z-50 flex h-[620px] max-h-[calc(100vh-11rem)] w-[410px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-brand-200/80 bg-white shadow-2xl backdrop-blur-xl dark:border-brand-900/80 dark:bg-[#0b1611] animate-in fade-in slide-in-from-bottom-5 duration-200"
         >
           {/* Header */}
           <div className="relative flex items-center justify-between border-b border-line bg-gradient-to-r from-brand-800 via-brand-900 to-brand-950 px-4 py-3 text-white dark:border-brand-900/60">

@@ -21,6 +21,7 @@ import ResultsHeader from "../components/hotels/ResultsHeader";
 import HotelListingCard from "../components/hotels/HotelListingCard";
 import HotelCardSkeleton from "../components/hotels/HotelCardSkeleton";
 import MobileFilterDrawer from "../components/hotels/MobileFilterDrawer";
+import FloatingTripCart from "../components/home/FloatingTripCart";
 
 function isoPlus(days) {
   const d = new Date();
@@ -240,6 +241,7 @@ export default function HotelsPage() {
         onPatch={patch}
         resultCount={visible.length}
       />
+      <FloatingTripCart />
     </div>
   );
 }

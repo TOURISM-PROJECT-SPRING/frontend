@@ -197,15 +197,16 @@ export default function LoginPage({ mode = "login" }) {
               <Icon name="info" size={13} className="text-gold-600" />
               The backend is a single source of truth — demo buttons use sample accounts when the API is offline.
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={loading}
-onClick={async () => {
+<div className="mt-3">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
                     setError(null);
                     setLoading(true);
                     try {
-                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER });
+                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER, forceDemo: true });
                       navigate(homePathFor(auth?.user), { replace: true });
                     } catch (err) {
                       setError(err.message || "Could not start the demo.");
@@ -218,14 +219,14 @@ onClick={async () => {
                   <Icon name="briefcase" size={17} />
                   Owner demo
                 </button>
-              <button
-                type="button"
-                disabled={loading}
-onClick={async () => {
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
                     setError(null);
                     setLoading(true);
                     try {
-                      const auth = await login({ username: "demo", password: "demo", role: ROLES.ADMIN });
+                      const auth = await login({ username: "demo", password: "demo", role: ROLES.ADMIN, forceDemo: true });
                       navigate(homePathFor(auth?.user), { replace: true });
                     } catch (err) {
                       setError(err.message || "Could not start the demo.");
@@ -238,6 +239,94 @@ onClick={async () => {
                   <Icon name="shield" size={17} />
                   Admin demo
                 </button>
+              </div>
+
+              <p className="mt-3 mb-1.5 text-center text-[11px] font-bold uppercase tracking-widest text-muted">
+                Owner by vertical
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setError(null);
+                    setLoading(true);
+                    try {
+                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER_HOTEL, forceDemo: true });
+                      navigate(homePathFor(auth?.user), { replace: true });
+                    } catch (err) {
+                      setError(err.message || "Could not start the demo.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
+                >
+                  <Icon name="bed" size={15} />
+                  Hotel owner
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setError(null);
+                    setLoading(true);
+                    try {
+                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER_TOUR, forceDemo: true });
+                      navigate(homePathFor(auth?.user), { replace: true });
+                    } catch (err) {
+                      setError(err.message || "Could not start the demo.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
+                >
+                  <Icon name="ticket" size={15} />
+                  Tour owner
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={async () => {
+                    setError(null);
+                    setLoading(true);
+                    try {
+                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER_RESTAURANT, forceDemo: true });
+                      navigate(homePathFor(auth?.user), { replace: true });
+                    } catch (err) {
+                      setError(err.message || "Could not start the demo.");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
+                >
+                  <Icon name="utensils" size={15} />
+                  Restaurant owner
+                </button>
+              </div>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={async () => {
+                  setError(null);
+                  setLoading(true);
+                  try {
+                    const auth = await login({ username: "demo", password: "demo", role: ROLES.SUPEROWNER, forceDemo: true });
+                    navigate(homePathFor(auth?.user), { replace: true });
+                  } catch (err) {
+                    setError(err.message || "Could not start the demo.");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-gold-300 bg-gold-50 text-xs font-semibold text-gold-800 transition-colors hover:bg-gold-100 disabled:opacity-70"
+              >
+                <Icon name="award" size={15} />
+                Super owner (all manage pages)
+              </button>
             </div>
           </div>
 

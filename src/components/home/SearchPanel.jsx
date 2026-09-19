@@ -105,7 +105,10 @@ export default function SearchPanel() {
     for (const f of keys) {
       if (activeValues[f.key]?.trim()) params.set(f.key, activeValues[f.key].trim());
     }
-    navigate(`/explore?${params.toString()}`);
+    const section = params.get("section");
+    const base =
+      section === "hotels" ? "/hotel" : section === "restaurants" ? "/restaurant" : "/tour";
+    navigate(base);
   };
 
   return (

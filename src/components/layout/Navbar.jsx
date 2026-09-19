@@ -31,7 +31,7 @@ export default function Navbar() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout, canUseManager: canManager } = useAuth();
+  const { isAuthenticated, user, logout, canManageOwner, isAdmin } = useAuth();
   const { count, openFavorites } = useFavorites();
 
   const isLinkActive = (to, end) =>
@@ -300,17 +300,32 @@ export default function Navbar() {
                         <span>My Bookings &amp; Vouchers</span>
                       </Link>
 
-                      {canManager && (
+                      {canManageOwner && (
                         <Link
-                          to="/manager"
+                          to="/owner"
                           className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-brand-900 transition-colors hover:bg-brand-50"
                         >
                           <div className="flex items-center gap-2.5">
                             <Icon name="grid" size={16} className="text-gold-600" />
-                            <span>Management Portal</span>
+                            <span>Owner Dashboard</span>
                           </div>
                           <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[9px] font-extrabold text-gold-800">
-                            Staff
+                            Owner
+                          </span>
+                        </Link>
+                      )}
+
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-brand-900 transition-colors hover:bg-brand-50"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Icon name="shield-check" size={16} className="text-brand-600" />
+                            <span>Admin Dashboard</span>
+                          </div>
+                          <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[9px] font-extrabold text-brand-800">
+                            Admin
                           </span>
                         </Link>
                       )}
@@ -426,13 +441,22 @@ export default function Navbar() {
                   <Icon name="user" size={16} className="text-brand-600" />
                   <span>Profile &amp; Bookings</span>
                 </Link>
-                {canManager && (
+                {canManageOwner && (
                   <Link
-                    to="/manager"
+                    to="/owner"
                     className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-900 hover:bg-brand-50"
                   >
                     <Icon name="grid" size={16} className="text-gold-600" />
-                    <span>Management Portal</span>
+                    <span>Owner Dashboard</span>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-900 hover:bg-brand-50"
+                  >
+                    <Icon name="shield-check" size={16} className="text-brand-600" />
+                    <span>Admin Dashboard</span>
                   </Link>
                 )}
                 <button

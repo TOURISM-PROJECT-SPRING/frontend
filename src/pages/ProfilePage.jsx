@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { roleLabel } from "../utils/rbac";
 import { useAuth } from "../context/AuthContext";
 import { useBookings } from "../hooks/useResource";
 import { useToast } from "../components/ui/Toast";
@@ -188,7 +189,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/explore")}
+                  onClick={() => navigate("/tour")}
                   className="flex items-center gap-2 rounded-xl bg-gold-400 px-4 py-2.5 text-xs font-bold text-brand-950 shadow-md transition-all hover:bg-gold-300 active:scale-95"
                 >
                   <Icon name="compass" size={15} />
@@ -416,7 +417,7 @@ export default function ProfilePage() {
                       { label: "Preferred Language", value: form.language, icon: "globe" },
                       { label: "Preferred Currency", value: form.currency, icon: "credit-card" },
                       { label: "Member Since", value: "September 2025", icon: "calendar" },
-                      { label: "Account Role", value: Array.isArray(user?.roles) ? user.roles.join(", ") : user?.roles || "Traveler", icon: "award" },
+                      { label: "Account Role", value: Array.isArray(user?.roles) ? user.roles.map((r) => roleLabel(r)).join(", ") : user?.roles || "Traveler", icon: "award" },
                     ].map((item) => (
                       <div key={item.label} className="flex items-start gap-3 rounded-xl border border-line/60 bg-canvas/60 p-3.5 transition-colors hover:bg-brand-50/40">
                         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white text-brand-700 shadow-2xs border border-line/50">
@@ -586,7 +587,7 @@ export default function ProfilePage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => navigate("/explore")}
+                      onClick={() => navigate("/tour")}
                       className="mt-5 rounded-xl bg-brand-700 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:bg-brand-800"
                     >
                       Start Exploring Now

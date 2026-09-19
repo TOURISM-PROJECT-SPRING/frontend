@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { primaryRoleLabel } from "../../utils/rbac";
 import { useOwnerBusiness, BUSINESS_TYPES } from "../../context/OwnerBusinessContext";
 
 export default function OwnerSettingsPage() {
@@ -311,7 +312,7 @@ export default function OwnerSettingsPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{displayName}</h3>
-              <p className="text-sm text-gray-400 dark:text-gray-500">{user?.roles?.[0] || "Property Owner"}</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">{primaryRoleLabel(user)}</p>
             </div>
           </div>
 

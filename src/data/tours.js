@@ -330,10 +330,11 @@ export function decorateTours(list) {
 }
 
 // Provinces that actually have activities, Siem Reap first, plus an "All" entry.
-export function getLocationOptions() {
+// Accepts any decorated list so real backend data drives the dropdown too.
+export function getLocationOptions(list = demoTours) {
   const seen = new Set();
   const keys = [];
-  for (const a of demoTours) {
+  for (const a of list || []) {
     const p = a.province || "Siem Reap";
     if (!seen.has(p)) {
       seen.add(p);
@@ -390,9 +391,10 @@ export function sortTours(list, sortKey) {
   }
 }
 
-// Unfiltered shows a believable marketplace total; once narrowed, show the real count.
-export function resultsCountLabel(shown, { filtered }) {
-  const n = filtered ? shown : 2637;
+// Shows a believable marketplace total when nothing is filtered; once narrowed,
+// (or when the total is provided, e.g. real backend lists) show the real count.
+export function resultsCountLabel(shown, { filtered, total }) {
+  const n = filtered ? shown : total ?? 2637;
   return `${n.toLocaleString("en-US")} results`;
 }
 
@@ -577,8 +579,8 @@ export function buildActivityDetail(a) {
   };
 }
 
-export function getActivitiesForSimilar(id, count = 3) {
-  const decorated = decorateTours(demoTours);
+export function getActivitiesForSimilar(id, count = 3, list = demoTours) {
+  const decorated = decorateTours(list);
   const current = decorated.find((x) => String(x.id) === String(id));
   if (!current) return decorated.slice(0, count);
   const others = decorated.filter((x) => String(x.id) !== String(id));

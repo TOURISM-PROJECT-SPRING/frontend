@@ -28,10 +28,10 @@ function CheckGroup({ options, selected, onToggle }) {
   );
 }
 
-export default function FilterBar({ filters, onPatch, onOpenAllFilters }) {
+export default function FilterBar({ filters, onPatch, onOpenAllFilters, locationOptions }) {
   const patch = (p) => onPatch(p);
-  const locationOptions = getLocationOptions();
-  const locLabel = locationOptions.find((o) => o.key === filters.location)?.label || "Siem Reap";
+  const opts = locationOptions?.length ? locationOptions : getLocationOptions();
+  const locLabel = opts.find((o) => o.key === filters.location)?.label || "All Cambodia";
 
   return (
     <div className="hide-scrollbar -mx-1 flex items-center gap-2.5 overflow-x-auto px-1 py-1">

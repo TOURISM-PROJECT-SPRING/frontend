@@ -21,7 +21,7 @@ export default function ThingsToDoSection({ category = "Essentials" }) {
               <p className="mt-1 text-sm text-muted">Showing picks for "{category}"</p>
             )}
           </div>
-          <Link to="/explore?section=tours" className="group inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:text-brand-800">
+          <Link to="/tour" className="group inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:text-brand-800">
             See all
             <Icon name="arrow-right" size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
           </Link>

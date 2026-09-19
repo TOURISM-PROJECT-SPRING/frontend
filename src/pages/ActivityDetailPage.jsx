@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { demoTours, decorateTours, buildActivityDetail, getActivitiesForSimilar } from "../data/tours";
+import { decorateTours, buildActivityDetail, getActivitiesForSimilar } from "../data/tours";
+import { useTours } from "../hooks/useResource";
 import { useFavorites } from "../context/FavoritesContext";
 import { useToast } from "../components/ui/Toast";
 import { useAuth } from "../context/AuthContext";
-import { EmptyState } from "../components/ui/feedback";
+import { EmptyState, LoadingState } from "../components/ui/feedback";
 import { money } from "../lib/format";
 import Icon from "../components/ui/Icon";
 import RatingDots from "../components/hotels/RatingDots";
@@ -33,12 +34,17 @@ export default function ActivityDetailPage() {
   const { isSaved, toggle } = useFavorites();
   const { isAuthenticated } = useAuth();
   const toast = useToast();
+  const tours = useTours();
 
   const activity = useMemo(() => {
-    const card = decorateTours(demoTours).find((x) => String(x.id) === String(id));
+    const card = decorateTours(tours.items).find((x) => String(x.id) === String(id));
     return buildActivityDetail(card);
-  }, [id]);
-  const similar = useMemo(() => getActivitiesForSimilar(id, 3), [id]);
+  }, [id, tours.items]);
+  const similar = useMemo(
+    () => getActivitiesForSimilar(id, 3, tours.items),
+    [id, tours.items]
+  );
+  const rating = activity?.rating != null ? Number(activity.rating) : null;
 
   const [guests, setGuests] = useState(2);
   const [date, setDate] = useState("");
@@ -50,6 +56,14 @@ export default function ActivityDetailPage() {
       document.title = "SovannDomNour";
     };
   }, [activity]);
+
+  if (tours.loading) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-20">
+        <LoadingState label="Loading experience…" />
+      </div>
+    );
+  }
 
   if (!activity) {
     return (
@@ -127,8 +141,12 @@ export default function ActivityDetailPage() {
       <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="hide-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap px-1 py-5 text-sm text-muted">
-          <Link to="/tour" className="font-medium underline decoration-brand-200 underline-offset-4 hover:text-brand-700">Things to do in {activity.location}</Link>
-          <Icon name="chevron-right" size={13} className="text-muted/60" />
+          {activity.location && (
+            <>
+              <Link to="/tour" className="font-medium underline decoration-brand-200 underline-offset-4 hover:text-brand-700">Things to do in {activity.location}</Link>
+              <Icon name="chevron-right" size={13} className="text-muted/60" />
+            </>
+          )}
           <span className="font-semibold text-brand-800" aria-current="page">{activity.title}</span>
         </nav>
 
@@ -144,19 +162,27 @@ export default function ActivityDetailPage() {
               {activity.title}
             </h1>
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-              <span className="flex items-center gap-2">
-                <span className="text-lg font-bold text-brand-900">{activity.rating.toFixed(1)}</span>
-                <RatingDots rating={activity.rating} size={11} />
-                <a href="#reviews" className="text-[15px] font-medium text-ink/70 underline decoration-brand-200 underline-offset-4 hover:text-brand-700">
-                  ({activity.reviews.toLocaleString("en-US")} reviews)
-                </a>
-              </span>
-              <span className="flex items-center gap-1.5 text-[15px] text-ink/75">
-                <Icon name="heart" size={15} className="text-success" /> {activity.recommend}% recommend
-              </span>
-              <span className="flex items-center gap-1.5 text-[15px] text-ink/75">
-                <Icon name="map-pin" size={15} className="text-brand-600" /> {activity.location}, Cambodia
-              </span>
+              {rating != null && (
+                <span className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-brand-900">{rating.toFixed(1)}</span>
+                  <RatingDots rating={rating} size={11} />
+                  {activity.reviews != null && (
+                    <a href="#reviews" className="text-[15px] font-medium text-ink/70 underline decoration-brand-200 underline-offset-4 hover:text-brand-700">
+                      ({Number(activity.reviews).toLocaleString("en-US")} reviews)
+                    </a>
+                  )}
+                </span>
+              )}
+              {activity.recommend != null && (
+                <span className="flex items-center gap-1.5 text-[15px] text-ink/75">
+                  <Icon name="heart" size={15} className="text-success" /> {Number(activity.recommend)}% recommend
+                </span>
+              )}
+              {activity.location && (
+                <span className="flex items-center gap-1.5 text-[15px] text-ink/75">
+                  <Icon name="map-pin" size={15} className="text-brand-600" /> {activity.location}, Cambodia
+                </span>
+              )}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -247,7 +273,7 @@ export default function ActivityDetailPage() {
             <Section id="good-to-know" title="Good to know">
               <div className="grid gap-4 sm:grid-cols-2">
                 <InfoRow icon="users" label="Group size" value={activity.groupSize} />
-                <InfoRow icon="clock" label="Duration" value={activity.duration} />
+                <InfoRow icon="clock" label="Duration" value={activity.duration || "Varies"} />
                 <InfoRow icon="globe" label="Languages" value={activity.languagesSpoken.join(", ")} />
                 <InfoRow icon="map-pin" label="Meeting point" value={activity.meetingPoint} />
                 <InfoRow icon="refresh" label="Cancellation" value={activity.cancellation} />
@@ -259,10 +285,16 @@ export default function ActivityDetailPage() {
               <div className="grid gap-6 sm:grid-cols-[220px_minmax(0,1fr)]">
                 <div className="rounded-2xl border border-line bg-white p-5 shadow-soft">
                   <div className="flex items-end gap-2">
-                    <span className="font-display text-4xl font-bold text-brand-800">{activity.rating.toFixed(1)}</span>
+                    <span className="font-display text-4xl font-bold text-brand-800">{rating != null ? rating.toFixed(1) : "—"}</span>
                     <div className="pb-1">
-                      <RatingDots rating={activity.rating} size={9} />
-                      <p className="mt-1 text-xs text-muted">{activity.reviews.toLocaleString("en-US")} reviews</p>
+                      {rating != null && <RatingDots rating={rating} size={9} />}
+                      <p className="mt-1 text-xs text-muted">
+                        {activity.reviews != null
+                          ? `${Number(activity.reviews).toLocaleString("en-US")} reviews`
+                          : rating != null
+                            ? `${rating.toFixed(1)} / 5`
+                            : "No reviews yet"}
+                      </p>
                     </div>
                   </div>
                   <div className="mt-4 space-y-2 border-t border-line pt-4">
@@ -291,7 +323,11 @@ export default function ActivityDetailPage() {
                 </div>
                 <span className="flex items-center gap-1.5 rounded-full bg-gold-50 px-3 py-1.5">
                   <Icon name="star" size={14} className="text-gold-500" fill="currentColor" stroke="none" />
-                  <span className="text-sm font-bold text-brand-800">{activity.rating.toFixed(1)}</span>
+                  {rating != null ? (
+                    <span className="text-sm font-bold text-brand-800">{rating.toFixed(1)}</span>
+                  ) : (
+                    <span className="text-sm font-bold text-brand-800">New</span>
+                  )}
                 </span>
               </div>
 
@@ -352,22 +388,38 @@ export default function ActivityDetailPage() {
         {/* More experiences */}
         {similar.length > 0 && (
           <div className="border-t border-line py-12">
-            <h2 className="font-display text-2xl font-bold text-brand-900">More experiences in {activity.location}</h2>
+            <h2 className="font-display text-2xl font-bold text-brand-900">More experiences{activity.location ? ` in ${activity.location}` : ""}</h2>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {similar.map((s) => (
                 <Link key={s.id} to={`/activity/${s.id}`} className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white transition-shadow hover:shadow-soft">
                   <div className="relative aspect-[16/10] w-full overflow-hidden">
-                    <img src={s.images?.[0]} alt={s.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+                    {s.images?.[0] ? (
+                      <img src={s.images[0]} alt={s.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center bg-brand-50 text-brand-300">
+                        <Icon name="binoculars" size={32} />
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col p-4">
                     <h3 className="line-clamp-2 font-display text-[16px] font-bold leading-snug text-brand-900">{s.title}</h3>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-sm font-bold text-ink">{s.rating.toFixed(1)}</span>
-                      <RatingDots rating={s.rating} size={9} />
-                      <span className="text-sm text-muted">({s.reviews.toLocaleString("en-US")})</span>
-                    </div>
-                    <p className="mt-2 flex items-center gap-1.5 text-sm text-ink/70"><Icon name="clock" size={14} className="text-brand-500" /> {s.duration}</p>
-                    <p className="mt-auto pt-3 text-sm text-ink/70">from <span className="font-display text-base font-bold text-brand-900">${s.price}</span> / adult</p>
+                    {s.rating != null && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-sm font-bold text-ink">{Number(s.rating).toFixed(1)}</span>
+                        <RatingDots rating={Number(s.rating)} size={9} />
+                        {s.reviews != null && (
+                          <span className="text-sm text-muted">({Number(s.reviews).toLocaleString("en-US")})</span>
+                        )}
+                      </div>
+                    )}
+                    {s.duration && (
+                      <p className="mt-2 flex items-center gap-1.5 text-sm text-ink/70"><Icon name="clock" size={14} className="text-brand-500" /> {s.duration}</p>
+                    )}
+                    <p className="mt-auto pt-3 text-sm text-ink/70">
+                      {s.price != null
+                        ? <>from <span className="font-display text-base font-bold text-brand-900">${s.price}</span> / adult</>
+                        : <span className="text-sm text-ink/70">Prices on request</span>}
+                    </p>
                   </div>
                 </Link>
               ))}

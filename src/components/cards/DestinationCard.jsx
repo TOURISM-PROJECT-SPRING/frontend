@@ -19,7 +19,7 @@ function pickGradient(seed = "") {
 }
 
 export default function DestinationCard({ item }) {
-  const href = item.href || `/explore?province=${encodeURIComponent(item.name || item.title || "")}`;
+  const href = item.href || `/tour?province=${encodeURIComponent(item.name || item.title || "")}`;
   const title = item.name || item.title || "Destination";
   const count = item.attractions || item.toursCount || null;
   const gradient = pickGradient(title);

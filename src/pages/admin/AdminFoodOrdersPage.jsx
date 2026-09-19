@@ -3,15 +3,41 @@ import TotalBadge from "../../components/admin/TotalBadge";
 import AdminPagination from "../../components/admin/AdminPagination";
 import { useEffect, useState } from "react";
 import { Search, Plus, Eye, Edit3, Trash2 } from "lucide-react";
-import { foodService } from "../../services/foodService";
+import { orderService } from "../../services/orderService";
 import { useToast } from "../../components/ui/Toast";
 
 const statusColors = {
   Pending: "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/15 dark:text-yellow-400",
+  Confirmed: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
   Preparing: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+  Completed: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400",
   Delivered: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400",
   Cancelled: "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400",
 };
+
+const titleCase = (s) => {
+  const str = String(s || "");
+  return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
+};
+
+const money = (v) => `$${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const formatDate = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+};
+
+const toOrderRow = (o) => ({
+  ...o,
+  id: o.id,
+  customer: o.userName || "Guest",
+  restaurant: o.restaurantName || "N/A",
+  items: Array.isArray(o.items) ? o.items.join(", ") : o.items || "N/A",
+  total: money(o.totalPrice),
+  status: titleCase(o.status),
+  date: formatDate(o.createdAt || o.pickupTime),
+});
 
 export default function AdminFoodOrdersPage() {
   const toast = useToast();
@@ -29,8 +55,8 @@ export default function AdminFoodOrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const data = await foodService.getAllFoods();
-        setOrders(data);
+        const data = await orderService.getAllOrders();
+        setOrders((data || []).map(toOrderRow));
         setLoading(false);
       } catch (error) {
         console.error("Error fetching orders:", error);
@@ -45,7 +71,7 @@ export default function AdminFoodOrdersPage() {
     const customerName = o.customer || o.name || "";
     const restaurantName = o.restaurant || "";
     const matchSearch = customerName.toLowerCase().includes(search.toLowerCase()) || restaurantName.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "All" || o.status === filter;
+    const matchFilter = filter === "All" || (o.status || "").toUpperCase() === filter.toUpperCase();
     return matchSearch && matchFilter;
   });
 
@@ -96,7 +122,7 @@ export default function AdminFoodOrdersPage() {
           <input type="text" placeholder="Search by customer or restaurant..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-primary transition" />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {["All", "Pending", "Preparing", "Delivered", "Cancelled"].map((s) => (
+          {["All", "Pending", "Confirmed", "Completed", "Cancelled"].map((s) => (
             <button key={s} onClick={() => { setFilter(s); setCurrentPage(1); }} className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filter === s ? "bg-primary text-white" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"}`}>{s}</button>
           ))}
         </div>

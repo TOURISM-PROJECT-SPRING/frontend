@@ -26,7 +26,7 @@ export default function AdminRevenueChart() {
   const chartData = raw.map((x) => ({ ...x, pct: `${((x.value / total) * 100).toFixed(1)}%` }));
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 animate-fade-in-up delay-150">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 animate-fade-in-up delay-150 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Revenue Overview</h3>
@@ -35,11 +35,11 @@ export default function AdminRevenueChart() {
       </div>
 
       {chartData.length ? (
-        <div className="flex items-center gap-5">
-          <div className="w-36 h-36 shrink-0">
+        <div className="flex flex-1 items-center gap-5 py-2">
+          <div className="w-40 h-40 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={62} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                <Pie data={chartData} cx="50%" cy="50%" innerRadius={44} outerRadius={70} paddingAngle={3} dataKey="value" strokeWidth={0}>
                   {chartData.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
@@ -65,7 +65,7 @@ export default function AdminRevenueChart() {
           </div>
         </div>
       ) : (
-        <div className="h-40 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
+        <div className="flex flex-1 items-center justify-center text-sm text-gray-400 dark:text-gray-500">
           No revenue yet.
         </div>
       )}

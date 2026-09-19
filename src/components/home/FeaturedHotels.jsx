@@ -33,7 +33,7 @@ export default function FeaturedHotels() {
           title="Stay Somewhere Special"
           subtitle="Handpicked resorts and boutique hotels for every kind of traveller."
 action={
-            <Link to="/explore?section=hotels" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
+            <Link to="/hotel" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
               View All <Icon name="arrow-right" size={16} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
             </Link>
           }

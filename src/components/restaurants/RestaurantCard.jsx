@@ -59,14 +59,20 @@ export default function RestaurantCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[15px] font-bold text-ink">{r.rating.toFixed(1)}</span>
-          <RatingDots rating={r.rating} size={9} />
-          <Link
-            to={`${r.href}#reviews`}
-            className="text-[15px] font-medium text-ink underline decoration-1 underline-offset-2 transition hover:text-brand-700"
-          >
-            ({r.reviews.toLocaleString("en-US")} reviews)
-          </Link>
+          {r.rating != null && (
+            <>
+              <span className="text-[15px] font-bold text-ink">{Number(r.rating).toFixed(1)}</span>
+              <RatingDots rating={Number(r.rating)} size={9} />
+            </>
+          )}
+          {r.reviews != null && (
+            <Link
+              to={`${r.href}#reviews`}
+              className="text-[15px] font-medium text-ink underline decoration-1 underline-offset-2 transition hover:text-brand-700"
+            >
+              ({Number(r.reviews).toLocaleString("en-US")} reviews)
+            </Link>
+          )}
         </div>
 
         <RestaurantMeta restaurant={r} />

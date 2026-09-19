@@ -20,9 +20,12 @@ function CircleButton({ dir, onClick, label }) {
 
 export default function ActivityCard({ activity: a, index, favorite, onToggleFavorite }) {
   const [idx, setIdx] = useState(0);
-  const images = a.images?.length ? a.images : [a.image];
-  const n = images.length;
+  const images = (a.images?.length ? a.images : [a.image]).filter(Boolean);
+  const n = images.length || 1;
   const step = (d) => setIdx((i) => (i + d + n) % n);
+  const rating = a.rating != null ? Number(a.rating) : null;
+  const reviews = a.reviews != null ? Number(a.reviews) : null;
+  const price = a.price != null ? Number(a.price) : null;
 
   return (
     <article
@@ -90,17 +93,27 @@ export default function ActivityCard({ activity: a, index, favorite, onToggleFav
         </Link>
 
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-bold text-ink">{a.rating.toFixed(1)}</span>
-          <RatingDots rating={a.rating} size={14} />
-          <span className="text-[15px] text-ink/60">({a.reviews.toLocaleString("en-US")})</span>
+          {rating != null ? (
+            <>
+              <span className="text-[15px] font-bold text-ink">{rating.toFixed(1)}</span>
+              <RatingDots rating={rating} size={14} />
+            </>
+          ) : null}
+          {reviews != null && (
+            <span className="text-[15px] text-ink/60">({reviews.toLocaleString("en-US")})</span>
+          )}
         </div>
 
-        <p className="text-[16px] text-ink/70">{a.recommend}% Recommend</p>
+        {a.recommend != null && (
+          <p className="text-[16px] text-ink/70">{Number(a.recommend)}% Recommend</p>
+        )}
 
-        <p className="flex items-center gap-2 text-[16px] text-ink/80">
-          <Icon name="clock" size={16} className="text-brand-600" />
-          {a.duration}
-        </p>
+        {a.duration && (
+          <p className="flex items-center gap-2 text-[16px] text-ink/80">
+            <Icon name="clock" size={16} className="text-brand-600" />
+            {a.duration}
+          </p>
+        )}
 
         {a.freeCancel && (
           <p className="flex items-center gap-2 text-[16px] text-brand-800">
@@ -115,8 +128,10 @@ export default function ActivityCard({ activity: a, index, favorite, onToggleFav
         <div className="mt-auto flex items-end justify-between gap-3 pt-4">
           <div className="leading-tight">
             <p className="text-[13px] text-ink/60">from</p>
-            <p className="font-display text-[22px] font-bold text-brand-900">${a.price}</p>
-            <p className="text-[13px] text-ink/60">per adult</p>
+            <p className="font-display text-[22px] font-bold text-brand-900">
+              {price != null ? `$${price.toLocaleString("en-US")}` : "On request"}
+            </p>
+            {price != null && <p className="text-[13px] text-ink/60">per adult</p>}
           </div>
           <Link
             to={`/activity/${a.id}`}

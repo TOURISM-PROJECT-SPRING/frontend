@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Sidebar from "../components/dashboard/Sidebar";
 import Topbar from "../components/dashboard/Topbar";
 import BusinessGuard from "../components/dashboard/BusinessGuard";
 import { OwnerBusinessProvider } from "../context/OwnerBusinessContext";
+import { useAuth } from "../context/AuthContext";
 
 // Dashboard (overview)
 import KPICards from "../components/dashboard/KPICards";
@@ -72,11 +73,36 @@ function DashboardOverview() {
   );
 }
 
+// Refreshes the current user from the backend when the owner console mounts or
+// comes back into focus, so role / business-assignment changes made in the
+// admin dashboard appear without a re-login.
+function OwnerRoleSync() {
+  const { refreshUser } = useAuth();
+  const refreshRef = useRef(refreshUser);
+  refreshRef.current = refreshUser;
+
+  useEffect(() => {
+    const sync = () => {
+      refreshRef.current();
+    };
+    sync();
+    window.addEventListener("focus", sync);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      window.removeEventListener("focus", sync);
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, []);
+
+  return null;
+}
+
 export default function OwnerDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <OwnerBusinessProvider>
+      <OwnerRoleSync />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
         <Sidebar
           collapsed={sidebarCollapsed}

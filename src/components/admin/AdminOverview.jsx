@@ -56,17 +56,17 @@ export default function AdminOverview() {
 
       <AdminKPICards />
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 h-full">
           <AdminBookingsChart />
         </div>
-        <div>
+        <div className="h-full">
           <AdminRevenueChart />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2 space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-5">
           <AdminRecentBookings />
           <AdminRecentActivities />
         </div>

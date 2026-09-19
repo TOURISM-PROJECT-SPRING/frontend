@@ -22,8 +22,8 @@ import HotelDetailPage from "./pages/HotelDetailPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import CheckoutPage from "./pages/CheckoutPage";
-import ManagerArea from "./pages/manager/ManagerArea";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import OwnerRoute from "./components/owner/OwnerRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { ROLES, homePathFor } from "./utils/rbac";
 
@@ -99,20 +99,12 @@ function App() {
       />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route
-        path="/manager/*"
-        element={
-          <ProtectedRoute>
-            <ManagerArea />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/owner/*"
         element={
           <ProtectedRoute>
-            <RoleGuard roles={[ROLES.OWNER]}>
+            <OwnerRoute>
               <OwnerDashboard />
-            </RoleGuard>
+            </OwnerRoute>
           </ProtectedRoute>
         }
       />

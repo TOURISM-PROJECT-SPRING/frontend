@@ -1,17 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/ui/Icon";
 import { useFavorites } from "../context/FavoritesContext";
 import { useToast } from "../components/ui/Toast";
+import { useRestaurants } from "../hooks/useResource";
 import {
-  demoRestaurants,
   decorateRestaurants,
+  decorateMarketplaceRestaurant,
+  buildProvinceOptions,
   applyRestaurantFilters,
   sortRestaurants,
   emptyFilters,
   countActiveFilters,
   resultsCountLabel,
-  PROVINCES,
   provinceLabel,
 } from "../data/restaurants";
 import PageHeader from "../components/restaurants/PageHeader";
@@ -23,11 +24,12 @@ import EmptyState from "../components/restaurants/EmptyState";
 import MobileFilterDrawer from "../components/restaurants/MobileFilterDrawer";
 import MapModal from "../components/restaurants/MapModal";
 import ReservationModal from "../components/restaurants/ReservationModal";
+import FloatingTripCart from "../components/home/FloatingTripCart";
 
 export default function RestaurantSearchPage() {
+  const restaurants = useRestaurants();
   const [filters, setFilters] = useState(emptyFilters);
   const [sort, setSort] = useState("featured");
-  const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
@@ -35,13 +37,12 @@ export default function RestaurantSearchPage() {
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
 
-  // Simulate a short fetch so the skeleton loading state is visible on entry.
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 650);
-    return () => clearTimeout(t);
-  }, []);
-
-  const all = useMemo(() => decorateRestaurants(demoRestaurants), []);
+  const marketplace = useMemo(
+    () => restaurants.items.map(decorateMarketplaceRestaurant),
+    [restaurants.items]
+  );
+  const all = useMemo(() => decorateRestaurants(marketplace), [marketplace]);
+  const provinces = useMemo(() => buildProvinceOptions(marketplace), [marketplace]);
   const visible = useMemo(
     () => sortRestaurants(applyRestaurantFilters(all, filters), sort),
     [all, filters, sort]
@@ -49,7 +50,7 @@ export default function RestaurantSearchPage() {
 
   const activeCount = countActiveFilters(filters);
   const isFiltered = activeCount > 0 || filters.search.trim() !== "";
-  const countLabel = resultsCountLabel(visible.length, { filtered: isFiltered });
+  const countLabel = resultsCountLabel(visible.length, { filtered: isFiltered, total: all.length });
 
   const provinceName = filters.province ? provinceLabel(filters.province) : "";
   const areaLabel = provinceName || "Cambodia";
@@ -64,7 +65,7 @@ export default function RestaurantSearchPage() {
       kind: "restaurant",
       id: r.id,
       title: r.name,
-      image: r.image,
+      image: r.image || r.images?.[0],
       location: r.location,
       href: r.href,
     });
@@ -79,7 +80,7 @@ export default function RestaurantSearchPage() {
         title={title}
         subtitle={subtitle}
         province={filters.province}
-        provinces={PROVINCES}
+        provinces={provinces}
         onProvince={(v) => patch({ province: v })}
         onReserve={() => setReserveOpen(true)}
         onMap={() => setMapOpen(true)}
@@ -113,7 +114,7 @@ export default function RestaurantSearchPage() {
               </span>
             </label>
 
-            <RestaurantFilterSidebar filters={filters} onPatch={patch} />
+            <RestaurantFilterSidebar filters={filters} onPatch={patch} provinces={provinces} />
           </div>
         </aside>
 
@@ -145,7 +146,7 @@ export default function RestaurantSearchPage() {
           </label>
 
           <div className="mt-5 flex flex-col gap-8">
-            {loading ? (
+            {restaurants.loading ? (
               Array.from({ length: 4 }).map((_, i) => <RestaurantCardSkeleton key={i} />)
             ) : visible.length === 0 ? (
               <EmptyState onClear={clearAll} />
@@ -161,7 +162,7 @@ export default function RestaurantSearchPage() {
             )}
           </div>
 
-          {!loading && visible.length > 0 && (
+          {!restaurants.loading && visible.length > 0 && (
             <p className="mt-8 text-center text-sm font-medium text-muted">
               You&apos;ve seen all {visible.length.toLocaleString("en-US")} matching restaurants in {areaLabel}
             </p>
@@ -175,6 +176,7 @@ export default function RestaurantSearchPage() {
         filters={filters}
         onPatch={patch}
         resultCount={visible.length}
+        provinces={provinces}
       />
       <MapModal open={mapOpen} onClose={() => setMapOpen(false)} restaurants={visible} title={title} />
       <ReservationModal
@@ -182,6 +184,7 @@ export default function RestaurantSearchPage() {
         onClose={() => setReserveOpen(false)}
         restaurants={visible.length ? visible : all}
       />
+      <FloatingTripCart />
     </div>
   );
 }

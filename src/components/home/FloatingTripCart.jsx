@@ -9,10 +9,10 @@ export default function FloatingTripCart() {
   const lastItem = items.length > 0 ? items[items.length - 1] : null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+    <div className="fixed bottom-6 right-6 z-40">
       {/* Quick Peek Tooltip / Popover when hovered */}
       {showQuickPeek && count > 0 && lastItem && (
-        <div className="animate-fade-up rounded-2xl border border-brand-200/80 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md w-72 transition-all">
+        <div className="absolute bottom-0 right-full mb-1 mr-3 animate-fade-up rounded-2xl border border-brand-200/80 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md w-72 transition-all">
           <div className="flex items-center justify-between pb-2 border-b border-line/60 text-xs">
             <span className="font-bold text-brand-900">Trip Cart Summary</span>
             <span className="rounded-full bg-brand-100 px-2 py-0.5 font-bold text-brand-800 text-[10px]">
@@ -55,26 +55,22 @@ export default function FloatingTripCart() {
         onMouseEnter={() => setShowQuickPeek(true)}
         onMouseLeave={() => setShowQuickPeek(false)}
         aria-label={`Open Trip Cart with ${count} saved items`}
-        className={`group relative flex items-center gap-2.5 rounded-full border border-white/40 px-4 py-2.5 shadow-lift transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-md ${
-          count > 0
-            ? "bg-brand-900/95 text-white ring-2 ring-gold-400/50 hover:bg-brand-900"
-            : "bg-white/95 text-brand-900 ring-1 ring-black/5 hover:bg-white"
-        }`}
+        className={`group relative flex items-center gap-2 rounded-full border border-gold-400/40 bg-brand-900/90 px-3 py-1.5 text-white shadow-lift ring-2 ring-gold-400/40 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-brand-900 active:scale-95`}
       >
-        <span className="relative grid h-7 w-7 place-items-center rounded-full bg-gold-400 text-brand-950 font-bold">
-          <Icon name="luggage" size={15} />
+        <span className="relative grid h-6 w-6 place-items-center rounded-full bg-gold-400 text-brand-950 font-bold">
+          <Icon name="luggage" size={13} />
           {count > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white ring-2 ring-white">
+            <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-black text-white ring-2 ring-white">
               {count}
             </span>
           )}
         </span>
 
-        <div className="text-left">
-          <p className="text-xs font-bold leading-none">
+        <div className="text-left leading-tight">
+          <p className="text-[11px] font-bold leading-none">
             {count > 0 ? "My Trip Cart" : "Trip Planner"}
           </p>
-          <p className={`text-[10px] font-medium leading-tight ${count > 0 ? "text-gold-300" : "text-muted"}`}>
+          <p className="mt-0.5 text-[9px] font-medium leading-none text-gold-300">
             {count > 0 ? `${count} saved · View plan` : "0 saved places"}
           </p>
         </div>

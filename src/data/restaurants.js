@@ -607,6 +607,65 @@ export function decorateRestaurants(list) {
   return (list || []).map(decorateRestaurant);
 }
 
+// Bridge from the normalized API card (data/normalizers.js normalizeRestaurant)
+// to the marketplace shape the listing consumes. Every demo-only field gets a
+// safe default so filtering/sorting/rendering behave the same for real data.
+export function decorateMarketplaceRestaurant(r) {
+  const open = r.open;
+  const status = open === true ? "open" : open === false ? "closed" : null;
+  const statusText =
+    status === "open"
+      ? r.openLabel || "Open now"
+      : status === "closed"
+        ? "Closed"
+        : "Check hours";
+  return {
+    ...r,
+    name: r.title || "Restaurant",
+    province: r.province || r.location || "Cambodia",
+    cuisines: r.category ? [r.category] : [],
+    establishment: "restaurant",
+    awards: r.award ? [r.award] : [],
+    onlineReservations: false,
+    specialOffer: false,
+    award: null,
+    priceTier: null,
+    distanceKm: null,
+    dietary: [],
+    features: [],
+    meals: [],
+    dishes: [],
+    hasMenu: false,
+    sponsored: false,
+    rank: null,
+    status,
+    statusText,
+    open,
+    openLabel: r.openLabel,
+    images: r.images?.length
+      ? r.images
+      : r.image
+        ? [r.image]
+        : [],
+    excerpts: r.description ? [r.description] : [],
+    priceLabel: "",
+  };
+}
+
+// Province options derived from any restaurant list (real or demo).
+export function buildProvinceOptions(list = []) {
+  if (!list?.length) return PROVINCES;
+  const seen = new Set();
+  const out = [];
+  for (const r of list) {
+    const key = r.province || r.location;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ key, label: provinceLabel(key) || key });
+  }
+  return out.length ? out : PROVINCES;
+}
+
 /* ------------------------------------------------------------------ */
 /* Filtering + sorting (pure)                                          */
 /* ------------------------------------------------------------------ */
@@ -670,7 +729,8 @@ export function sortRestaurants(list, sortKey) {
 
 // When nothing is filtered we surface a believable marketplace total; once the
 // traveler narrows the list we show the real matched count so the number moves.
-export function resultsCountLabel(shown, { filtered }) {
-  const n = filtered ? shown : 1222;
+// When `total` is passed (real backend lists) we never fake a larger number.
+export function resultsCountLabel(shown, { filtered, total }) {
+  const n = filtered ? shown : total ?? 1222;
   return `${n.toLocaleString("en-US")} results`;
 }

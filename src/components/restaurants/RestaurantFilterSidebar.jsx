@@ -27,7 +27,7 @@ function useToggleList(onPatch, filters) {
   };
 }
 
-export default function RestaurantFilterSidebar({ filters, onPatch }) {
+export default function RestaurantFilterSidebar({ filters, onPatch, provinces = PROVINCES }) {
   const toggle = useToggleList(onPatch, filters);
   const [moreEst, setMoreEst] = useState(false);
   const [allCuisine, setAllCuisine] = useState(false);
@@ -45,13 +45,13 @@ export default function RestaurantFilterSidebar({ filters, onPatch }) {
           checked={filters.province === ""}
           onChange={() => onPatch({ province: "" })}
         />
-        {PROVINCES.map((p) => (
+        {provinces.map((p) => (
           <CheckRow
-            key={p.key}
-            label={p.label}
+            key={p.key || p}
+            label={p.label || p}
             icon="map-pin"
-            checked={filters.province === p.key}
-            onChange={(v) => onPatch({ province: v ? p.key : "" })}
+            checked={filters.province === (p.key || p)}
+            onChange={(v) => onPatch({ province: v ? p.key || p : "" })}
           />
         ))}
       </FilterSection>

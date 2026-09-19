@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useFavorites } from "../context/FavoritesContext";
 import { useToast } from "../components/ui/Toast";
 import { EmptyState } from "../components/ui/feedback";
+import { useTours } from "../hooks/useResource";
 import {
-  demoTours,
   decorateTours,
   applyTourFilters,
   sortTours,
   emptyFilters,
   countActiveFilters,
+  getLocationOptions,
   resultsCountLabel,
 } from "../data/tours";
 import FilterBar from "../components/tours/FilterBar";
@@ -18,24 +19,21 @@ import PromoBanner from "../components/tours/PromoBanner";
 import ActivityCard from "../components/tours/ActivityCard";
 import AllFiltersDrawer from "../components/tours/AllFiltersDrawer";
 import ToursSkeleton from "../components/tours/ToursSkeleton";
+import FloatingTripCart from "../components/home/FloatingTripCart";
 
 const CONTAINER = "mx-auto w-full max-w-[1400px] px-5 sm:px-6 lg:px-[70px]";
 
 export default function ToursPage() {
-  const [filters, setFilters] = useState(emptyFilters);
+  const tours = useTours();
+  const [filters, setFilters] = useState({ ...emptyFilters(), location: "" });
   const [sort, setSort] = useState("featured");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 550);
-    return () => clearTimeout(t);
-  }, []);
-
-  const all = useMemo(() => decorateTours(demoTours), []);
+  const decorated = useMemo(() => decorateTours(tours.items), [tours.items]);
+  const locationOptions = useMemo(() => getLocationOptions(decorated), [decorated]);
   const city = filters.location ? provinceLabel(filters.location) || filters.location : "Cambodia";
 
   useEffect(() => {
@@ -44,26 +42,27 @@ export default function ToursPage() {
       document.title = "SovannDomNour";
     };
   }, [city]);
+
   const visible = useMemo(
-    () => sortTours(applyTourFilters(all, filters), sort),
-    [all, filters, sort]
+    () => sortTours(applyTourFilters(decorated, filters), sort),
+    [decorated, filters, sort]
   );
 
   const activeCount = countActiveFilters(filters);
   const isFiltered = activeCount > 0;
-  const countLabel = resultsCountLabel(visible.length, { filtered: isFiltered });
+  const countLabel = resultsCountLabel(visible.length, { filtered: isFiltered, total: decorated.length });
 
   const patch = (p) => setFilters((f) => ({ ...f, ...p }));
-  const clearAll = () => setFilters(emptyFilters());
+  const clearAll = () => setFilters({ ...emptyFilters(), location: "" });
 
   const toggleFavorite = (a) => {
     const saved = toggle({
       kind: "tour",
       id: a.id,
       title: a.title,
-      image: a.images?.[0],
+      image: a.images?.[0] || a.image,
       location: a.location,
-      href: a.href,
+      href: a.href || `/tours/${a.id}`,
     });
     toast[saved ? "success" : "info"](
       saved ? `Saved "${a.title}" to My trips.` : `Removed "${a.title}" from My trips.`
@@ -82,7 +81,7 @@ export default function ToursPage() {
       {/* Sticky filter bar */}
       <div className="sticky top-[72px] z-30 border-b border-line bg-white/90 backdrop-blur-md">
         <div className={`${CONTAINER} py-3`}>
-          <FilterBar filters={filters} onPatch={patch} onOpenAllFilters={() => setDrawerOpen(true)} />
+          <FilterBar filters={filters} onPatch={patch} onOpenAllFilters={() => setDrawerOpen(true)} locationOptions={locationOptions} />
         </div>
       </div>
 
@@ -96,7 +95,7 @@ export default function ToursPage() {
         <PromoBanner />
 
         {/* Grid */}
-        {loading ? (
+        {tours.loading ? (
           <div className="py-8">
             <ToursSkeleton count={8} />
           </div>
@@ -133,7 +132,7 @@ export default function ToursPage() {
           </div>
         )}
 
-        {!loading && visible.length > 0 && (
+        {!tours.loading && visible.length > 0 && (
           <p className="pb-16 text-center text-sm font-medium text-muted">
             You&apos;ve seen all {visible.length.toLocaleString("en-US")} matching activities in {city}
           </p>
@@ -147,6 +146,7 @@ export default function ToursPage() {
         onPatch={patch}
         resultCount={visible.length}
       />
+      <FloatingTripCart />
     </div>
   );
 }

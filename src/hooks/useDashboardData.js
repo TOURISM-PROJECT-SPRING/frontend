@@ -277,17 +277,13 @@ function computeDashboard(input = {}) {
     const label = new Date(b.createdAt || Date.now()).toLocaleDateString("en-US", { weekday: "short" });
     weekdayCounts.food[label] = (weekdayCounts.food[label] || 0) + 1;
   });
-  const revenueByWeekday = weekOrder
-    .filter((day) => weekdayMap.has(day))
-    .map((day) => ({ day, revenue: weekdayMap.get(day) }));
-  const bookingsByWeekday = weekOrder
-    .filter((day) => weekdayCounts.hotel[day] || weekdayCounts.ticket[day] || weekdayCounts.food[day])
-    .map((day) => ({
-      day,
-      hotel: weekdayCounts.hotel[day] || 0,
-      ticket: weekdayCounts.ticket[day] || 0,
-      food: weekdayCounts.food[day] || 0,
-    }));
+  const revenueByWeekday = weekOrder.map((day) => ({ day, revenue: weekdayMap.get(day) || 0 }));
+  const bookingsByWeekday = weekOrder.map((day) => ({
+    day,
+    hotel: weekdayCounts.hotel[day] || 0,
+    ticket: weekdayCounts.ticket[day] || 0,
+    food: weekdayCounts.food[day] || 0,
+  }));
 
   const bookingsByType = [
     { name: "Hotel Rooms", value: rb.length, color: "#1b3b2b" },

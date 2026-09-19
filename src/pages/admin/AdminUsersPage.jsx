@@ -24,8 +24,28 @@ import { managementService } from "../../services/managementService";
 import { userAttachmentService } from "../../services/userAttachmentService";
 import AvatarUpload from "../../components/ui/AvatarUpload";
 import { useToast } from "../../components/ui/Toast";
+import { AUTH_USER_STORAGE_KEY } from "../../context/AuthContext";
+import { setOwnerRoleOverride } from "../../utils/rbac";
 
 const norm = (s) => String(s || "").toUpperCase();
+
+// If the edited account is the one currently signed in, write the change
+// through to the session so every open tab (owner dashboard included) reflects
+// the new role immediately — even when the backend is offline.
+const syncSignedInSession = (editedUser, updates) => {
+  try {
+    setOwnerRoleOverride(editedUser, updates.roles?.[0] || editedUser.role || null);
+    const raw = localStorage.getItem(AUTH_USER_STORAGE_KEY);
+    if (!raw) return;
+    const current = JSON.parse(raw);
+    if (current && String(current.id) === String(editedUser.id)) {
+      localStorage.setItem(
+        AUTH_USER_STORAGE_KEY,
+        JSON.stringify({ ...current, ...updates, roles: updates.roles || current.roles })
+      );
+    }
+  } catch {}
+};
 
 const roleColors = {
   ADMIN: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
@@ -210,6 +230,7 @@ export default function AdminUsersPage() {
       );
       setEditTarget(null);
       toast.success("User updated successfully");
+      syncSignedInSession(editTarget, payload);
     } catch (error) {
       console.error("Error updating user:", error);
       // Optimistic update fallback so demo / offline mock works smoothly
@@ -222,6 +243,7 @@ export default function AdminUsersPage() {
       );
       setEditTarget(null);
       toast.success("User updated (offline mode)");
+      syncSignedInSession(editTarget, payload);
     } finally {
       setSaving(false);
     }

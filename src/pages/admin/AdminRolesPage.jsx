@@ -344,9 +344,22 @@ export default function AdminRolesPage() {
           isSystem: false,
         };
         try {
-          await managementService.createRole(newRole);
+          const res = await managementService.createRole(newRole);
+          const server = res?.data || null;
+          setRoles((prev) => [
+            ...prev,
+            {
+              ...newRole,
+              id: server?.id ?? newRole.id,
+              name: (server?.name || newRole.name).toUpperCase(),
+              label: server?.label || newRole.label || `${cleanName} Role`,
+              description: server?.description || newRole.description,
+              color: server?.color || newRole.color || "blue",
+              userCount: server?.userCount ?? 0,
+              permissions: server?.permissions || newRole.permissions || [],
+            },
+          ]);
         } catch {}
-        setRoles((prev) => [...prev, newRole]);
         toast.success("Role created successfully");
       } else if (editRole) {
         const updated = {
@@ -355,9 +368,23 @@ export default function AdminRolesPage() {
           name: cleanName,
         };
         try {
-          await managementService.updateRole(editRole.id, updated);
+          const server = await managementService.updateRole(editRole.id, updated);
+          setRoles((prev) =>
+            prev.map((r) =>
+              r.id === editRole.id
+                ? {
+                    ...updated,
+                    id: server?.id || editRole.id,
+                    name: (server?.name || updated.name).toUpperCase(),
+                    label: server?.label || updated.label,
+                    description: server?.description || updated.description,
+                    color: server?.color || updated.color,
+                    permissions: server?.permissions || updated.permissions || [],
+                  }
+                : r
+            )
+          );
         } catch {}
-        setRoles((prev) => prev.map((r) => (r.id === editRole.id ? updated : r)));
         toast.success("Role updated successfully");
       }
       setIsCreating(false);

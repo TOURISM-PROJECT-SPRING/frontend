@@ -16,7 +16,7 @@ export default function FeaturedRestaurants() {
         title="Taste Cambodia"
         subtitle="From royal Khmer cuisine to buzzing street stalls — book a table or order in."
         action={
-          <Link to="/explore?section=restaurants" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
+          <Link to="/restaurant" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
             View All <Icon name="arrow-right" size={16} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
           </Link>
         }

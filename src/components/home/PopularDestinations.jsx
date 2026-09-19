@@ -43,7 +43,7 @@ export default function PopularDestinations() {
               <Icon name="chevron-right" size={18} />
             </button>
             <Link
-              to="/destinations"
+              to="/tour"
               className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-white border border-line px-4 py-2 text-xs font-bold text-brand-700 shadow-sm transition-colors hover:bg-brand-50"
             >
               All Destinations

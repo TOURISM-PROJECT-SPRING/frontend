@@ -23,6 +23,7 @@ import { authService } from "../../services/authService";
 import { userAttachmentService } from "../../services/userAttachmentService";
 import useDashboardData from "../../hooks/useDashboardData";
 import { useToast } from "../../components/ui/Toast";
+import { primaryRoleLabel } from "../../utils/rbac";
 
 export default function OwnerProfilePage() {
   const { user, userId, avatarUrl, setAvatarUrl } = useAuth();
@@ -122,7 +123,7 @@ export default function OwnerProfilePage() {
     { label: "Total Revenue", value: dashboardData?.revenueText || "$0" },
     { label: "Avg. Rating", value: dashboardData?.avgRating ? `${dashboardData.avgRating}/5` : "4.8" },
     { label: "Available Rooms", value: String(dashboardData?.totalRooms || 0) },
-    { label: "Role", value: user?.roles?.[0] || "OWNER" },
+    { label: "Role", value: primaryRoleLabel(user) || "OWNER" },
   ];
 
   const handlePasswordSubmit = async (e) => {

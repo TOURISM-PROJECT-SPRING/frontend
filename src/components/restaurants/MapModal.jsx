@@ -129,9 +129,13 @@ export default function MapModal({ open, onClose, restaurants, title = "Restaura
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-brand-900">{r.name}</span>
                     <span className="mt-0.5 flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-ink">{r.rating.toFixed(1)}</span>
-                      <RatingDots rating={r.rating} size={6} />
-                      <span className="text-xs text-muted">· {r.priceLabel}</span>
+                      {r.rating != null && (
+                        <>
+                          <span className="text-xs font-bold text-ink">{Number(r.rating).toFixed(1)}</span>
+                          <RatingDots rating={Number(r.rating)} size={6} />
+                        </>
+                      )}
+                      <span className="text-xs text-muted">· {r.priceLabel || "—"}</span>
                     </span>
                   </span>
                 </button>
