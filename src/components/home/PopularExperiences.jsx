@@ -2,13 +2,13 @@ import { Link } from "react-router-dom";
 import SectionHeading from "./SectionHeading";
 import Icon from "../ui/Icon";
 import TourCard from "../explore/TourCard";
-import { CardGridSkeleton, DemoNote } from "../ui/feedback";
+import { CardGridSkeleton } from "../ui/feedback";
 import { useTours } from "../../hooks/useResource";
 import { useFavorites } from "../../context/FavoritesContext";
 import { useToast } from "../ui/Toast";
 
 export default function PopularExperiences() {
-  const { items, loading, source } = useTours();
+  const { items, loading } = useTours();
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
   const featured = items.slice(0, 4);
@@ -47,7 +47,6 @@ export default function PopularExperiences() {
               <TourCard key={t.id} tour={t} favorite={isSaved("tour", t.id)} onFavorite={onFavorite} />
             ))}
           </div>
-          {source === "demo" && <div className="mt-6"><DemoNote /></div>}
         </>
       )}
     </section>

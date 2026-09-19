@@ -64,15 +64,8 @@ export function useExploreBundle() {
   }, [tours.items, hotels.items, restaurants.items, dests.items]);
 
   const loading = tours.loading || hotels.loading || restaurants.loading || dests.loading;
-  const source =
-    tours.source === "api" ||
-    hotels.source === "api" ||
-    restaurants.source === "api" ||
-    dests.source === "api"
-      ? "api"
-      : "demo";
 
-  return { items: data, loading, source };
+  return { items: data, loading, source: "api" };
 }
 
 // Recommendations return a { hotels, restaurants } object rather than a flat list.

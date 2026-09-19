@@ -3,11 +3,11 @@ import { Link } from "react-router-dom";
 import SectionHeading from "./SectionHeading";
 import Icon from "../ui/Icon";
 import DestinationCard from "../cards/DestinationCard";
-import { CardGridSkeleton, DemoNote } from "../ui/feedback";
+import { CardGridSkeleton } from "../ui/feedback";
 import { useDestinations } from "../../hooks/useResource";
 
 export default function PopularDestinations() {
-  const { items, loading, source } = useDestinations();
+  const { items, loading } = useDestinations();
   const scrollRef = useRef(null);
 
   const scroll = (dir) => {
@@ -66,7 +66,6 @@ export default function PopularDestinations() {
                 </div>
               ))}
             </div>
-            {source === "demo" && <div className="mt-6"><DemoNote /></div>}
           </>
         )}
       </div>

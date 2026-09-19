@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
-import { longDate } from "./checkoutData";
+import { longDate, cancellationInfo } from "./checkoutData";
 
 function CountdownBanner({ seconds, expired }) {
   const mm = Math.floor(seconds / 60);
@@ -91,7 +91,7 @@ export default function BookingSummary({ booking, money, promo, onApplyPromo, on
         <div className="mt-4 border-t border-line pt-4">
           <p className="flex items-start gap-2 text-sm font-semibold text-brand-700">
             <Icon name="refresh" size={16} className="mt-0.5 shrink-0" />
-            <span>Free cancellation before {booking.cancelCutoff} (tour local time)</span>
+            <span>{cancellationInfo({ cancelCutoff: booking.cancelCutoff, freeCancel: booking.freeCancel }).label}</span>
           </p>
         </div>
 

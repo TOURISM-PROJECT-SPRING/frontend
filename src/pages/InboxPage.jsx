@@ -22,6 +22,7 @@ export default function InboxPage() {
   const {
     alerts,
     unreadCount,
+    loading,
     markAsRead,
     markAllAsRead,
     removeAlert,
@@ -163,7 +164,20 @@ export default function InboxPage() {
         </div>
 
         {/* Alert Cards */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex animate-pulse items-start justify-between gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                <div className="flex-1">
+                  <div className="h-4 w-1/3 rounded-lg bg-gray-200 dark:bg-gray-800" />
+                  <div className="mt-2 h-3 w-2/3 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                  <div className="mt-3 h-3 w-1/6 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                </div>
+                <div className="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="bg-white dark:bg-gray-950 rounded-3xl border border-gray-100 dark:border-gray-800 p-12 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3 text-gray-300 dark:text-gray-600">
               <InboxIcon className="w-8 h-8" />

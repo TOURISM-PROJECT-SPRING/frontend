@@ -39,7 +39,7 @@ function Group({ options, selected, onToggle }) {
   );
 }
 
-export default function AllFiltersDrawer({ open, onClose, filters, onPatch, resultCount }) {
+export default function AllFiltersDrawer({ open, onClose, filters, onPatch, resultCount, support = {} }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -55,6 +55,11 @@ export default function AllFiltersDrawer({ open, onClose, filters, onPatch, resu
   if (!open) return null;
   const patch = onPatch;
 
+  const categoryOptions =
+    support.categories && support.categories.length
+      ? CATEGORY_OPTIONS.filter((o) => support.categories.includes(o.key))
+      : CATEGORY_OPTIONS;
+
   return createPortal(
     <div className="fixed inset-0 z-[110] flex justify-end" role="dialog" aria-modal="true" aria-label="All filters">
       <div className="absolute inset-0 bg-brand-950/40 backdrop-blur-sm animate-fade" onClick={onClose} />
@@ -69,31 +74,41 @@ export default function AllFiltersDrawer({ open, onClose, filters, onPatch, resu
         </div>
 
         <div className="flex-1 overflow-y-auto px-5">
-          <Section title="Categories">
-            <Group options={CATEGORY_OPTIONS} selected={filters.categories} onToggle={(k) => patch({ categories: toggle(filters.categories, k) })} />
-          </Section>
+          {categoryOptions.length > 0 && (
+            <Section title="Categories">
+              <Group options={categoryOptions} selected={filters.categories} onToggle={(k) => patch({ categories: toggle(filters.categories, k) })} />
+            </Section>
+          )}
 
-          <Section title="Awards">
-            <Group options={AWARD_OPTIONS} selected={filters.awards} onToggle={(k) => patch({ awards: toggle(filters.awards, k) })} />
-          </Section>
+          {support.awards && (
+            <Section title="Awards">
+              <Group options={AWARD_OPTIONS} selected={filters.awards} onToggle={(k) => patch({ awards: toggle(filters.awards, k) })} />
+            </Section>
+          )}
 
-          <Section title="Languages">
-            <Group options={LANGUAGE_OPTIONS} selected={filters.languages} onToggle={(k) => patch({ languages: toggle(filters.languages, k) })} />
-          </Section>
+          {support.languages && (
+            <Section title="Languages">
+              <Group options={LANGUAGE_OPTIONS} selected={filters.languages} onToggle={(k) => patch({ languages: toggle(filters.languages, k) })} />
+            </Section>
+          )}
 
-          <Section title="Time of day">
-            <Group options={TIME_OPTIONS} selected={filters.timeOfDay} onToggle={(k) => patch({ timeOfDay: toggle(filters.timeOfDay, k) })} />
-          </Section>
+          {support.timeOfDay && (
+            <Section title="Time of day">
+              <Group options={TIME_OPTIONS} selected={filters.timeOfDay} onToggle={(k) => patch({ timeOfDay: toggle(filters.timeOfDay, k) })} />
+            </Section>
+          )}
 
           <Section title="Price">
             <Group options={PRICE_OPTIONS} selected={filters.price} onToggle={(k) => patch({ price: toggle(filters.price, k) })} />
           </Section>
 
-          <Section title="Cancellation">
-            <OptionRow checked={filters.freeCancel} onChange={() => patch({ freeCancel: !filters.freeCancel })}>
-              Free cancellation only
-            </OptionRow>
-          </Section>
+          {support.freeCancel && (
+            <Section title="Cancellation">
+              <OptionRow checked={filters.freeCancel} onChange={() => patch({ freeCancel: !filters.freeCancel })}>
+                Free cancellation only
+              </OptionRow>
+            </Section>
+          )}
           <div className="h-6" />
         </div>
 

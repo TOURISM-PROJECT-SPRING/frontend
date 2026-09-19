@@ -1,15 +1,13 @@
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
-import { longDate } from "./checkoutData";
+import { longDate, cancellationInfo } from "./checkoutData";
 
-function CancellationNote({ cutoff }) {
+function CancellationNote({ cutoff, freeCancel }) {
+  const info = cancellationInfo({ cancelCutoff: cutoff, freeCancel });
   return (
     <p className="flex items-start gap-2 text-sm font-semibold text-brand-700">
       <Icon name="refresh" size={16} className="mt-0.5 shrink-0 text-brand-600" />
-      <span>
-        Free cancellation before {cutoff}
-        <span className="block text-xs font-medium text-muted">(tour local time)</span>
-      </span>
+      <span>{info.label || info.sub}</span>
     </p>
   );
 }
@@ -29,7 +27,7 @@ export default function ActivityDetailsCard({ booking, travelerName, onEdit }) {
       <div className="mt-6 flex gap-4">
         <SmartImage src={booking.image} alt={booking.title} ratio="1 / 1" className="h-24 w-24 shrink-0 rounded-xl border border-line sm:h-28 sm:w-28" />
         <div className="min-w-0 flex-1">
-          <CancellationNote cutoff={booking.cancelCutoff} />
+          <CancellationNote cutoff={booking.cancelCutoff} freeCancel={booking.freeCancel} />
           <h3 className="mt-3 font-display text-lg font-bold leading-snug text-brand-900">{booking.title}</h3>
           {booking.subtitle && <p className="mt-0.5 text-sm font-semibold text-muted">{booking.subtitle}</p>}
           <p className="mt-2 flex items-center gap-2 text-sm text-brand-800">

@@ -37,6 +37,14 @@ export default function ActivityCard({ activity: a, index, favorite, onToggleFav
       <div className="relative aspect-[4/3] w-full overflow-hidden">
         <SmartImage src={images[idx]} alt={`${a.title} — photo ${idx + 1} of ${n}`} className="h-full w-full" imgClassName="transition-transform duration-500 group-hover:scale-[1.03]" />
 
+        {/* Category chip */}
+        {a.categoryLabel && (
+          <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-lg bg-brand-900/70 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            <Icon name="map-pin" size={13} className="text-gold-300" />
+            {a.categoryLabel}
+          </span>
+        )}
+
         {/* Favorite */}
         <button
           type="button"

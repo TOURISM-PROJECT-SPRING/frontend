@@ -21,33 +21,17 @@ import {
   normalizeRoomBooking,
   normalizeFoodOrder,
 } from "./normalizers";
-import {
-  fallbackTours,
-  fallbackHotels,
-  fallbackRestaurants,
-  fallbackDestinations,
-  fallbackFoods,
-  fallbackRooms,
-  fallbackBookings,
-} from "./fallbacks";
-import { demoExtraHotels } from "./hotels";
-import { demoRestaurants, decorateRestaurants } from "./restaurants";
 import { toNumber } from "../lib/format";
 
-// Each fetcher returns { items, source } where source is "api" or "demo".
-// We fall back to demo data when the backend is unreachable OR when it
-// responds successfully but with no content — so the site always looks
-// complete, and automatically switches to real data once the DB is seeded.
+// Each fetcher returns { items, source } where source is always "api".
+// Public pages render real backend data only — no demo fallback.
 
-async function tryApi(fn, fallback) {
+async function tryApi(fn) {
   try {
     const items = await fn();
-    if (Array.isArray(items) && items.length === 0) {
-      return { items: fallback, source: "demo" };
-    }
     return { items: items ?? [], source: "api" };
   } catch (e) {
-    return { items: fallback, source: "demo", error: e };
+    return { items: [], source: "api", error: e };
   }
 }
 
@@ -96,7 +80,7 @@ export const repository = {
         ticketPriceByPlace(),
       ]);
       return (places || []).map((t) => normalizeTourPlace(t, priceByPlace));
-    }, fallbackTours);
+    });
   },
 
   async getTour(id) {
@@ -108,7 +92,7 @@ export const repository = {
       const card = normalizeTourPlace(t, {});
       card.tickets = (tickets || []).map(normalizeTicket);
       return [card];
-    }, fallbackTours.filter((x) => String(x.id) === String(id)));
+    });
   },
 
   async getHotels() {
@@ -118,7 +102,7 @@ export const repository = {
         hotelPriceByHotel(),
       ]);
       return (hotels || []).map((h) => normalizeHotel(h, priceByHotel));
-    }, fallbackHotels);
+    });
   },
 
   async getHotel(id) {
@@ -134,19 +118,15 @@ export const repository = {
         card.priceUnit = "/night";
       }
       return [card];
-    }, [...fallbackHotels, ...demoExtraHotels].filter((x) => String(x.id) === String(id)));
-    if (res.source === "demo" && res.items[0] && !res.items[0].rooms) res.items[0].rooms = fallbackRooms;
+    });
     return res;
   },
 
   async getRestaurants() {
-    return tryApi(
-      async () => {
-        const list = await restaurantService.getAllRestaurantsWithImages();
-        return (list || []).map(normalizeRestaurant);
-      },
-      fallbackRestaurants
-    );
+    return tryApi(async () => {
+      const list = await restaurantService.getAllRestaurantsWithImages();
+      return (list || []).map(normalizeRestaurant);
+    });
   },
 
   async getRestaurant(id) {
@@ -158,42 +138,29 @@ export const repository = {
       const card = normalizeRestaurant(r);
       card.menu = (foods || []).map(normalizeFood);
       return [card];
-    }, [...fallbackRestaurants, ...decorateRestaurants(demoRestaurants)].filter((x) => String(x.id) === String(id)));
-    if (res.source === "demo" && res.items[0] && !res.items[0].menu) res.items[0].menu = fallbackFoods;
+    });
     return res;
   },
 
   async getFoodsByRestaurant(id) {
-    return tryApi(
-      async () => {
-        const foods = await foodService.getFoodsByRestaurant(id);
-        return (foods || []).map(normalizeFood);
-      },
-      fallbackFoods
-    );
+    return tryApi(async () => {
+      const foods = await foodService.getFoodsByRestaurant(id);
+      return (foods || []).map(normalizeFood);
+    });
   },
 
   async getDestinations() {
-    return tryApi(
-      async () => {
-        const list = await provinceService.getAllProvinces();
-        return (list || []).map(normalizeProvince);
-      },
-      fallbackDestinations
-    );
+    return tryApi(async () => {
+      const list = await provinceService.getAllProvinces();
+      return (list || []).map(normalizeProvince);
+    });
   },
 
   async getCategories() {
     return tryApi(async () => {
       const list = await placeCategoryService.getAllCategories();
       return (list || []).map((c) => ({ id: c.id, name: c.name }));
-    }, [
-      { id: "all", name: "All" },
-      { id: "culture", name: "Culture" },
-      { id: "nature", name: "Nature" },
-      { id: "adventure", name: "Adventure" },
-      { id: "food", name: "Food" },
-    ]);
+    });
   },
 
   // ---- Dashboard bookings: aggregate the 3 booking services ----
@@ -229,10 +196,7 @@ export const repository = {
       ...pick(orders).map(normalizeFoodOrder),
     ];
     const anyError = [tickets, rooms, orders].some((r) => r.status === "rejected");
-    if (items.length === 0) {
-      return { items: fallbackBookings, source: "demo", error: anyError ? "backend" : null };
-    }
-    return { items, source: "api" };
+    return { items, source: "api", error: anyError ? "backend" : null };
   },
 
   async getDashboardStats() {
@@ -243,7 +207,7 @@ export const repository = {
         { label: "Upcoming Trips", value: upcoming.filter((b) => b.kind === "tour").length, icon: "luggage", tone: "green" },
         { label: "Hotel Bookings", value: items.filter((b) => b.kind === "hotel").length, icon: "bed", tone: "gold" },
         { label: "Restaurant Orders", value: items.filter((b) => b.kind === "restaurant").length, icon: "utensils", tone: "green" },
-        { label: "Saved Places", value: source === "demo" ? 8 : upcoming.length, icon: "heart", tone: "gold" },
+        { label: "Saved Places", value: upcoming.length, icon: "heart", tone: "gold" },
       ],
       source,
     };
@@ -251,7 +215,7 @@ export const repository = {
 
   // ---- Same-province recommendations for a chosen tour ----
   async getRecommendationsForTour(tour) {
-    if (!tour) return { hotels: [], restaurants: [], source: "demo" };
+    if (!tour) return { hotels: [], restaurants: [], source: "api" };
     const tokens = [tour.province, tour.location]
       .filter(Boolean)
       .map((s) => String(s).toLowerCase());

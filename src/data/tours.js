@@ -308,17 +308,34 @@ export const demoTours = [
 /* ------------------------------------------------------------------ */
 
 function priceBand(p) {
+  if (p == null) return null;
   if (p < 25) return "under25";
   if (p < 50) return "25to50";
   if (p < 100) return "50to100";
   return "100plus";
 }
 
+// Backend place categories (Temple, Beach, Heritage, Nature, City, Mountain)
+// map onto our filter keys so real-data category filters keep working.
+const CATEGORY_KEYS_FROM_NAME = {
+  temple: ["temples"],
+  beach: ["nature"],
+  heritage: ["culture", "temples"],
+  nature: ["nature"],
+  city: ["culture"],
+  mountain: ["nature"],
+};
+
 export function decorateTour(a) {
   const province = a.province || "Siem Reap";
+  const namedCats = Array.isArray(a.categories) && a.categories.length
+    ? a.categories
+    : CATEGORY_KEYS_FROM_NAME[String(a.category || "").toLowerCase()] || [];
   return {
     ...a,
     province,
+    categories: namedCats,
+    categoryLabel: a.categoryLabel || a.category || null,
     priceBand: a.priceBand || priceBand(a.price),
     location: a.location || provinceLabel(province) || province,
     href: a.href || `/tours/${a.id}`,
@@ -387,7 +404,9 @@ export function sortTours(list, sortKey) {
       return arr.sort((a, b) => b.price - a.price);
     case "featured":
     default:
-      return arr.sort((a, b) => Number(b.featured) - Number(a.featured));
+      return arr.sort(
+        (a, b) => Number(b.featured) - Number(a.featured) || (b.rating || 0) - (a.rating || 0) || (b.reviews || 0) - (a.reviews || 0)
+      );
   }
 }
 

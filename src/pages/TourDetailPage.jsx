@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import Icon from "../components/ui/Icon";
 import SmartImage from "../components/ui/SmartImage";
 import Rating from "../components/ui/Rating";
-import { Skeleton, EmptyState, DemoNote } from "../components/ui/feedback";
+import { Skeleton, EmptyState } from "../components/ui/feedback";
 import { useToast } from "../components/ui/Toast";
 import { useTours } from "../hooks/useResource";
 import { useFavorites } from "../context/FavoritesContext";
@@ -14,7 +14,7 @@ import GuideInfo from "../components/explore/GuideInfo";
 export default function TourDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { items: tours, loading, source } = useTours();
+  const { items: tours, loading } = useTours();
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
   const { isAuthenticated } = useAuth();
@@ -232,7 +232,6 @@ export default function TourDetailPage() {
               </section>
             )}
 
-            {source === "demo" && <DemoNote />}
           </div>
 
           {/* Booking Sidebar */}

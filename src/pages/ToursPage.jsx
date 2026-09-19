@@ -52,6 +52,20 @@ export default function ToursPage() {
   const isFiltered = activeCount > 0;
   const countLabel = resultsCountLabel(visible.length, { filtered: isFiltered, total: decorated.length });
 
+  // Which filters are backed by real data — hide the rest so users never
+  // select options that would always return zero results.
+  const support = useMemo(() => {
+    const keys = new Set();
+    for (const a of decorated) (a.categories || []).forEach((c) => keys.add(c));
+    return {
+      categories: [...keys],
+      languages: decorated.some((a) => (a.languages || []).length > 0),
+      timeOfDay: decorated.some((a) => (a.timeOfDay || []).length > 0),
+      awards: decorated.some((a) => a.awardTier != null),
+      freeCancel: decorated.some((a) => a.freeCancel),
+    };
+  }, [decorated]);
+
   const patch = (p) => setFilters((f) => ({ ...f, ...p }));
   const clearAll = () => setFilters({ ...emptyFilters(), location: "" });
 
@@ -81,7 +95,7 @@ export default function ToursPage() {
       {/* Sticky filter bar */}
       <div className="sticky top-[72px] z-30 border-b border-line bg-white/90 backdrop-blur-md">
         <div className={`${CONTAINER} py-3`}>
-          <FilterBar filters={filters} onPatch={patch} onOpenAllFilters={() => setDrawerOpen(true)} locationOptions={locationOptions} />
+          <FilterBar filters={filters} onPatch={patch} onOpenAllFilters={() => setDrawerOpen(true)} locationOptions={locationOptions} support={support} />
         </div>
       </div>
 
@@ -145,6 +159,7 @@ export default function ToursPage() {
         filters={filters}
         onPatch={patch}
         resultCount={visible.length}
+        support={support}
       />
       <FloatingTripCart />
     </div>

@@ -28,7 +28,7 @@ function CheckGroup({ options, selected, onToggle }) {
   );
 }
 
-export default function FilterBar({ filters, onPatch, onOpenAllFilters, locationOptions }) {
+export default function FilterBar({ filters, onPatch, onOpenAllFilters, locationOptions, support = {} }) {
   const patch = (p) => onPatch(p);
   const opts = locationOptions?.length ? locationOptions : getLocationOptions();
   const locLabel = opts.find((o) => o.key === filters.location)?.label || "All Cambodia";
@@ -105,32 +105,37 @@ export default function FilterBar({ filters, onPatch, onOpenAllFilters, location
         </div>
       </Dropdown>
 
-      {/* Awards */}
-      <Dropdown label="Awards" icon={null} count={filters.awards.length} active={filters.awards.length > 0}>
-        <CheckGroup
-          options={AWARD_OPTIONS}
-          selected={filters.awards}
-          onToggle={(k) => patch({ awards: toggle(filters.awards, k) })}
-        />
-      </Dropdown>
+      {support.awards && (
+        <Dropdown label="Awards" icon={null} count={filters.awards.length} active={filters.awards.length > 0}>
+          <CheckGroup
+            options={AWARD_OPTIONS}
+            selected={filters.awards}
+            onToggle={(k) => patch({ awards: toggle(filters.awards, k) })}
+          />
+        </Dropdown>
+      )}
 
       {/* Languages */}
-      <Dropdown label="Languages" icon={null} count={filters.languages.length} active={filters.languages.length > 0}>
-        <CheckGroup
-          options={LANGUAGE_OPTIONS}
-          selected={filters.languages}
-          onToggle={(k) => patch({ languages: toggle(filters.languages, k) })}
-        />
-      </Dropdown>
+      {support.languages && (
+        <Dropdown label="Languages" icon={null} count={filters.languages.length} active={filters.languages.length > 0}>
+          <CheckGroup
+            options={LANGUAGE_OPTIONS}
+            selected={filters.languages}
+            onToggle={(k) => patch({ languages: toggle(filters.languages, k) })}
+          />
+        </Dropdown>
+      )}
 
       {/* Time of Day */}
-      <Dropdown label="Time of Day" icon={null} count={filters.timeOfDay.length} active={filters.timeOfDay.length > 0}>
-        <CheckGroup
-          options={TIME_OPTIONS}
-          selected={filters.timeOfDay}
-          onToggle={(k) => patch({ timeOfDay: toggle(filters.timeOfDay, k) })}
-        />
-      </Dropdown>
+      {support.timeOfDay && (
+        <Dropdown label="Time of Day" icon={null} count={filters.timeOfDay.length} active={filters.timeOfDay.length > 0}>
+          <CheckGroup
+            options={TIME_OPTIONS}
+            selected={filters.timeOfDay}
+            onToggle={(k) => patch({ timeOfDay: toggle(filters.timeOfDay, k) })}
+          />
+        </Dropdown>
+      )}
 
       {/* Price */}
       <Dropdown label="Price" icon={null} count={filters.price.length} active={filters.price.length > 0}>
@@ -141,13 +146,13 @@ export default function FilterBar({ filters, onPatch, onOpenAllFilters, location
         />
       </Dropdown>
 
-      {/* All filters — blue outline */}
+      {/* All filters */}
       <button
         type="button"
         onClick={onOpenAllFilters}
-        className="inline-flex h-[52px] shrink-0 items-center gap-2 rounded-full border-2 border-[#3438FF] bg-white px-5 text-[15px] font-semibold text-brand-900 transition-colors hover:bg-[#3438FF]/5"
+        className="inline-flex h-[52px] shrink-0 items-center gap-2 rounded-full border-2 border-brand-700 bg-white px-5 text-[15px] font-semibold text-brand-900 transition-colors hover:bg-brand-50"
       >
-        <Icon name="sliders-horizontal" size={18} className="text-[#3438FF]" />
+        <Icon name="sliders-horizontal" size={18} className="text-brand-700" />
         All filters
       </button>
     </div>

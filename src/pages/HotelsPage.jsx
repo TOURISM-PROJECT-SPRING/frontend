@@ -6,7 +6,6 @@ import { useToast } from "../components/ui/Toast";
 import { useHotels, useDestinations } from "../hooks/useResource";
 import {
   decorateHotels,
-  demoExtraHotels,
   applyHotelFilters,
   sortHotels,
   emptyFilters,
@@ -45,12 +44,10 @@ export default function HotelsPage() {
 
   const patch = (p) => setFilters((f) => ({ ...f, ...p }));
 
-  // In demo mode we append curated extra stays so the marketplace feels alive;
-  // with a seeded backend this is skipped and real data rules.
+  // Real backend data only.
   const decorated = useMemo(() => {
-    const extra = hotels.source === "api" ? [] : demoExtraHotels;
-    return decorateHotels([...hotels.items, ...extra]);
-  }, [hotels.items, hotels.source]);
+    return decorateHotels(hotels.items);
+  }, [hotels.items]);
 
   const visible = useMemo(
     () => sortHotels(applyHotelFilters(decorated, filters), sort),

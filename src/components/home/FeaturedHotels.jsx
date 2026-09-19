@@ -2,13 +2,13 @@ import { Link } from "react-router-dom";
 import SectionHeading from "./SectionHeading";
 import Icon from "../ui/Icon";
 import HotelCard from "../explore/HotelCard";
-import { CardGridSkeleton, DemoNote } from "../ui/feedback";
+import { CardGridSkeleton } from "../ui/feedback";
 import { useHotels } from "../../hooks/useResource";
 import { useFavorites } from "../../context/FavoritesContext";
 import { useToast } from "../ui/Toast";
 
 export default function FeaturedHotels() {
-  const { items, loading, source } = useHotels();
+  const { items, loading } = useHotels();
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
   const featured = items.slice(0, 4);
@@ -48,7 +48,6 @@ action={
                 <HotelCard key={h.id} hotel={h} favorite={isSaved("hotel", h.id)} onFavorite={onFavorite} />
               ))}
             </div>
-            {source === "demo" && <div className="mt-6"><DemoNote /></div>}
           </>
         )}
       </div>

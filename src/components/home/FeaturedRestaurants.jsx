@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 import SectionHeading from "./SectionHeading";
 import Icon from "../ui/Icon";
 import ListingCard from "../cards/ListingCard";
-import { CardGridSkeleton, DemoNote } from "../ui/feedback";
+import { CardGridSkeleton } from "../ui/feedback";
 import { useRestaurants } from "../../hooks/useResource";
 
 export default function FeaturedRestaurants() {
-  const { items, loading, source } = useRestaurants();
+  const { items, loading } = useRestaurants();
   const featured = items.slice(0, 4);
 
   return (
@@ -31,7 +31,6 @@ export default function FeaturedRestaurants() {
               <ListingCard key={r.id} item={r} />
             ))}
           </div>
-          {source === "demo" && <div className="mt-6"><DemoNote /></div>}
         </>
       )}
     </section>

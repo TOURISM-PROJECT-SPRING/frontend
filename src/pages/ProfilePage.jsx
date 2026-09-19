@@ -32,7 +32,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, isDemo, logout } = useAuth();
   const toast = useToast();
-  const { items: bookings, source } = useBookings();
+  const { items: bookings, loading } = useBookings();
 
   const [tab, setTab] = useState("profile");
   const [confirming, setConfirming] = useState(false);
@@ -205,7 +205,7 @@ export default function ProfilePage() {
                   <span className="text-xs font-semibold uppercase tracking-wider">Total Trips</span>
                   <Icon name="luggage" size={16} />
                 </div>
-                <p className="mt-2 font-display text-2xl font-black text-white">{stats.total}</p>
+                {loading ? <div className="mt-2 h-8 w-14 animate-pulse rounded-lg bg-white/20" /> : <p className="mt-2 font-display text-2xl font-black text-white">{stats.total}</p>}
                 <span className="text-[11px] text-emerald-300/80">Tours, hotels &amp; dining</span>
               </div>
 
@@ -214,7 +214,7 @@ export default function ProfilePage() {
                   <span className="text-xs font-semibold uppercase tracking-wider">Upcoming</span>
                   <Icon name="calendar" size={16} />
                 </div>
-                <p className="mt-2 font-display text-2xl font-black text-gold-300">{stats.upcoming}</p>
+                {loading ? <div className="mt-2 h-8 w-14 animate-pulse rounded-lg bg-white/20" /> : <p className="mt-2 font-display text-2xl font-black text-gold-300">{stats.upcoming}</p>}
                 <span className="text-[11px] text-emerald-300/80">Ready for departure</span>
               </div>
 
@@ -223,7 +223,7 @@ export default function ProfilePage() {
                   <span className="text-xs font-semibold uppercase tracking-wider">Explorer Points</span>
                   <Icon name="award" size={16} />
                 </div>
-                <p className="mt-2 font-display text-2xl font-black text-white">{stats.points}</p>
+                {loading ? <div className="mt-2 h-8 w-14 animate-pulse rounded-lg bg-white/20" /> : <p className="mt-2 font-display text-2xl font-black text-white">{stats.points}</p>}
                 <span className="text-[11px] text-emerald-300/80">Tier reward balance</span>
               </div>
 
@@ -232,7 +232,7 @@ export default function ProfilePage() {
                   <span className="text-xs font-semibold uppercase tracking-wider">Total Spent</span>
                   <Icon name="trending-up" size={16} />
                 </div>
-                <p className="mt-2 font-display text-2xl font-black text-white">${stats.spent.toFixed(2)}</p>
+                {loading ? <div className="mt-2 h-8 w-14 animate-pulse rounded-lg bg-white/20" /> : <p className="mt-2 font-display text-2xl font-black text-white">${stats.spent.toFixed(2)}</p>}
                 <span className="text-[11px] text-emerald-300/80">Confirmed bookings</span>
               </div>
             </div>
@@ -570,7 +570,25 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {filteredTrips.length ? (
+                {loading ? (
+                  <div className="space-y-3.5">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse rounded-3xl border border-line bg-white p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="h-4 w-1/3 rounded-lg bg-brand-100" />
+                            <div className="mt-2 h-3 w-1/2 rounded-lg bg-brand-100/70" />
+                            <div className="mt-3 flex gap-2">
+                              <div className="h-5 w-16 rounded-full bg-brand-100/70" />
+                              <div className="h-5 w-20 rounded-full bg-brand-100/70" />
+                            </div>
+                          </div>
+                          <div className="h-4 w-24 rounded-lg bg-brand-100" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredTrips.length ? (
                   <div className="space-y-3.5">
                     {filteredTrips.map((b) => (
                       <TripCard key={b.key || b.id} trip={b} onSelect={setSelectedTrip} />

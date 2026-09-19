@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../components/ui/Icon";
 import Logo from "../components/ui/Logo";
 import Button from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
+import { EmptyState } from "../components/ui/feedback";
 import { useToast } from "../components/ui/Toast";
 import { useAuth } from "../context/AuthContext";
 import ContactDetailsCard from "../components/checkout/ContactDetailsCard";
 import ActivityDetailsCard from "../components/checkout/ActivityDetailsCard";
 import PaymentDetailsCard from "../components/checkout/PaymentDetailsCard";
 import BookingSummary from "../components/checkout/BookingSummary";
-import { MOCK_BOOKING, isValidEmail, cardNumberValid, expiryValid, cvcValid, bookingReference, longDate } from "../components/checkout/checkoutData";
+import { isValidEmail, cardNumberValid, expiryValid, cvcValid, bookingReference, longDate } from "../components/checkout/checkoutData";
 import { ticketBookingService } from "../services/ticketBookingService";
 import { roomBookingService } from "../services/roomBookingService";
 import { paymentService } from "../services/paymentService";
@@ -29,7 +30,10 @@ export default function CheckoutPage() {
   const toast = useToast();
   const { user, userId } = useAuth();
 
-  const [booking, setBooking] = useState(() => ({ ...MOCK_BOOKING, ...(location.state || {}) }));
+  // Booking arrives via navigation state from a detail page (tours, hotels,
+  // restaurants). When /checkout is opened directly there is nothing to book —
+  // we show a friendly prompt instead of a fake "mock" booking.
+  const [booking, setBooking] = useState(() => location.state || null);
 
   const [contact, setContact] = useState(() => {
     const { firstName, lastName } = splitName(user?.fullname || user?.username || "");
@@ -47,7 +51,7 @@ export default function CheckoutPage() {
 
   const [confirmed, setConfirmed] = useState(null); // { reference }
   const [changeOpen, setChangeOpen] = useState(false);
-  const [changeForm, setChangeForm] = useState(() => ({ date: booking.date, time: booking.time, guests: booking.guests }));
+  const [changeForm, setChangeForm] = useState(() => ({ date: booking?.date ?? "", time: booking?.time ?? "9:00 AM", guests: booking?.guests ?? 2 }));
 
   // Countdown hold timer.
   const [seconds, setSeconds] = useState(HOLD_SECONDS);
@@ -59,23 +63,23 @@ export default function CheckoutPage() {
   }, [seconds]);
 
   const money = useMemo(() => {
-    const unit = Number(booking.price) || 0;
-    const subtotal = unit * (Number(booking.guests) || 1);
+    const unit = Number(booking?.price) || 0;
+    const subtotal = unit * (Number(booking?.guests) || 1);
     const discount = promo.applied ? Math.round(subtotal * 0.1 * 100) / 100 : 0;
     const total = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
     return {
       unit, subtotal, discount, total,
       usd: (n) => `$${(Number(n) || 0).toFixed(2)}`,
     };
-  }, [booking.price, booking.guests, promo.applied]);
+  }, [booking?.price, booking?.guests, promo.applied]);
 
   // Charge date for "Reserve now, pay later" = day before the tour.
   const chargeDateLabel = useMemo(() => {
-    const d = new Date(`${booking.date}T00:00:00`);
+    const d = new Date(`${booking?.date || ""}T00:00:00`);
     if (Number.isNaN(d.getTime())) return "the tour date";
     d.setDate(d.getDate() - 2);
     return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  }, [booking.date]);
+  }, [booking?.date]);
 
   const travelerName = `${contact.firstName} ${contact.lastName}`.trim();
 
@@ -179,45 +183,58 @@ export default function CheckoutPage() {
       </header>
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <div className="mb-6">
-          <h1 className="font-display text-3xl font-bold tracking-tight text-brand-800 sm:text-4xl">Complete your booking</h1>
-          <p className="mt-1 text-sm text-muted">Review your details and confirm — it only takes a minute.</p>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-          {/* Steps */}
-          <div className="order-2 space-y-6 lg:order-1">
-            <ContactDetailsCard contact={contact} onSave={setContact} />
-            <ActivityDetailsCard booking={booking} travelerName={travelerName} onEdit={() => setChangeOpen(true)} />
-            <PaymentDetailsCard
-              money={money}
-              payTiming={payTiming} setPayTiming={setPayTiming}
-              payMethod={payMethod} setPayMethod={setPayMethod}
-              card={card} setCard={setCard}
-              country={country} setCountry={setCountry}
-              saveInfo={saveInfo} setSaveInfo={setSaveInfo}
-              errors={errors} submitting={submitting} onBook={onBook}
-              chargeDateLabel={chargeDateLabel}
-              cancelCutoff={booking.cancelCutoff}
+        {!booking ? (
+          <div className="grid min-h-[55vh] place-items-center">
+            <EmptyState
+              icon="luggage"
+              title="No booking selected"
+              message="Choose an activity, tour or hotel to book it here. Your selection will show up on this page automatically."
+              action={<Link to="/tour" className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-brand-700 px-6 font-display text-sm font-bold text-white transition-colors hover:bg-brand-800">Explore things to do</Link>}
             />
           </div>
-
-          {/* Sticky summary */}
-          <aside className="order-1 lg:order-2">
-            <div className="lg:sticky lg:top-6">
-              <BookingSummary
-                booking={booking}
-                money={money}
-                promo={promo}
-                onApplyPromo={applyPromo}
-                onRemovePromo={removePromo}
-                onOpenChange={() => setChangeOpen(true)}
-                seconds={seconds}
-                expired={expired}
-              />
+        ) : (
+          <>
+            <div className="mb-6">
+              <h1 className="font-display text-3xl font-bold tracking-tight text-brand-800 sm:text-4xl">Complete your booking</h1>
+              <p className="mt-1 text-sm text-muted">Review your details and confirm — it only takes a minute.</p>
             </div>
-          </aside>
-        </div>
+
+            <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+              {/* Steps */}
+              <div className="order-2 space-y-6 lg:order-1">
+                <ContactDetailsCard contact={contact} onSave={setContact} />
+                <ActivityDetailsCard booking={booking} travelerName={travelerName} onEdit={() => setChangeOpen(true)} />
+                <PaymentDetailsCard
+                  money={money}
+                  payTiming={payTiming} setPayTiming={setPayTiming}
+                  payMethod={payMethod} setPayMethod={setPayMethod}
+                  card={card} setCard={setCard}
+                  country={country} setCountry={setCountry}
+                  saveInfo={saveInfo} setSaveInfo={setSaveInfo}
+                  errors={errors} submitting={submitting} onBook={onBook}
+                  chargeDateLabel={chargeDateLabel}
+                  cancelCutoff={booking.cancelCutoff}
+                />
+              </div>
+
+              {/* Sticky summary */}
+              <aside className="order-1 lg:order-2">
+                <div className="lg:sticky lg:top-6">
+                  <BookingSummary
+                    booking={booking}
+                    money={money}
+                    promo={promo}
+                    onApplyPromo={applyPromo}
+                    onRemovePromo={removePromo}
+                    onOpenChange={() => setChangeOpen(true)}
+                    seconds={seconds}
+                    expired={expired}
+                  />
+                </div>
+              </aside>
+            </div>
+          </>
+        )}
       </main>
 
       <footer className="border-t border-line bg-white py-6">
