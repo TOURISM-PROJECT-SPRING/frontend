@@ -10,6 +10,7 @@ import { Modal } from "../components/ui/Modal";
 import SmartImage from "../components/ui/SmartImage";
 import StatusBadge from "../components/manager/StatusBadge";
 import { money } from "../lib/format";
+import authService from "../services/authService";
 
 const TABS = [
   { key: "profile", label: "Profile Details", icon: "user", badge: "Verified" },
@@ -30,7 +31,7 @@ function initials(name) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, isDemo, logout } = useAuth();
+  const { user, isDemo, logout, updateUser } = useAuth();
   const toast = useToast();
   const { items: bookings, loading } = useBookings();
 
@@ -44,13 +45,15 @@ export default function ProfilePage() {
     fullname: user?.fullname || "Sokha Dara",
     username: user?.username || "sokhadara",
     email: user?.email || "sokha.dara@example.com",
-    phone: user?.phone || "+855 12 345 678",
+    phone: user?.phone || "",
+    address: user?.address || "",
     city: "Phnom Penh",
     country: "Cambodia",
     bio: "Passionate traveler exploring the heritage of Angkor, eco-resorts in Koh Rong, and local culinary culture.",
     language: "English (US)",
     currency: "USD ($)",
   });
+  const [editing, setEditing] = useState(false);
 
   const [preferences, setPreferences] = useState({
     dietary: "Vegetarian Friendly",
@@ -96,18 +99,34 @@ export default function ProfilePage() {
     return bookings;
   }, [bookings, tripFilter]);
 
-  const saveAccount = () => {
+  const saveAccount = async () => {
     if (!form.fullname.trim() || !form.email.trim()) {
       toast.error("Full name and email are required.");
       return;
     }
     try {
-      const stored = localStorage.getItem("sdn.user");
-      const parsed = stored ? JSON.parse(stored) : {};
-      const updated = { ...parsed, fullname: form.fullname, email: form.email, phone: form.phone, username: form.username };
-      localStorage.setItem("sdn.user", JSON.stringify(updated));
+      const patch = {
+        fullname: form.fullname.trim(),
+        email: form.email.trim(),
+        phone: form.phone?.trim() || "",
+        address: form.address?.trim() || "",
+      };
+      if (!isDemo) {
+        const data = await authService.updateProfile(patch);
+        if (data?.user) updateUser(data.user);
+      } else {
+        const stored = localStorage.getItem("sdn.user");
+        const parsed = stored ? JSON.parse(stored) : {};
+        localStorage.setItem(
+          "sdn.user",
+          JSON.stringify({ ...parsed, ...patch, username: form.username })
+        );
+        updateUser({ ...patch, username: form.username });
+      }
+      setEditing(false);
     } catch {
-      // ignore
+      toast.error("Could not save your profile. Please try again.");
+      return;
     }
     toast.success("Profile & account information updated successfully.");
   };
@@ -397,23 +416,81 @@ export default function ProfilePage() {
                       <h2 className="font-display text-lg font-bold text-brand-900">Personal Information</h2>
                       <p className="text-xs text-muted">Essential details used for booking tickets, hotel check-ins, and tour pickups.</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setTab("account")}
-                      className="flex items-center gap-1.5 text-xs font-bold text-brand-700 underline underline-offset-4 hover:text-brand-900"
-                    >
-                      <Icon name="pencil" size={14} />
-                      <span>Edit</span>
-                    </button>
+                    {editing ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditing(false)}
+                          className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-bold text-muted transition-colors hover:bg-canvas"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={saveAccount}
+                          className="flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-800"
+                        >
+                          <Icon name="check" size={14} className="text-gold-400" />
+                          <span>Save</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setEditing(true)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-brand-700 underline underline-offset-4 hover:text-brand-900"
+                      >
+                        <Icon name="pencil" size={14} />
+                        <span>Edit</span>
+                      </button>
+                    )}
                   </div>
 
+                  {editing ? (
+                    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {[
+                        { key: "fullname", label: "Full Legal Name", icon: "user" },
+                        { key: "email", label: "Email Address", icon: "mail", type: "email" },
+                        { key: "phone", label: "Phone Number", icon: "phone", type: "tel" },
+                        { key: "city", label: "City", icon: "map-pin" },
+                        { key: "country", label: "Country", icon: "map-pin" },
+                      ].map((field) => (
+                        <label key={field.key} className="block">
+                          <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-800">
+                            <Icon name={field.icon} size={13} className="text-brand-600" />
+                            {field.label}
+                          </span>
+                          <input
+                            type={field.type || "text"}
+                            value={form[field.key]}
+                            onChange={setFormField(field.key)}
+                            className="h-11 w-full rounded-xl border border-line bg-canvas/60 px-4 text-sm font-semibold text-ink outline-none transition-all focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/15"
+                          />
+                        </label>
+                      ))}
+                      <label className="block sm:col-span-2">
+                        <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-800">
+                          <Icon name="map-pin" size={13} className="text-brand-600" />
+                          Mailing Address
+                        </span>
+                        <input
+                          type="text"
+                          value={form.address}
+                          onChange={setFormField("address")}
+                          placeholder="St. 51, Sangkat Boeung Keng Kang I, Phnom Penh, Cambodia"
+                          className="h-11 w-full rounded-xl border border-line bg-canvas/60 px-4 text-sm font-semibold text-ink outline-none transition-all focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/15"
+                        />
+                      </label>
+                    </div>
+                  ) : (
                   <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {[
                       { label: "Full Legal Name", value: form.fullname, icon: "user" },
                       { label: "Email Address", value: form.email, icon: "mail" },
-                      { label: "Phone Number", value: form.phone, icon: "phone" },
+                      { label: "Phone Number", value: form.phone || "Not provided", icon: "phone" },
                       { label: "Username Handle", value: `@${form.username}`, icon: "at-sign" },
                       { label: "City & Country", value: `${form.city}, ${form.country}`, icon: "map-pin" },
+                      { label: "Mailing Address", value: form.address || "Not provided", icon: "map-pin" },
                       { label: "Preferred Language", value: form.language, icon: "globe" },
                       { label: "Preferred Currency", value: form.currency, icon: "credit-card" },
                       { label: "Member Since", value: "September 2025", icon: "calendar" },
@@ -430,6 +507,7 @@ export default function ProfilePage() {
                       </div>
                     ))}
                   </dl>
+                  )}
 
                   {/* Bio statement */}
                   <div className="mt-6 rounded-xl border border-line/70 bg-canvas/40 p-4">
@@ -709,6 +787,19 @@ export default function ProfilePage() {
                         type="text"
                         value={form.country}
                         onChange={setFormField("country")}
+                        className="h-12 w-full rounded-xl border border-line bg-canvas/60 px-4 text-sm font-semibold text-ink outline-none transition-all focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/15"
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-brand-800">
+                        Mailing Address
+                      </span>
+                      <input
+                        type="text"
+                        value={form.address}
+                        onChange={setFormField("address")}
+                        placeholder="St. 51, Sangkat Boeung Keng Kang I, Phnom Penh, Cambodia"
                         className="h-12 w-full rounded-xl border border-line bg-canvas/60 px-4 text-sm font-semibold text-ink outline-none transition-all focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/15"
                       />
                     </label>

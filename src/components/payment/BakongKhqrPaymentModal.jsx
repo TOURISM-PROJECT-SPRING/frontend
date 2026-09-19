@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import Icon from "../ui/Icon";
 import { bakongService } from "../../services/bakongService";
 
 /**
- * Production-ready Bakong KHQR Payment Modal for Cambodia National Bank (NBC) standard.
+ * Bakong KHQR Payment Modal — clean premium card style matching the
+ * SovannDomNour design system (brand tokens + dark mode).
  *
  * @param {Object} props
  * @param {boolean} props.isOpen - Controls modal visibility
@@ -136,7 +138,6 @@ export default function BakongKhqrPaymentModal({
   useEffect(() => {
     if (status !== "SCANNING") return;
 
-    // Countdown interval (1s)
     countdownTimerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -148,7 +149,6 @@ export default function BakongKhqrPaymentModal({
       });
     }, 1000);
 
-    // Bakong Status Polling interval (3s)
     pollTimerRef.current = setInterval(() => {
       pollStatus();
     }, 3000);
@@ -204,150 +204,148 @@ export default function BakongKhqrPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md bg-white dark:bg-[#13241c] rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-line transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-line bg-white shadow-2xl shadow-ink/10 dark:bg-card">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-20 grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white hover:bg-white/30 transition"
+          className="absolute right-3.5 top-3.5 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           aria-label={t("khqr.cancel")}
         >
-          ✕
+          <Icon name="x" size={17} />
         </button>
 
-        {/* Authentic Red KHQR Header Banner */}
-        <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 px-6 py-4 text-white text-center relative overflow-hidden shadow-md">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <span className="font-black tracking-wider text-xl bg-white text-red-600 px-2 py-0.5 rounded font-mono shadow-sm">
-              {t("khqr.khqr")}
-            </span>
-            <span className="text-xs font-semibold tracking-wide uppercase opacity-90">
-              {t("khqr.bakongPayment")}
-            </span>
-          </div>
-          <p className="text-[11px] text-red-100 font-medium">{t("khqr.nbc")}</p>
+        {/* Brand-green header */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-brand-800 via-brand-700 to-brand-600 px-6 py-6 text-center text-white">
+          <div className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-white/5" />
+          <span className="relative inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest">
+            <Icon name="shield-check" size={13} />
+            {t("khqr.khqr")} · {t("khqr.bakongPayment")}
+          </span>
+          <h3 className="relative mt-3 font-display text-2xl font-bold tracking-tight">
+            {qrData?.merchantName || "SovannDomNour Tourism"}
+          </h3>
+          <p className="relative mt-0.5 text-xs text-white/75">{t("khqr.nbc")}</p>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6">
+        <div className="p-6 sm:p-7">
           {/* ================= STATE 1: GENERATING ================= */}
           {status === "GENERATING" && (
-            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="relative h-14 w-14">
-                <div className="absolute inset-0 rounded-full border-4 border-red-200 animate-ping opacity-75" />
-                <div className="h-14 w-14 rounded-full border-4 border-red-600 border-t-transparent animate-spin" />
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="relative h-16 w-16">
+                <div className="absolute inset-0 animate-ping rounded-full border-4 border-brand-200 opacity-60" />
+                <div className="h-16 w-16 animate-spin rounded-full border-4 border-brand-700 border-t-transparent" />
               </div>
-              <div>
-                <h3 className="font-bold text-slate-800 text-base">{t("khqr.generating")}</h3>
-                <p className="text-xs text-slate-500 mt-1">{t("khqr.connecting")}</p>
+              <div className="mt-5">
+                <h4 className="font-display text-lg font-bold text-ink">{t("khqr.generating")}</h4>
+                <p className="mt-1 text-sm text-muted">{t("khqr.connecting")}</p>
               </div>
             </div>
           )}
 
           {/* ================= STATE 2: SCANNING (ACTIVE) ================= */}
           {status === "SCANNING" && qrData && (
-            <div className="flex flex-col items-center text-center space-y-4">
-              {/* Merchant & Price Info */}
-              <div className="w-full pb-3 border-b border-slate-100">
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  {qrData.merchantName || "SovannDomNour Tourism"}
-                </span>
-                <div className="text-3xl font-extrabold text-slate-900 mt-0.5 font-mono">
-                  {formatAmount(qrData.amount, qrData.currency)}
-                </div>
-                {description && (
-                  <p className="text-xs text-slate-500 truncate max-w-xs mx-auto mt-0.5">
-                    {description}
-                  </p>
-                )}
+            <div className="flex flex-col items-center text-center">
+              {/* Price */}
+              <span className="text-xs font-bold uppercase tracking-widest text-muted">
+                {t("khqr.amountPaid")}
+              </span>
+              <div className="mt-1 font-mono text-5xl font-extrabold tracking-tight text-brand-800 dark:text-white">
+                {formatAmount(qrData.amount, qrData.currency)}
               </div>
+              {description && (
+                <p className="mt-1.5 mb-4 max-w-xs truncate text-sm text-muted">{description}</p>
+              )}
 
-              {/* High-Resolution QR Display Box */}
-              <div className="relative p-3 bg-white rounded-xl border-2 border-slate-100 shadow-sm">
+              {/* QR Display */}
+              <div className="relative mt-1 rounded-2xl border border-line bg-white p-3 shadow-lg shadow-brand-900/5">
                 {qrData.qrImage ? (
                   <img
                     src={qrData.qrImage}
                     alt="Bakong KHQR"
-                    className="w-56 h-56 object-contain rounded-lg"
+                    className="h-60 w-60 rounded-xl object-contain"
                   />
                 ) : (
-                  <div className="w-56 h-56 flex items-center justify-center bg-slate-50 text-xs text-slate-400">
+                  <div className="flex h-60 w-60 items-center justify-center rounded-xl bg-canvas text-sm text-muted">
                     QR Code Loading...
                   </div>
                 )}
-
-                {/* Center Bakong KHQR Badge */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 py-1 rounded shadow-md border border-red-200">
-                  <span className="text-red-600 font-bold font-mono text-xs tracking-wider">KHQR</span>
+                <div className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-lg border border-line bg-white px-2 py-0.5 shadow-md">
+                  <span className="font-mono text-xs font-black tracking-wider text-red-600">
+                    KHQR
+                  </span>
                 </div>
               </div>
 
-              {/* Countdown Timer & Polling Indicator */}
-              <div className="w-full flex items-center justify-between px-2 text-xs">
-                <div className="flex items-center gap-2">
+              {/* Countdown & polling */}
+              <div className="mt-4 flex w-full items-center justify-between rounded-2xl border border-line bg-canvas px-4 py-3">
+                <div className="flex items-center gap-2.5">
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
                   </span>
-                  <span className="text-slate-600 font-medium">{t("khqr.listening")}</span>
+                  <span className="text-sm font-semibold text-ink">{t("khqr.listening")}</span>
                 </div>
-
                 <div
-                  className={`font-mono font-bold px-2 py-0.5 rounded-full ${
+                  className={`flex items-center gap-1 rounded-full px-3 py-1 font-mono text-sm font-bold ${
                     timeLeft <= 60
-                      ? "bg-red-50 text-red-600 animate-pulse"
+                      ? "animate-pulse bg-red-50 text-red-600"
                       : timeLeft <= 120
-                      ? "bg-amber-50 text-amber-600"
-                      : "bg-slate-100 text-slate-700"
+                      ? "bg-gold-100 text-gold-700"
+                      : "bg-brand-50 text-brand-700"
                   }`}
                 >
-                  ⏱ {formatTime(timeLeft)}
+                  <Icon name="clock" size={14} />
+                  {formatTime(timeLeft)}
                 </div>
               </div>
 
-              {/* Supported Banking Apps Banner */}
-              <div className="w-full bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
-                <p className="text-[11px] font-semibold text-slate-600">{t("khqr.scanning")}</p>
-                <div className="mt-1.5 flex items-center justify-center gap-1.5 flex-wrap text-[10px] font-bold text-slate-500">
-                  <span className="px-1.5 py-0.5 rounded bg-white shadow-xs border border-slate-200 text-red-600">
-                    Bakong
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-white shadow-xs border border-slate-200 text-blue-800">
-                    ABA Mobile
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-white shadow-xs border border-slate-200 text-blue-600">
-                    Acleda
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-white shadow-xs border border-slate-200 text-emerald-600">
-                    Wing
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-white shadow-xs border border-slate-200 text-orange-600">
-                    Canadia
-                  </span>
+              {/* Supported banking apps */}
+              <div className="mt-3 w-full text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  {t("khqr.scanning")}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                  {["Bakong", "ABA Mobile", "Acleda", "Wing", "Canadia"].map((bank, i) => (
+                    <span
+                      key={bank}
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                        i === 0
+                          ? "border-red-200 bg-red-50 text-red-600"
+                          : "border-line bg-card text-muted"
+                      }`}
+                    >
+                      {bank}
+                    </span>
+                  ))}
                 </div>
               </div>
 
               {/* MD5 Reference & Copy */}
-              <div className="w-full flex items-center justify-between text-[11px] text-slate-400 px-1 pt-1 font-mono">
-                <span className="truncate max-w-[200px]" title={qrData.md5}>
+              <div className="mt-3 flex w-full items-center justify-between rounded-xl border border-line px-3.5 py-2.5 font-mono text-[11px] text-muted">
+                <span className="max-w-[220px] truncate" title={qrData.md5}>
                   MD5: {qrData.md5?.substring(0, 16)}...
                 </span>
                 <button
                   onClick={handleCopyMd5}
-                  className="text-slate-600 hover:text-slate-900 underline ml-2"
+                  className="ml-2 inline-flex items-center gap-1 font-sans font-semibold text-brand-700 transition hover:text-brand-900"
                 >
+                  <Icon name="copy" size={12} />
                   {copied ? t("khqr.copied") : t("khqr.copyMd5")}
                 </button>
               </div>
 
               {/* Sandbox Dev Simulation Button */}
-              <div className="w-full pt-2">
+              <div className="mt-3 w-full">
                 <button
                   onClick={handleSimulatePayment}
                   disabled={isSimulating}
-                  className="w-full py-2 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition flex items-center justify-center gap-1.5"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gold-400 bg-gold-50 py-2.5 text-xs font-bold text-gold-700 transition hover:bg-gold-100 disabled:opacity-60"
                   title="Simulate payment confirmation for testing without scanning real bank money"
                 >
+                  <span className="text-sm leading-none">⚡</span>
                   {isSimulating ? t("khqr.simulating") : t("khqr.simulate")}
                 </button>
               </div>
@@ -356,42 +354,41 @@ export default function BakongKhqrPaymentModal({
 
           {/* ================= STATE 3: SUCCESS ================= */}
           {status === "SUCCESS" && (
-            <div className="py-6 flex flex-col items-center text-center space-y-4 animate-scale-in">
-              <div className="h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl shadow-inner animate-bounce">
-                ✓
+            <div className="flex flex-col items-center py-6 text-center">
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+                <Icon name="check-circle" size={36} />
+              </span>
+
+              <div className="mt-4">
+                <h3 className="font-display text-2xl font-bold text-ink">{t("khqr.successTitle")}</h3>
+                <p className="mt-1 text-sm text-muted">{t("khqr.successSubtitle")}</p>
               </div>
 
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900">{t("khqr.successTitle")}</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  {t("khqr.successSubtitle")}
-                </p>
-              </div>
-
-              <div className="w-full bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-2 text-xs text-left">
+              <div className="mt-5 w-full space-y-2.5 rounded-2xl border border-line bg-canvas p-5 text-left text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">{t("khqr.amountPaid")}</span>
-                  <span className="font-bold text-slate-800 font-mono">
+                  <span className="text-muted">{t("khqr.amountPaid")}</span>
+                  <span className="font-mono font-bold text-ink">
                     {formatAmount(amount, currency)}
                   </span>
                 </div>
                 {successData?.transactionId && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500">{t("khqr.transactionRef")}</span>
-                    <span className="font-mono text-slate-700 truncate max-w-[180px]">
+                    <span className="text-muted">{t("khqr.transactionRef")}</span>
+                    <span className="max-w-[190px] truncate font-mono text-ink">
                       {successData.transactionId}
                     </span>
                   </div>
                 )}
                 {bookingId && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500">{t("khqr.bookingRef")}</span>
-                    <span className="font-bold text-emerald-600 font-mono">#{bookingId}</span>
+                    <span className="text-muted">{t("khqr.bookingRef")}</span>
+                    <span className="font-mono font-bold text-emerald-600">#{bookingId}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-slate-500">{t("khqr.status")}</span>
-                  <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[11px]">
+                  <span className="text-muted">{t("khqr.status")}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                    <Icon name="check" size={12} />
                     {t("khqr.confirmed")}
                   </span>
                 </div>
@@ -399,7 +396,7 @@ export default function BakongKhqrPaymentModal({
 
               <button
                 onClick={onClose}
-                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition"
+                className="mt-5 w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-500"
               >
                 {t("khqr.completeBtn")}
               </button>
@@ -408,21 +405,19 @@ export default function BakongKhqrPaymentModal({
 
           {/* ================= STATE 4: EXPIRED ================= */}
           {status === "EXPIRED" && (
-            <div className="py-8 flex flex-col items-center text-center space-y-4">
-              <div className="h-14 w-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl">
-                ⏳
-              </div>
+            <div className="flex flex-col items-center py-8 text-center">
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-gold-100 text-gold-600">
+                <Icon name="clock" size={30} />
+              </span>
 
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">{t("khqr.expiredTitle")}</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                  {t("khqr.expiredDesc")}
-                </p>
+              <div className="mt-4">
+                <h3 className="font-display text-xl font-bold text-ink">{t("khqr.expiredTitle")}</h3>
+                <p className="mt-1 max-w-xs text-sm text-muted">{t("khqr.expiredDesc")}</p>
               </div>
 
               <button
                 onClick={generateKhqr}
-                className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm shadow-md transition"
+                className="mt-5 w-full rounded-xl bg-brand-700 py-3 text-sm font-bold text-white shadow-md shadow-brand-700/20 transition hover:bg-brand-800"
               >
                 {t("khqr.regenBtn")}
               </button>
@@ -431,26 +426,26 @@ export default function BakongKhqrPaymentModal({
 
           {/* ================= STATE 5: ERROR ================= */}
           {status === "ERROR" && (
-            <div className="py-8 flex flex-col items-center text-center space-y-4">
-              <div className="h-14 w-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl">
-                ⚠️
+            <div className="flex flex-col items-center py-8 text-center">
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-red-50 text-red-600">
+                <Icon name="x-circle" size={30} />
+              </span>
+
+              <div className="mt-4">
+                <h3 className="font-display text-xl font-bold text-ink">{t("khqr.errorTitle")}</h3>
+                <p className="mt-1 max-w-xs text-sm text-danger">{errorMessage}</p>
               </div>
 
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">{t("khqr.errorTitle")}</h3>
-                <p className="text-xs text-red-600 mt-1 max-w-xs">{errorMessage}</p>
-              </div>
-
-              <div className="flex gap-2 w-full">
+              <div className="mt-5 flex w-full gap-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
+                  className="flex-1 rounded-xl border border-line bg-card py-2.5 text-sm font-semibold text-ink transition hover:bg-canvas"
                 >
                   {t("khqr.cancel")}
                 </button>
                 <button
                   onClick={generateKhqr}
-                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition"
+                  className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500"
                 >
                   {t("khqr.retry")}
                 </button>

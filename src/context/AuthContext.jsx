@@ -163,6 +163,18 @@ export function AuthProvider({ children }) {
     persist(null, null);
   }, [persist, token, setAvatarUrl]);
 
+  // Merges freshly saved profile data (e.g. full name, phone) into the current
+  // session so every open tab sees the change immediately.
+  const updateUser = useCallback(
+    (patch) => {
+      if (!user) return;
+      const merged = { ...user, ...patch, demo: user.demo };
+      localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(merged));
+      setUser(merged);
+    },
+    [user]
+  );
+
   // Re-fetches the current user from the backend so role / business assignment
   // changes made in the admin dashboard take effect in the owner console
   // without a full re-login. Silent no-op for demo/offline users.
@@ -238,8 +250,9 @@ export function AuthProvider({ children }) {
       register,
       logout,
       refreshUser,
+      updateUser,
     }),
-    [user, token, ready, avatarUrl, setAvatarUrl, login, register, logout, refreshUser]
+    [user, token, ready, avatarUrl, setAvatarUrl, login, register, logout, refreshUser, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

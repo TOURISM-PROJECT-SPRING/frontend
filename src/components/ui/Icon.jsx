@@ -62,11 +62,25 @@ const PATHS = {
       <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
     </>
   ),
+  banknote: (
+    <>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2" />
+      <path d="M6 10V9M18 15v1" />
+    </>
+  ),
   receipt: (
     <>
       <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
       <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
       <path d="M12 17.5v-11" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
     </>
   ),
   briefcase: (
@@ -337,6 +351,22 @@ const PATHS = {
     <>
       <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
       <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+    </>
+  ),
+  "qr-code": (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <rect x="7" y="7" width="3" height="3" />
+      <rect x="14" y="7" width="3" height="3" />
+      <rect x="7" y="14" width="3" height="3" />
+      <path d="M14 14h3v3h-3z" />
+      <path d="M17 17v3M14 20h3" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </>
   ),
 };

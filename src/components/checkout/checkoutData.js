@@ -26,6 +26,13 @@ export function isValidEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v || "").trim());
 }
 
+// Auto-format phone digits into tidy groups of 3 while typing (e.g. 012 345 678).
+export function formatPhone(v) {
+  const digits = (v || "").replace(/\D/g, "").slice(0, 12);
+  if (!digits) return "";
+  return digits.match(/.{1,3}/g).join(" ");
+}
+
 // Keep only digits, group in 4s, cap at 16 digits.
 export function formatCardNumber(v) {
   const digits = (v || "").replace(/\D/g, "").slice(0, 16);

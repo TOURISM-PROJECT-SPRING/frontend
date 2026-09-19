@@ -41,6 +41,14 @@ function BrandBadge({ brand }) {
 
 const PAY_METHODS = [
   {
+    key: "bakong",
+    label: "Bakong KHQR",
+    sublabel: "Scan & pay instantly with Bakong / bank apps",
+    icon: "qr-code",
+    tag: "Instant",
+    khqrBadge: true,
+  },
+  {
     key: "card",
     label: "Credit / Debit Card",
     sublabel: "Visa, Mastercard, Amex, JCB",
@@ -48,34 +56,11 @@ const PAY_METHODS = [
     brands: ["visa", "mastercard", "amex"],
   },
   {
-    key: "gpay",
-    label: "Google Pay",
-    sublabel: "Fast & secure one-click checkout",
-    icon: "smartphone",
-    customBadge: (
-      <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-bold text-slate-700 shadow-2xs">
-        <span className="text-blue-500">G</span>
-        <span className="text-slate-600">Pay</span>
-      </span>
-    ),
-  },
-  {
-    key: "paypal",
-    label: "PayPal",
-    sublabel: "Pay with your PayPal balance or bank",
-    icon: "wallet",
-    customBadge: (
-      <span className="inline-flex items-center rounded-md border border-slate-200 bg-[#003087] px-2 py-0.5 text-xs font-black italic tracking-wide text-white shadow-2xs">
-        Pay<span className="text-[#0079C1]">Pal</span>
-      </span>
-    ),
-  },
-  {
-    key: "paypal_later",
-    label: "PayPal Pay Later",
-    sublabel: "4 interest-free bi-weekly payments",
-    icon: "wallet",
-    tag: "0% Interest",
+    key: "cash",
+    label: "Pay with Cash",
+    sublabel: "Pay in person with cash (USD or KHR)",
+    icon: "banknote",
+    tag: "No fees",
   },
 ];
 
@@ -187,10 +172,13 @@ export default function PaymentDetailsCard({
             <button
               type="button"
               onClick={() => setPayTiming("later")}
+              disabled={payMethod === "bakong"}
               className={`group relative flex flex-col justify-between rounded-xl border-2 p-4 text-left transition-all ${
-                payTiming === "later"
-                  ? "border-brand-700 bg-brand-50/40 shadow-xs ring-1 ring-brand-700/20"
-                  : "border-line bg-white hover:border-brand-300 hover:bg-slate-50/50"
+                payMethod === "bakong"
+                  ? "cursor-not-allowed border-line bg-slate-50/60 opacity-50"
+                  : payTiming === "later"
+                    ? "border-brand-700 bg-brand-50/40 shadow-xs ring-1 ring-brand-700/20"
+                    : "border-line bg-white hover:border-brand-300 hover:bg-slate-50/50"
               }`}
             >
               <div className="flex w-full items-start justify-between gap-2">
@@ -239,7 +227,10 @@ export default function PaymentDetailsCard({
                 >
                   <button
                     type="button"
-                    onClick={() => setPayMethod(m.key)}
+                    onClick={() => {
+                      setPayMethod(m.key);
+                      if (m.key === "bakong") setPayTiming("now");
+                    }}
                     className={`flex w-full items-center justify-between gap-3 p-4 text-left transition-colors ${
                       isSelected ? "bg-brand-50/20" : "hover:bg-slate-50/60"
                     }`}
@@ -259,6 +250,11 @@ export default function PaymentDetailsCard({
                       {m.tag && (
                         <span className="rounded-md bg-gold-100 px-2 py-0.5 text-[11px] font-bold text-gold-700">
                           {m.tag}
+                        </span>
+                      )}
+                      {m.khqrBadge && (
+                        <span className="inline-flex items-center rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-black tracking-wider text-white shadow-xs font-mono">
+                          KHQR
                         </span>
                       )}
                       {m.customBadge}
@@ -434,7 +430,7 @@ export default function PaymentDetailsCard({
                   )}
 
                   {/* Non-card Redirect Notice */}
-                  {m.key !== "card" && isSelected && (
+                  {m.key !== "card" && isSelected && m.key !== "bakong" && m.key !== "cash" && (
                     <div className="border-t border-line/70 bg-brand-50/20 p-4 text-xs text-muted">
                       <div className="flex items-center gap-2 font-semibold text-brand-800">
                         <Icon name="shield-check" size={16} className="text-brand-600" />
@@ -443,6 +439,79 @@ export default function PaymentDetailsCard({
                       <p className="mt-1 pl-6">
                         You will be safely routed to <strong className="text-brand-900">{m.label}</strong> to authorize your payment. No account or card numbers are exposed.
                       </p>
+                    </div>
+                  )}
+
+                  {/* Cash panel */}
+                  {m.key === "cash" && isSelected && (
+                    <div className="border-t border-line/70 bg-gradient-to-b from-emerald-50/40 to-white p-5 sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-600 text-white shadow-sm">
+                          <Icon name="banknote" size={18} />
+                        </span>
+                        <div>
+                          <p className="font-display text-sm font-bold text-brand-900">
+                            Pay when you arrive
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed text-muted">
+                            No online payment needed. Pay the total of <strong className="text-brand-900">{money.usd(money.total)}</strong>{" "}
+                            directly to your guide or host in cash — USD or Cambodian Riel (KHR) accepted.
+                            A receipt is issued on the spot.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 rounded-xl border border-emerald-100 bg-white p-3.5">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-600">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="clock" size={13} className="text-emerald-600" />
+                            Paid at check-in / tour start
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="refresh" size={13} className="text-emerald-600" />
+                            Free cancellation before {cancelCutoff}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="check-circle" size={13} className="text-emerald-600" />
+                            No card fees
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bakong KHQR panel */}
+                  {m.key === "bakong" && isSelected && (
+                    <div className="border-t border-line/70 bg-gradient-to-b from-red-50/40 to-white p-5 sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-600 font-mono text-[10px] font-black tracking-wider text-white shadow-sm">
+                          KHQR
+                        </span>
+                        <div>
+                          <p className="font-display text-sm font-bold text-brand-900">
+                            Scan to pay with Bakong KHQR
+                          </p>
+                          <p className="mt-1 text-xs leading-relaxed text-muted">
+                            After you confirm, we&apos;ll generate a National Bank of Cambodia KHQR code. Scan it with any Bakong-enabled app
+                            ({" "}<strong>Bakong, ABA, ACLEDA, Wing, Canadia</strong>{" "}) to complete your payment instantly.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 rounded-xl border border-red-100 bg-white p-3.5">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-600">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="clock" size={13} className="text-red-600" />
+                            QR valid for 5 minutes
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="smartphone" size={13} className="text-red-600" />
+                            No app? Scan with any bank app
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <Icon name="check-circle" size={13} className="text-emerald-600" />
+                            Instant confirmation
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -474,7 +543,11 @@ export default function PaymentDetailsCard({
           <div className="flex items-baseline justify-between rounded-xl bg-canvas p-4 sm:px-6">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                {payTiming === "now" ? "Total amount" : "Amount due today"}
+                {payMethod === "cash"
+                  ? "Amount to pay on arrival"
+                  : payTiming === "now"
+                    ? "Total amount"
+                    : "Amount due today"}
               </span>
               <p className="font-display text-2xl font-bold text-brand-900 sm:text-3xl">
                 {money.usd(dueToday)}
@@ -520,9 +593,11 @@ export default function PaymentDetailsCard({
               <>
                 <Icon name="lock" size={17} className="transition-transform group-hover:scale-110" />
                 <span>
-                  {payTiming === "now"
-                    ? `Confirm & Pay ${money.usd(money.total)}`
-                    : `Reserve Now • Pay ${money.usd(0)} Today`}
+                  {payMethod === "cash"
+                    ? `Reserve • Pay ${money.usd(money.total)} in cash`
+                    : payTiming === "now"
+                      ? `Confirm & Pay ${money.usd(money.total)}`
+                      : `Reserve Now • Pay ${money.usd(0)} Today`}
                 </span>
               </>
             )}

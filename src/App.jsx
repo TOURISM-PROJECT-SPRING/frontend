@@ -22,6 +22,8 @@ import HotelDetailPage from "./pages/HotelDetailPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import CheckoutPage from "./pages/CheckoutPage";
+import AiPage from "./pages/AiPage";
+import TripPlannerPage from "./pages/TripPlannerPage";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerRoute from "./components/owner/OwnerRoute";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -45,6 +47,8 @@ function PublicLayout() {
           <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/my-bookings" element={<InboxPage />} />
+          <Route path="/ai" element={<AiPage />} />
+          <Route path="/trip-planner" element={<TripPlannerPage />} />
           <Route
             path="/profile"
             element={

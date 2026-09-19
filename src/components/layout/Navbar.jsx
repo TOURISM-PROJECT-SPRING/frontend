@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "../ui/Logo";
 import Icon from "../ui/Icon";
-import ThemeToggle from "../ui/ThemeToggle";
 import { useAuth } from "../../context/AuthContext";
 import { useFavorites } from "../../context/FavoritesContext";
 
@@ -31,7 +30,7 @@ export default function Navbar() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout, canManageOwner, isAdmin } = useAuth();
+  const { isAuthenticated, user, logout, canManageOwner } = useAuth();
   const { count, openFavorites } = useFavorites();
 
   const isLinkActive = (to, end) =>
@@ -107,9 +106,15 @@ export default function Navbar() {
         
         {/* ================= LEFT: BRAND LOGO ================= */}
         <div className="flex items-center gap-6">
-          <Link to="/" aria-label="SovannDomNour Home" className="shrink-0 transition-transform active:scale-95">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="SovannDomNour — go back to previous page"
+            title="Previous page"
+            className="shrink-0 cursor-pointer"
+          >
             <Logo />
-          </Link>
+          </button>
 
           {/* Desktop Nav Links (Segmented Navigation) */}
           <nav className="hidden lg:flex items-center gap-1 rounded-full border border-line/60 bg-canvas/80 p-1 shadow-2xs backdrop-blur-sm">
@@ -231,11 +236,6 @@ export default function Navbar() {
             )}
           </button>
 
-          {/* Theme Mode Toggle (Light / Dark) */}
-          <span className="hidden sm:inline-flex">
-            <ThemeToggle />
-          </span>
-
           {/* Authenticated User Menu */}
           {isAuthenticated ? (
             <div className="relative">
@@ -315,21 +315,7 @@ export default function Navbar() {
                         </Link>
                       )}
 
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-brand-900 transition-colors hover:bg-brand-50"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <Icon name="shield-check" size={16} className="text-brand-600" />
-                            <span>Admin Dashboard</span>
-                          </div>
-                          <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[9px] font-extrabold text-brand-800">
-                            Admin
-                          </span>
-                        </Link>
-                      )}
-                    </div>
+                      </div>
 
                     {/* Sign Out */}
                     <div className="mt-1 border-t border-line/60 pt-1">
@@ -426,12 +412,6 @@ export default function Navbar() {
           {/* Divider & Account Links */}
           <div className="mt-4 border-t border-line/80 pt-4">
 
-            {/* Theme Mode (visible for smaller screens) */}
-            <div className="flex items-center justify-between rounded-xl border border-line/60 bg-white/80 px-4 py-3 sm:hidden">
-              <span className="text-xs font-bold text-brand-900">Theme</span>
-              <ThemeToggle />
-            </div>
-
             {isAuthenticated ? (
               <div className="space-y-1">
                 <Link
@@ -448,15 +428,6 @@ export default function Navbar() {
                   >
                     <Icon name="grid" size={16} className="text-gold-600" />
                     <span>Owner Dashboard</span>
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-900 hover:bg-brand-50"
-                  >
-                    <Icon name="shield-check" size={16} className="text-brand-600" />
-                    <span>Admin Dashboard</span>
                   </Link>
                 )}
                 <button

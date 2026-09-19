@@ -331,8 +331,11 @@ export function decorateTour(a) {
   const namedCats = Array.isArray(a.categories) && a.categories.length
     ? a.categories
     : CATEGORY_KEYS_FROM_NAME[String(a.category || "").toLowerCase()] || [];
+  const images = a.images && a.images.length ? a.images : activityFallbackImages(a).slice(0, 4);
   return {
     ...a,
+    images,
+    image: a.image || images[0] || null,
     province,
     categories: namedCats,
     categoryLabel: a.categoryLabel || a.category || null,
@@ -569,11 +572,22 @@ function buildDescription(a) {
   return `Discover ${a.title.toLowerCase()} — a hand-crafted way to experience ${flavor} around ${a.location || "Siem Reap"}. Your friendly local guide shapes the day around the best light, the calmest moments and the stories that bring each stop to life, while private, air-conditioned transport and hotel pickup take care of every practical detail. With generous time for photos, a relaxed small-group pace and all the logistics handled in advance, this is the most rewarding way to see the very best of ${a.location || "Siem Reap"} in a single ${a.duration}.`;
 }
 
+// Build a themed gallery from the verified imagery pool when an activity has no
+// uploads yet — keeps the gallery from rendering empty while backend data fills in.
+function activityFallbackImages(a) {
+  const cat = String((a.category || "") + " " + (a.categories || []).join(" ")).toLowerCase();
+  let keys = ["angkor", "angkorReflejo", "angkorThomGate", "taProhm", "banteaySrei"];
+  if (cat.includes("beach") || cat.includes("nature")) keys = ["kohRong", "beach", "palmPool", "kompongPhluk", "skyline"];
+  else if (cat.includes("food") || cat.includes("street")) keys = ["amok", "lokLak", "noodles", "bbq", "street"];
+  else if (cat.includes("city") || cat.includes("culture")) keys = ["palace", "skyline", "street", "amok", "bbq"];
+  return gallery(keys);
+}
+
 export function buildActivityDetail(a) {
   if (!a) return null;
   const h = hashId(a.id);
   const rating = a.rating ?? 4.8;
-  const galleryImages = (a.images || []).map((url, i) => ({
+  const galleryImages = (a.images && a.images.length ? a.images : activityFallbackImages(a)).map((url, i) => ({
     url,
     category: ["Experience", "Sights", "Guide", "Group", "Views"][i % 5],
   }));

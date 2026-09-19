@@ -183,9 +183,6 @@ export default function Footer() {
             <span className="rounded border border-white/20 bg-white/10 px-2 py-0.5 font-bold text-gold-300">
               ABA KHQR
             </span>
-            <span className="rounded border border-white/20 bg-white/10 px-2 py-0.5 font-bold text-blue-300">
-              PayPal
-            </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-xs">

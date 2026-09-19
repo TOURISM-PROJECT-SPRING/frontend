@@ -170,9 +170,9 @@ function SovannFace({ className = "h-14 w-14", isFloating = false, isHovered = f
   );
 }
 
-export default function SovannAiChat() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("chat"); // "chat" | "planner"
+export default function SovannAiChat({ embedded = false, initialTab = "chat" }) {
+  const [isOpen, setIsOpen] = useState(embedded);
+  const [activeTab, setActiveTab] = useState(initialTab); // "chat" | "planner"
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([
@@ -327,6 +327,7 @@ export default function SovannAiChat() {
   return (
     <>
       {/* Floating Action Button (FAB) on the right side */}
+      {!embedded && (
       <div className="fixed bottom-[5.25rem] right-6 z-50 flex items-center gap-3">
         {/* Animated Speech Bubble: Sovann Says Hello! */}
         {!isOpen && showGreeting && (
@@ -398,13 +399,17 @@ export default function SovannAiChat() {
           )}
         </button>
       </div>
+      )}
 
       {/* Floating Chat Modal */}
       {isOpen && (
         <aside
           role="dialog"
           aria-label="Sovann AI Chat Concierge"
-          className="fixed bottom-[9.5rem] right-4 z-50 flex h-[620px] max-h-[calc(100vh-11rem)] w-[410px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-brand-200/80 bg-white shadow-2xl backdrop-blur-xl dark:border-brand-900/80 dark:bg-[#0b1611] animate-in fade-in slide-in-from-bottom-5 duration-200"
+          className={`${embedded
+            ? "flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-brand-200/80 bg-white shadow-soft dark:border-brand-900/80 dark:bg-[#0b1611] animate-in fade-in duration-200"
+            : "fixed bottom-[9.5rem] right-4 z-50 flex h-[620px] max-h-[calc(100vh-11rem)] w-[410px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-brand-200/80 bg-white shadow-2xl backdrop-blur-xl dark:border-brand-900/80 dark:bg-[#0b1611] animate-in fade-in slide-in-from-bottom-5 duration-200"
+          }`}
         >
           {/* Header */}
           <div className="relative flex items-center justify-between border-b border-line bg-gradient-to-r from-brand-800 via-brand-900 to-brand-950 px-4 py-3 text-white dark:border-brand-900/60">

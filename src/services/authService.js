@@ -22,4 +22,13 @@ export const authService = {
     const response = await axiosClient.post('/auth/logout');
     return response.data;
   },
+  updateProfile: async ({ fullname, email, phone, address } = {}) => {
+    const response = await axiosClient.put('/auth/profile', {
+      fullname,
+      email,
+      phone,
+      address,
+    });
+    return response.data;
+  },
 };

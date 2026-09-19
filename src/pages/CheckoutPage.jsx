@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../components/ui/Icon";
-import Logo from "../components/ui/Logo";
+import Navbar from "../components/layout/Navbar";
 import Button from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
 import { EmptyState } from "../components/ui/feedback";
@@ -15,14 +15,13 @@ import { isValidEmail, cardNumberValid, expiryValid, cvcValid, bookingReference,
 import { ticketBookingService } from "../services/ticketBookingService";
 import { roomBookingService } from "../services/roomBookingService";
 import { paymentService } from "../services/paymentService";
+import BakongKhqrPaymentModal from "../components/payment/BakongKhqrPaymentModal";
+import SovannAiChat from "../components/ai/SovannAiChat";
+import FloatingTripCart from "../components/home/FloatingTripCart";
+import { openInvoicePdf } from "../utils/invoice";
 
 const HOLD_SECONDS = 11 * 60 + 30; // 11:30
 const TIME_OPTIONS = ["4:30 AM", "6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "5:30 PM"];
-
-function splitName(fullname = "") {
-  const parts = fullname.trim().split(/\s+/);
-  return { firstName: parts[0] || "", lastName: parts.slice(1).join(" ") };
-}
 
 export default function CheckoutPage() {
   const location = useLocation();
@@ -35,13 +34,15 @@ export default function CheckoutPage() {
   // we show a friendly prompt instead of a fake "mock" booking.
   const [booking, setBooking] = useState(() => location.state || null);
 
-  const [contact, setContact] = useState(() => {
-    const { firstName, lastName } = splitName(user?.fullname || user?.username || "");
-    return { firstName, lastName, email: user?.email || "", dialCode: "+855", phone: "" };
-  });
+  const [contact, setContact] = useState(() => ({
+    fullname: user?.fullname || user?.username || "",
+    email: user?.email || "",
+    dialCode: "+855",
+    phone: user?.phone || "",
+  }));
 
   const [payTiming, setPayTiming] = useState("now");
-  const [payMethod, setPayMethod] = useState("card");
+  const [payMethod, setPayMethod] = useState("cash");
   const [card, setCard] = useState({ number: "", expiry: "", cvc: "" });
   const [country, setCountry] = useState("Cambodia");
   const [saveInfo, setSaveInfo] = useState(true);
@@ -52,6 +53,22 @@ export default function CheckoutPage() {
   const [confirmed, setConfirmed] = useState(null); // { reference }
   const [changeOpen, setChangeOpen] = useState(false);
   const [changeForm, setChangeForm] = useState(() => ({ date: booking?.date ?? "", time: booking?.time ?? "9:00 AM", guests: booking?.guests ?? 2 }));
+
+  // Keep the contact fields in sync with the signed-in user: if the user saves
+  // a phone (or name/email) in their profile and then visits checkout in the
+  // same session, we pick it up without clobbering what they already typed.
+  const userIdForContact = userId;
+  useEffect(() => {
+    setContact((prev) => ({
+      fullname: user?.fullname || prev.fullname,
+      email: user?.email || prev.email,
+      dialCode: prev.dialCode || "+855",
+      phone: user?.phone || prev.phone,
+    }));
+  }, [user?.fullname, user?.email, user?.phone, userIdForContact]);
+
+  // Bakong KHQR pending payment (booking created, awaiting scan)
+  const [bakongBooking, setBakongBooking] = useState(null);
 
   // Countdown hold timer.
   const [seconds, setSeconds] = useState(HOLD_SECONDS);
@@ -81,7 +98,7 @@ export default function CheckoutPage() {
     return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
   }, [booking?.date]);
 
-  const travelerName = `${contact.firstName} ${contact.lastName}`.trim();
+  const travelerName = contact.fullname?.trim();
 
   const applyPromo = (code) => {
     if (code === "SAVE10") { setPromo({ applied: true, code }); return true; }
@@ -91,8 +108,7 @@ export default function CheckoutPage() {
 
   const validate = () => {
     const e = {};
-    if (!contact.firstName?.trim()) e.contact = "Add your first and last name.";
-    else if (!contact.lastName?.trim()) e.contact = "Add your last name.";
+    if (!contact.fullname?.trim()) e.contact = "Add your full name.";
     else if (!isValidEmail(contact.email)) e.contact = "Add a valid email address.";
     else if (!/^\d{6,12}$/.test((contact.phone || "").replace(/\s/g, ""))) e.contact = "Add a valid phone number.";
     if (payMethod === "card") {
@@ -119,8 +135,11 @@ export default function CheckoutPage() {
     }
     setSubmitting(true);
     try {
-      const paymentMethod = payMethod === "card" ? "Card" : "CARD";
+      const isBakong = payMethod === "bakong";
+      const paymentMethod = isBakong ? "BAKONG_KHQR" : payMethod === "card" ? "Card" : payMethod === "cash" ? "CASH" : "CARD";
       const bookingIds = { roomBookingIds: [], ticketBookingIds: [], foodOrderIds: [], tourBookingIds: [] };
+      let bakongBookingId = null;
+      let bakongBookingType = null;
 
       if (booking.kind === "hotel") {
         const roomId = Number(booking.roomId) || null;
@@ -134,6 +153,8 @@ export default function CheckoutPage() {
           paymentMethod,
         });
         bookingIds.roomBookingIds.push(room.id);
+        bakongBookingId = room.id;
+        bakongBookingType = "ROOM";
       } else {
         const ticketId = Number(booking.ticketId) || null;
         if (!ticketId) throw new Error("No ticket selected.");
@@ -145,6 +166,23 @@ export default function CheckoutPage() {
           paymentMethod,
         });
         bookingIds.ticketBookingIds.push(ticket.id);
+        bakongBookingId = ticket.id;
+        bakongBookingType = "TICKET";
+      }
+
+      if (isBakong) {
+        // Booking is created with BAKONG_KHQR method — open the KHQR scan modal
+        // instead of settling payment here. The backend auto-confirms the booking
+        // once the NHQR transaction is verified.
+        setSubmitting(false);
+        setBakongBooking({
+          bookingId: bakongBookingId,
+          bookingType: bakongBookingType,
+          amount: money.total,
+          currency: "USD",
+          description: booking.title || "Tourism Booking",
+        });
+        return;
       }
 
       const payment = await paymentService.processPayment({
@@ -162,6 +200,11 @@ export default function CheckoutPage() {
     setSubmitting(false);
   };
 
+  const onBakongSuccess = (res) => {
+    setBakongBooking(null);
+    setConfirmed({ reference: res?.transactionId || bookingReference(booking.date) });
+  };
+
   const applyChange = () => {
     setBooking((b) => ({ ...b, date: changeForm.date, time: changeForm.time, guests: Math.max(1, Number(changeForm.guests) || 1) }));
     setChangeOpen(false);
@@ -170,17 +213,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans text-ink">
-      {/* Minimal checkout header */}
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Logo />
-          <div className="flex items-center gap-2 text-sm font-bold text-brand-700">
-            <Icon name="lock" size={16} className="text-brand-600" />
-            <span className="hidden sm:inline">Secure checkout</span>
-            <span className="sm:hidden">Secure</span>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         {!booking ? (
@@ -277,6 +310,21 @@ export default function CheckoutPage() {
         </div>
       </Modal>
 
+      {/* Bakong KHQR payment modal */}
+      <BakongKhqrPaymentModal
+        isOpen={!!bakongBooking}
+        onClose={() => {
+          setBakongBooking(null);
+          setSubmitting(false);
+        }}
+        onSuccess={onBakongSuccess}
+        amount={bakongBooking?.amount || money.total}
+        currency={bakongBooking?.currency || "USD"}
+        bookingId={bakongBooking?.bookingId}
+        bookingType={bakongBooking?.bookingType || "TICKET"}
+        description={bakongBooking?.description || "Tourism Booking"}
+      />
+
       {/* Success confirmation modal */}
       <Modal open={!!confirmed} onClose={() => navigate("/")} title="Booking confirmed">
         {confirmed && (
@@ -293,15 +341,41 @@ export default function CheckoutPage() {
               <p className="font-display text-lg font-bold text-brand-800">{confirmed.reference}</p>
               <p className="mt-2 text-sm text-brand-800">{booking.title}</p>
               <p className="text-xs text-muted">{longDate(booking.date)} • {booking.time} • {booking.guests} adult{booking.guests > 1 ? "s" : ""}</p>
-              <p className="mt-1 text-sm font-bold text-brand-700">{payTiming === "now" ? `Paid ${money.usd(money.total)}` : `${money.usd(money.total)} due ${chargeDateLabel}`}</p>
+              <p className="mt-1 text-sm font-bold text-brand-700">
+                {payMethod === "cash"
+                  ? `Pay ${money.usd(money.total)} in cash on arrival`
+                  : payTiming === "now" ? `Paid ${money.usd(money.total)}` : `${money.usd(money.total)} due ${chargeDateLabel}`}
+              </p>
             </div>
             <div className="flex gap-3">
               <Button variant="secondary" className="flex-1 justify-center" onClick={() => navigate("/")}>Back to home</Button>
               <Button variant="primary" className="flex-1 justify-center" onClick={() => navigate("/profile")}>View my bookings</Button>
             </div>
+            <button
+              type="button"
+              onClick={() =>
+                openInvoicePdf({
+                  booking,
+                  money,
+                  contact,
+                  reference: confirmed.reference,
+                  payMethod,
+                  payTiming,
+                  chargeDateLabel,
+                })
+              }
+              className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/60 px-5 py-3 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+            >
+              <Icon name="download" size={16} className="text-brand-600" />
+              Download invoice (PDF)
+            </button>
           </div>
         )}
       </Modal>
+
+      {/* Floating My AI (Sovann) & Trip Planner — same as the Explore page */}
+      <SovannAiChat />
+      <FloatingTripCart />
     </div>
   );
 }
