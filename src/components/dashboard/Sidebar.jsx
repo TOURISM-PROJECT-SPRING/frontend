@@ -33,6 +33,7 @@ export default function Sidebar({ collapsed, onToggle }) {
     hasRestaurant,
     hasTour,
     isBusinessLocked,
+    activeCount,
   } = useOwnerBusiness();
 
   // Dynamic sections generator based on active & locked owner businesses
@@ -135,6 +136,64 @@ export default function Sidebar({ collapsed, onToggle }) {
           </div>
         )}
       </div>
+
+      {/* Business Type Active & Locked Badges (Read-Only) */}
+      {!collapsed && (
+        <div className="px-3 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-[#edf5f0]/50 dark:bg-[#101d16]/60">
+          <div className="flex items-center justify-between gap-1 mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[#1b3b2b]/70 dark:text-emerald-400/70 uppercase tracking-wider">
+                My Businesses
+              </span>
+              <span
+                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+                  activeCount === 3
+                    ? "bg-[#1b3b2b] text-white border-[#1b3b2b]"
+                    : "bg-[#f4b938]/20 text-amber-900 border-[#f4b938]/40 dark:bg-[#f4b938]/30 dark:text-amber-200"
+                }`}
+              >
+                {activeCount}/3 Active
+              </span>
+            </div>
+            <span className="text-[9px] text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider" title="Managed by Administrator">
+              Admin Managed
+            </span>
+          </div>
+
+          {/* Business Status Badges */}
+          <div className="flex flex-wrap gap-1">
+            <span
+              className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 border transition ${
+                hasHotel
+                  ? "bg-[#edf5f0] text-[#1b3b2b] border-[#1b3b2b]/30 dark:bg-[#16291e] dark:text-emerald-300 dark:border-emerald-700/50"
+                  : "bg-gray-100/80 text-gray-400 border-gray-200 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-500"
+              }`}
+            >
+              {hasHotel ? "🏨 Hotel" : "🔒 Hotel"}
+            </span>
+
+            <span
+              className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 border transition ${
+                hasRestaurant
+                  ? "bg-amber-50 text-amber-900 border-amber-300/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                  : "bg-gray-100/80 text-gray-400 border-gray-200 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-500"
+              }`}
+            >
+              {hasRestaurant ? "🍽️ Dining" : "🔒 Dining"}
+            </span>
+
+            <span
+              className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 border transition ${
+                hasTour
+                  ? "bg-[#1b3b2b] text-white border-[#1b3b2b] dark:bg-emerald-800 dark:border-emerald-600"
+                  : "bg-gray-100/80 text-gray-400 border-gray-200 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-500"
+              }`}
+            >
+              {hasTour ? "🎫 Tours" : "🔒 Tours"}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2.5">

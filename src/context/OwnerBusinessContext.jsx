@@ -44,10 +44,130 @@ export const BUSINESS_TYPES = [
     label: "Tourists & Tours",
     shortLabel: "Tourists / Tours",
     icon: "Compass",
-    color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-800",
+    color:
+      "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-800",
     badge: "🎫 Tourist & Tour",
     tagline: "Destinations, Attraction Tickets & Packages",
-    description: "Manage tourist attractions, entrance tickets, visitor bookings, and tour packages",
+    description:
+      "Manage tourist attractions, entrance tickets, visitor bookings, and tour packages",
+  },
+];
+
+export const TEST_OWNERS = [
+  {
+    id: 101,
+    username: "owner_hotel",
+    password: "owner123",
+    label: "Hotel Owner",
+    fullname: "Sovann Hotel Owner",
+    email: "owner.hotel@smart-tourism.com",
+    badge: "🏨 Hotel Owner",
+    assignedBusinesses: ["hotel"],
+    redirect: "/owner",
+    description: "Owns Hotel & Stays. Restaurant and Tourists are LOCKED.",
+  },
+  {
+    id: 102,
+    username: "owner_restaurant",
+    password: "owner123",
+    label: "Restaurant Owner",
+    fullname: "Chann Restaurant Owner",
+    email: "owner.restaurant@smart-tourism.com",
+    badge: "🍽️ Restaurant Owner",
+    assignedBusinesses: ["restaurant"],
+    redirect: "/owner",
+    description: "Owns Restaurant & Dining. Hotel and Tourists are LOCKED.",
+  },
+  {
+    id: 103,
+    username: "owner_tour",
+    password: "owner123",
+    label: "Tourists Owner",
+    fullname: "Bopha Tour Owner",
+    email: "owner.tour@smart-tourism.com",
+    badge: "🎫 Tourists Owner",
+    assignedBusinesses: ["tour"],
+    redirect: "/owner",
+    description:
+      "Owns Tourists & Attractions. Hotel and Restaurant are LOCKED.",
+  },
+];
+
+export const TEST_ALL_ROLES = [
+  {
+    id: 1,
+    username: "admin",
+    password: "admin123",
+    label: "Admin",
+    fullname: "System Administrator",
+    email: "admin@smart-tourism.com",
+    role: "ADMIN",
+    roles: ["ADMIN"],
+    badge: "👑 Admin",
+    type: "admin",
+    redirect: "/admin",
+    description:
+      "System Administrator with full management & verification privileges.",
+  },
+  {
+    id: 201,
+    username: "customer",
+    password: "customer123",
+    label: "Customer / Tourist",
+    fullname: "Dara Customer",
+    email: "customer@smart-tourism.com",
+    role: "TOURIST",
+    roles: ["TOURIST"],
+    badge: "🎒 Customer / Tourist",
+    type: "customer",
+    redirect: "/",
+    description:
+      "Customer / Tourist booking hotels, attraction tickets, and food.",
+  },
+  {
+    id: 101,
+    username: "owner_hotel",
+    password: "owner123",
+    label: "Hotel Owner",
+    fullname: "Sovann Hotel Owner",
+    email: "owner.hotel@smart-tourism.com",
+    role: "OWNER",
+    roles: ["OWNER"],
+    badge: "🏨 Hotel Owner",
+    type: "owner",
+    assignedBusinesses: ["hotel"],
+    redirect: "/owner",
+    description: "Hotel Stays active. Restaurant & Tourists modules LOCKED.",
+  },
+  {
+    id: 102,
+    username: "owner_restaurant",
+    password: "owner123",
+    label: "Restaurant Owner",
+    fullname: "Chann Restaurant Owner",
+    email: "owner.restaurant@smart-tourism.com",
+    role: "OWNER",
+    roles: ["OWNER"],
+    badge: "🍽️ Dining Owner",
+    type: "owner",
+    assignedBusinesses: ["restaurant"],
+    redirect: "/owner",
+    description: "Restaurant Dining active. Hotel & Tourists modules LOCKED.",
+  },
+  {
+    id: 103,
+    username: "owner_tour",
+    password: "owner123",
+    label: "Tourists Owner",
+    fullname: "Bopha Tour Owner",
+    email: "owner.tour@smart-tourism.com",
+    role: "OWNER",
+    roles: ["OWNER"],
+    badge: "🎫 Tour Owner",
+    type: "owner",
+    assignedBusinesses: ["tour"],
+    redirect: "/owner",
+    description: "Tourists & Tours active. Hotel & Restaurant modules LOCKED.",
   },
 ];
 
@@ -144,6 +264,16 @@ export function OwnerBusinessProvider({ children }) {
     [storageKey, user]
   );
 
+  // Expose global helper for browser console testing
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.__setOwnerBusinesses = (types) => {
+        setAssignedBusinesses(types);
+        console.log("Simulated assigned businesses:", types);
+      };
+    }
+  }, [setAssignedBusinesses]);
+
   const isBusinessLocked = useCallback(
     (typeId) => {
       return !businessTypes.includes(typeId);
@@ -158,6 +288,22 @@ export function OwnerBusinessProvider({ children }) {
   const isAllUnlocked = businessTypes.length === 3;
   const activeCount = businessTypes.length;
   const lockedCount = 3 - activeCount;
+
+  // Find which test owner profile matches currently
+  const currentTestOwner = TEST_OWNERS.find(
+    (o) =>
+      o.username === user?.username ||
+      (user?.username === "owner" && o.username === "owner_hotel"),
+  ) || {
+    username: user?.username || "owner",
+    fullname: user?.fullname || "Business Owner",
+    badge: hasHotel
+      ? "🏨 Hotel Owner"
+      : hasRestaurant
+        ? "🍽️ Restaurant Owner"
+        : "🎫 Tourists Owner",
+    assignedBusinesses: businessTypes,
+  };
 
   const statusSummary =
     activeCount === 3
@@ -183,6 +329,8 @@ export function OwnerBusinessProvider({ children }) {
         activeBusinessView,
         setActiveBusinessView,
         BUSINESS_TYPES,
+        TEST_OWNERS,
+        currentTestOwner,
       }}
     >
       {children}

@@ -2,19 +2,27 @@ import axiosClient from '../api/axiosClient';
 
 export const authService = {
   // Backend LoginRequest expects { username, password }.
-  login: async ({ username, usernameOrEmail, password } = {}) => {
+  login: async ({ username, usernameOrEmail, email, password } = {}) => {
+    const userIdentifier = username || usernameOrEmail || email || '';
     const response = await axiosClient.post('/auth/login', {
-      username: username || usernameOrEmail,
+      username: userIdentifier,
       password,
     });
     return response.data;
   },
-  register: async ({ fullname, username, email, password } = {}) => {
+  register: async ({ fullname, fullName, username, email, password } = {}) => {
     const response = await axiosClient.post('/auth/register', {
-      fullname,
+      fullname: fullname || fullName,
       username,
       email,
       password,
+    });
+    return response.data;
+  },
+  changePassword: async ({ currentPassword, newPassword } = {}) => {
+    const response = await axiosClient.post('/auth/change-password', {
+      currentPassword,
+      newPassword,
     });
     return response.data;
   },
@@ -32,3 +40,5 @@ export const authService = {
     return response.data;
   },
 };
+
+export default authService;
