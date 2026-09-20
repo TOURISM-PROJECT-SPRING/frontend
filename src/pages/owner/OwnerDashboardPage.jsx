@@ -44,7 +44,7 @@ const TYPE_ICONS = {
 export default function OwnerDashboardPage() {
   const { user } = useAuth();
   const toast = useToast();
-  const ownerId = user?.id || 1;
+  const ownerId = user?.id || null;
 
   const [activeTab, setActiveTab] = useState("overview"); // overview | bookings | services
   const [stats, setStats] = useState(null);

@@ -23,148 +23,8 @@ import {
 } from "lucide-react";
 import { managementService } from "../../services/managementService";
 import { useToast } from "../../components/ui/Toast";
-
-const PERMISSION_GROUPS = [
-  {
-    category: "Users & Access Control",
-    permissions: [
-      { id: "users.view", label: "View User Accounts" },
-      { id: "users.create", label: "Create Users" },
-      { id: "users.edit", label: "Edit Profiles & Roles" },
-      { id: "users.delete", label: "Delete User Accounts" },
-    ],
-  },
-  {
-    category: "Accommodations & Stays",
-    permissions: [
-      { id: "hotels.view", label: "View Hotels & Properties" },
-      { id: "hotels.edit", label: "Create & Edit Hotels" },
-      { id: "rooms.manage", label: "Manage Room Inventory" },
-      { id: "bookings.view", label: "Manage Room Reservations" },
-    ],
-  },
-  {
-    category: "Restaurants & Dining",
-    permissions: [
-      { id: "dining.view", label: "View Dining Listings" },
-      { id: "menu.manage", label: "Manage Food Items & Menus" },
-      { id: "orders.manage", label: "Process Food Orders" },
-    ],
-  },
-  {
-    category: "Attractions & Tours",
-    permissions: [
-      { id: "places.manage", label: "Manage Tourist Attractions" },
-      { id: "tickets.manage", label: "Manage Entrance Tickets" },
-      { id: "packages.manage", label: "Manage Packages & Guides" },
-    ],
-  },
-  {
-    category: "Financials & Platform Settings",
-    permissions: [
-      { id: "payments.view", label: "Inspect Ledger & KHQR Payments" },
-      { id: "payouts.manage", label: "Manage Partner Payouts" },
-      { id: "reports.export", label: "Export Financial Reports" },
-      { id: "settings.edit", label: "Modify System Settings" },
-      { id: "logs.view", label: "Audit System Security Logs" },
-    ],
-  },
-];
-
-const DEFAULT_ROLES = [
-  {
-    id: 1,
-    name: "ADMIN",
-    label: "Super Administrator",
-    description:
-      "Full administrative privileges across user accounts, destinations, hotels, financial reconciliations, and global settings.",
-    userCount: 3,
-    color: "purple",
-    isSystem: true,
-    permissions: [
-      "users.view",
-      "users.create",
-      "users.edit",
-      "users.delete",
-      "hotels.view",
-      "hotels.edit",
-      "rooms.manage",
-      "bookings.view",
-      "dining.view",
-      "menu.manage",
-      "orders.manage",
-      "places.manage",
-      "tickets.manage",
-      "packages.manage",
-      "payments.view",
-      "payouts.manage",
-      "reports.export",
-      "settings.edit",
-      "logs.view",
-    ],
-  },
-  {
-    id: 2,
-    name: "OWNER",
-    label: "Business & Property Partner",
-    description:
-      "Full management rights over registered properties, room inventories, dining menus, tour packages, and payout accounts.",
-    userCount: 14,
-    color: "green",
-    isSystem: true,
-    permissions: [
-      "hotels.view",
-      "hotels.edit",
-      "rooms.manage",
-      "bookings.view",
-      "dining.view",
-      "menu.manage",
-      "orders.manage",
-      "places.manage",
-      "tickets.manage",
-      "packages.manage",
-      "payments.view",
-      "payouts.manage",
-      "reports.export",
-    ],
-  },
-  {
-    id: 3,
-    name: "MANAGER",
-    label: "Operations Manager",
-    description:
-      "Operational supervisor rights over day-to-day reservations, guest check-ins, kitchen order boards, and place ticket verifications.",
-    userCount: 8,
-    color: "blue",
-    isSystem: false,
-    permissions: [
-      "hotels.view",
-      "rooms.manage",
-      "bookings.view",
-      "dining.view",
-      "orders.manage",
-      "places.manage",
-      "tickets.manage",
-      "reports.export",
-    ],
-  },
-  {
-    id: 4,
-    name: "USER",
-    label: "Customer & Tourist",
-    description:
-      "Default public traveler role for browsing attractions, making room & ticket bookings, dining reservations, and Bakong KHQR payments.",
-    userCount: 4820,
-    color: "emerald",
-    isSystem: true,
-    permissions: [
-      "hotels.view",
-      "dining.view",
-      "places.manage",
-      "bookings.view",
-    ],
-  },
-];
+import { usePermissions } from "../../context/PermissionsContext";
+import { PERMISSION_GROUPS, DEFAULT_ROLES } from "../../utils/permissions";
 
 const colorStyles = {
   purple: {
@@ -196,6 +56,7 @@ const colorStyles = {
 
 export default function AdminRolesPage() {
   const toast = useToast();
+  const permissions = usePermissions();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -252,10 +113,9 @@ export default function AdminRolesPage() {
     fetchRoles();
   }, []);
 
-  const totalPermissionsCount = PERMISSION_GROUPS.reduce(
-    (sum, g) => sum + g.permissions.length,
-    0
-  );
+  const grantedPermissionCount = new Set(
+    roles.flatMap((r) => r.permissions || [])
+  ).size;
 
   const toggleExpand = (roleId) => {
     setExpandedRoles((prev) => ({ ...prev, [roleId]: !prev[roleId] }));
@@ -387,6 +247,7 @@ export default function AdminRolesPage() {
         } catch {}
         toast.success("Role updated successfully");
       }
+      permissions.reload();
       setIsCreating(false);
       setEditRole(null);
     } finally {
@@ -401,6 +262,7 @@ export default function AdminRolesPage() {
       await managementService.deleteRole(deleteTarget.id);
     } catch {}
     setRoles((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+    permissions.reload();
     setDeleteTarget(null);
     toast.success("Role deleted successfully");
   };
@@ -453,8 +315,8 @@ export default function AdminRolesPage() {
             </span>
             <Key className="w-4 h-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalPermissionsCount}</p>
-          <p className="text-[11px] text-gray-400 mt-1">Granular resource actions</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{grantedPermissionCount}</p>
+          <p className="text-[11px] text-gray-400 mt-1">Distinct actions granted to roles</p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4 shadow-xs">

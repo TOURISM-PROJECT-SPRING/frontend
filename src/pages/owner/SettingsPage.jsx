@@ -1,16 +1,14 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Camera,
   Save,
   CheckCircle,
-  Building2,
-  UtensilsCrossed,
-  Compass,
   Lock,
-  Check,
   ShieldCheck,
   Mail,
   AlertCircle,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { primaryRoleLabel } from "../../utils/rbac";
@@ -21,8 +19,8 @@ export default function OwnerSettingsPage() {
   const {
     isBusinessLocked,
     activeCount,
-    lockedCount,
     statusSummary,
+    isSuspended,
   } = useOwnerBusiness();
 
   const [activeTab, setActiveTab] = useState("business");
@@ -83,6 +81,59 @@ export default function OwnerSettingsPage() {
       {/* Business Types & Permissions Tab (Read-Only, Admin Managed) */}
       {activeTab === "business" && (
         <div className="space-y-6">
+          {/* Account Access Status (admin-managed) */}
+          {isSuspended ? (
+            <div className="p-5 bg-red-50/80 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4 animate-fade-in-up">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold">
+                    Suspended
+                  </span>
+                  <span className="text-sm font-bold text-red-900 dark:text-red-200">
+                    Account Access Suspended
+                  </span>
+                </div>
+                <p className="text-xs text-red-700/80 dark:text-red-300/80 mt-1 leading-relaxed">
+                  The System Administrator has suspended your owner account. Business operations,
+                  offerings management, and booking processing are paused. Your assigned business
+                  verticals are preserved and will resume automatically once access is reactivated —
+                  please contact the administration team for details.
+                </p>
+              </div>
+              <Link
+                to="/owner/help"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shrink-0"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Contact Admin</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="p-5 bg-[#edf5f0]/70 dark:bg-[#16291e]/60 border border-[#1b3b2b]/20 dark:border-emerald-800/50 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4 animate-fade-in-up">
+              <div className="w-12 h-12 rounded-2xl bg-[#1b3b2b]/10 border border-[#1b3b2b]/20 dark:border-emerald-700/50 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6 text-[#1b3b2b] dark:text-emerald-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#1b3b2b] text-white text-xs font-bold">
+                    Active
+                  </span>
+                  <span className="text-sm font-bold text-[#1b3b2b] dark:text-emerald-200">
+                    Account Access Active
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600/80 dark:text-emerald-200/60 mt-1 leading-relaxed">
+                  Your account is active. The business verticals you are assigned to manage by the
+                  System Administrator are shown below — any vertical without a license remains
+                  locked to your account.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Admin Managed Overview Banner */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -178,26 +229,36 @@ export default function OwnerSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {BUSINESS_TYPES.map((biz) => {
                   const isLocked = isBusinessLocked(biz.id);
+                  const suspended = isSuspended;
 
                   return (
                     <div
                       key={biz.id}
                       className={`rounded-2xl border p-5 transition relative select-none ${
-                        !isLocked
-                          ? "bg-[#edf5f0]/70 dark:bg-[#16291e]/80 border-[#1b3b2b] dark:border-emerald-500 shadow-sm"
-                          : "bg-gray-50/50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700 opacity-65"
+                        suspended
+                          ? "bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 opacity-80"
+                          : !isLocked
+                            ? "bg-[#edf5f0]/70 dark:bg-[#16291e]/80 border-[#1b3b2b] dark:border-emerald-500 shadow-sm"
+                            : "bg-gray-50/50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700 opacity-65"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-2xl">{biz.badge.split(" ")[0]}</span>
                         <div
                           className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 ${
-                            !isLocked
-                              ? "bg-[#1b3b2b] text-white shadow-2xs"
-                              : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                            suspended
+                              ? "bg-red-600 text-white shadow-2xs"
+                              : !isLocked
+                                ? "bg-[#1b3b2b] text-white shadow-2xs"
+                                : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                           }`}
                         >
-                          {!isLocked ? (
+                          {suspended ? (
+                            <>
+                              <ShieldAlert className="w-3 h-3 text-white" />
+                              <span>Access Suspended</span>
+                            </>
+                          ) : !isLocked ? (
                             <>
                               <CheckCircle className="w-3 h-3 text-[#f4b938]" />
                               <span>Assigned & Active</span>
@@ -219,7 +280,11 @@ export default function OwnerSettingsPage() {
                       </p>
 
                       <div className="mt-4 pt-3 border-t border-gray-200/60 dark:border-gray-700/60 text-[11px]">
-                        {!isLocked ? (
+                        {suspended ? (
+                          <span className="text-red-700 dark:text-red-300 font-bold flex items-center gap-1">
+                            <ShieldAlert className="w-3 h-3" /> Assignment preserved · frozen
+                          </span>
+                        ) : !isLocked ? (
                           <span className="text-[#1b3b2b] dark:text-emerald-400 font-bold flex items-center gap-1">
                             ✓ Full Management Access
                           </span>

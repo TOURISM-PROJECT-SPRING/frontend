@@ -1,11 +1,35 @@
-import { DollarSign, BedDouble, Star, TrendingUp } from "lucide-react";
+import { DollarSign, BedDouble, Star, TrendingUp, Download, RefreshCw } from "lucide-react";
 import useDashboardData from "../../hooks/useDashboardData";
+import { downloadCSV } from "../../utils/export";
 
 const money = (v) =>
   `$${Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
 export default function OwnerReportsPage() {
-  const { data, loading } = useDashboardData();
+  const { data, loading, refresh } = useDashboardData();
+
+  const handleExport = () => {
+    const rows = [];
+    rows.push(["Report", "Value"]);
+    rows.push(["Total Revenue", data?.revenueText || money(data?.totalRevenue)]);
+    rows.push(["Total Bookings", data?.totalBookings || 0]);
+    rows.push(["Occupancy Rate", data?.occupancyRate != null ? `${data.occupancyRate}%` : "—"]);
+    rows.push(["Avg. Rating", data?.avgRating || "—"]);
+    rows.push([]);
+    (data?.topProperties || []).forEach((p) => rows.push(["Top Property", `${p.rank}. ${p.name} — ${p.bookings} bookings — ${p.revenueText || "$0"}`]));
+    rows.push([]);
+    (data?.topPlaces || []).forEach((p) => rows.push(["Top Place", `${p.rank}. ${p.name} — ${p.rating ? `★${p.rating}` : "no rating"} — ${p.bookings} bookings`]));
+    rows.push([]);
+    (data?.bookingsByType || []).forEach((bt) => rows.push([`Bookings: ${bt.name}`, bt.value]));
+    rows.push([]);
+    (data?.revenueByMonth || []).forEach((m) => rows.push([`Revenue: ${m.month}`, money(m.revenue)]));
+
+    downloadCSV(rows, `owner-report-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  const handleRefresh = async () => {
+    await refresh();
+  };
 
   if (loading) {
     return <div className="p-12 text-center text-sm text-gray-400">Loading reports from server...</div>;
@@ -18,9 +42,26 @@ export default function OwnerReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Performance analytics</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Performance analytics</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition disabled:opacity-60 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

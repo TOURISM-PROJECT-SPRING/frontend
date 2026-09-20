@@ -37,6 +37,18 @@ export const managementService = {
     const response = await axiosClient.patch(`/management/owners/${id}/verify`, { status });
     return response.data;
   },
+  updateOwnerContract: async (id, businessTypes) => {
+    const response = await axiosClient.put(`/management/owners/${id}/contract`, { businessTypes });
+    return response.data;
+  },
+  updateOwnerStatus: async (id, status, reason = '') => {
+    const response = await axiosClient.patch(`/management/owners/${id}/status`, { status, reason });
+    return response.data;
+  },
+  getOwnerBusinesses: async (id) => {
+    const response = await axiosClient.get(`/management/owners/${id}/businesses`);
+    return response.data;
+  },
   getRoles: async () => {
     const response = await axiosClient.get('/management/roles');
     return response.data;

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { authService } from "../services/authService";
 import { managementService } from "../services/managementService";
-import { ROLES, hasRole, canUseManager, isOwnerRole, setOwnerRoleOverride } from "../utils/rbac";
+import { ROLES, hasRole, canUseManager, isOwnerRole, setOwnerRoleOverride, clearOwnerRoleOverride } from "../utils/rbac";
 
 // Token lives under localStorage key "token" because axiosClient.js attaches
 // `Authorization: Bearer <token>` from that exact key.
@@ -12,6 +12,20 @@ const AVATAR_KEY = "sdn.avatar";
 // Exported so other modules (e.g. the admin user editor) can write-through to
 // the signed-in session, which keeps every open tab in sync.
 export const AUTH_USER_STORAGE_KEY = USER_KEY;
+
+// When an admin changes a signed-in account's role, that account must be
+// signed out and sent to the login page so it re-authenticates with the new
+// authority. A per-user marker is written to localStorage so every tab in the
+// same browser picks it up; the tab that owns the session clears it and
+// redirects to /login.
+export const RELOGIN_MARKER_PREFIX = "sdn.relogin_";
+
+export function reloginMarkerKeys(currentUser) {
+  return [
+    `${RELOGIN_MARKER_PREFIX}${currentUser?.id ?? ""}`,
+    `${RELOGIN_MARKER_PREFIX}${(currentUser?.username || "").toLowerCase()}`,
+  ].filter((k) => k && k.length > RELOGIN_MARKER_PREFIX.length);
+}
 
 const AuthContext = createContext(null);
 
@@ -63,23 +77,6 @@ export function AuthProvider({ children }) {
     setReady(true);
   }, []);
 
-  // Keep the session in sync across tabs: when anything writes the stored user
-  // (e.g. the admin dashboard updates the signed-in user's role), every open
-  // tab — including the owner console — re-reads it immediately.
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === AUTH_USER_STORAGE_KEY) {
-        if (e.newValue) {
-          try {
-            setUser(JSON.parse(e.newValue));
-          } catch {}
-        }
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
   const setAvatarUrl = useCallback((url) => {
     setAvatarUrlState(url || "");
     if (url) localStorage.setItem(AVATAR_KEY, url);
@@ -95,6 +92,9 @@ export function AuthProvider({ children }) {
     // never falls back to a stale override it can't manage.
     if (nextUser) {
       setOwnerRoleOverride(nextUser, nextUser.roles?.[0] || nextUser.role || null);
+      // A fresh sign-in starts clean — any earlier "role changed, re-login"
+      // marker is now obsolete.
+      reloginMarkerKeys(nextUser).forEach((k) => localStorage.removeItem(k));
     }
     setToken(jwt || null);
     setUser(nextUser || null);
@@ -218,6 +218,76 @@ export function AuthProvider({ children }) {
     persist(null, null);
   }, [persist, token, setAvatarUrl]);
 
+  // Clears the local session and bounces the account to the login page. Used
+  // when an admin changes a signed-in account's role, so the user re-authenticates
+  // and picks up the new authority from the backend.
+  const handleForcedRelogin = useCallback(() => {
+    setAvatarUrl("");
+    persist(null, null);
+    window.location.assign("/login");
+  }, [persist, setAvatarUrl]);
+
+  // Call this after an admin successfully changes a user's platform role on the
+  // server. Any tab where that account is signed in — including this one — is
+  // signed out and sent to /login to log in with the new role. Returns true when
+  // the current tab owns that session and is being redirected.
+  const markReloginForUser = useCallback(
+    (editedUser) => {
+      if (!editedUser) return false;
+      reloginMarkerKeys(editedUser).forEach((k) => {
+        try {
+          localStorage.setItem(k, String(Date.now()));
+        } catch {}
+      });
+      clearOwnerRoleOverride(editedUser);
+      // The storage event does not fire in the tab that wrote the marker, so
+      // when this account is signed in right here, log it out directly.
+      if (
+        user &&
+        reloginMarkerKeys(user).some((k) => reloginMarkerKeys(editedUser).includes(k))
+      ) {
+        handleForcedRelogin();
+        return true;
+      }
+      return false;
+    },
+    [user, handleForcedRelogin]
+  );
+
+  // If an admin raised a "role changed" re-login marker for the account signed
+  // in on this tab, drop the stale session and bounce to the login page.
+  const checkForcedRelogin = useCallback(() => {
+    if (user && reloginMarkerKeys(user).some((k) => localStorage.getItem(k))) {
+      handleForcedRelogin();
+    }
+  }, [user, handleForcedRelogin]);
+
+  // Keep the session in sync across tabs: when anything writes the stored user
+  // (e.g. the admin dashboard updates the signed-in user's role), every open
+  // tab — including the owner console — re-reads it immediately. Background
+  // tabs can delay or coalesce storage events, so the re-login marker is also
+  // re-checked when the tab regains focus / becomes visible.
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === AUTH_USER_STORAGE_KEY && e.newValue) {
+        try {
+          setUser(JSON.parse(e.newValue));
+        } catch {}
+      }
+      if (e.key && e.key.startsWith(RELOGIN_MARKER_PREFIX) && e.newValue) {
+        checkForcedRelogin();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", checkForcedRelogin);
+    document.addEventListener("visibilitychange", checkForcedRelogin);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", checkForcedRelogin);
+      document.removeEventListener("visibilitychange", checkForcedRelogin);
+    };
+  }, [user, handleForcedRelogin, checkForcedRelogin]);
+
   // Merges freshly saved profile data (e.g. full name, phone) into the current
   // session so every open tab sees the change immediately.
   const updateUser = useCallback(
@@ -272,10 +342,18 @@ export function AuthProvider({ children }) {
   refreshUserRef.current = refreshUser;
   const tokenRef = useRef(token);
   tokenRef.current = token;
+  const forceReloginRef = useRef(handleForcedRelogin);
+  forceReloginRef.current = handleForcedRelogin;
 
   useEffect(() => {
     if (tokenRef.current && tokenRef.current !== "demo-token") {
       refreshUserRef.current();
+    }
+    // If an admin left a "role changed" marker while this tab was closed, drop
+    // the stale session and require a fresh login with the new role.
+    const mountedUser = readStoredUser();
+    if (mountedUser && reloginMarkerKeys(mountedUser).some((k) => localStorage.getItem(k))) {
+      forceReloginRef.current();
     }
     // Run once on mount only.
   }, []);
@@ -307,8 +385,9 @@ export function AuthProvider({ children }) {
       switchTestAccount,
       refreshUser,
       updateUser,
+      markReloginForUser,
     }),
-    [user, token, ready, avatarUrl, setAvatarUrl, login, register, logout, switchTestAccount, refreshUser, updateUser]
+    [user, token, ready, avatarUrl, setAvatarUrl, login, register, logout, switchTestAccount, refreshUser, updateUser, markReloginForUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

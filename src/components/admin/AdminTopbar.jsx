@@ -149,6 +149,9 @@ export default function AdminTopbar() {
                 <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-800">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</p>
                   <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{displayEmail}</p>
+                  <span className="inline-block mt-1 text-[10px] font-semibold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 rounded">
+                    {roleLabel}
+                  </span>
                 </div>
                 <Link
                   to="/admin/profile"

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Download } from "lucide-react";
 import { managementService } from "../../services/managementService";
+import { downloadCSV } from "../../utils/export";
 
 const norm = (s) => String(s || "").toUpperCase();
 
@@ -37,15 +39,37 @@ export default function OwnerPayoutsPage() {
     fetchData();
   }, []);
 
+  const handleExport = () => {
+    const rows = [["Transaction ID", "Date", "Amount", "Reference", "Status"]];
+    payments.forEach((p) => {
+      rows.push([
+        p.transactionId || "N/A",
+        p.paidAt ? p.paidAt.slice(0, 10) : p.createdAt ? p.createdAt.slice(0, 10) : "N/A",
+        Number(p.amount).toFixed(2),
+        p.referenceName || "N/A",
+        statusLabel(p.status),
+      ]);
+    });
+    downloadCSV(rows, `owner-payouts-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
   if (loading) {
     return <div className="p-12 text-center text-sm text-gray-400">Loading payouts from server...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Payouts</h1>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Payment history</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Payouts</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Payment history</p>
+        </div>
+        <button
+          onClick={handleExport}
+          className="inline-flex items-center gap-2 self-start px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+        >
+          <Download className="w-4 h-4" /> Export CSV
+        </button>
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">

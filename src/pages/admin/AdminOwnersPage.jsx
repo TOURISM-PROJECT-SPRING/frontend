@@ -18,7 +18,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  FileText,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -62,6 +61,7 @@ export default function AdminOwnersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [accessStatusFilter, setAccessStatusFilter] = useState("ALL");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,6 +80,8 @@ export default function AdminOwnersPage() {
     businessName: "",
     businessLicenseNo: "",
     businessType: "hotel",
+    businessTypes: ["hotel"],
+    accountStatus: "ACTIVE",
     userName: "",
     userEmail: "",
     phone: "",
@@ -124,10 +126,15 @@ export default function AdminOwnersPage() {
     const oStatus = norm(o.verificationStatus);
     const matchStatus = statusFilter === "ALL" || oStatus === statusFilter;
 
-    const oType = String(o.businessType || "hotel").toLowerCase();
-    const matchType = typeFilter === "ALL" || oType === typeFilter;
+    const oTypes = Array.isArray(o.businessTypes)
+      ? o.businessTypes.map(String).map((t) => t.toLowerCase())
+      : [String(o.businessType || "hotel").toLowerCase()];
+    const matchType = typeFilter === "ALL" || oTypes.includes(typeFilter);
 
-    return matchSearch && matchStatus && matchType;
+    const oAccess = norm(o.status);
+    const matchAccess = accessStatusFilter === "ALL" || oAccess === accessStatusFilter;
+
+    return matchSearch && matchStatus && matchType && matchAccess;
   });
 
   // KPIs
@@ -166,6 +173,10 @@ export default function AdminOwnersPage() {
       businessName: item.businessName || "",
       businessLicenseNo: item.businessLicenseNo || "",
       businessType: item.businessType || "hotel",
+      businessTypes: Array.isArray(item.businessTypes) && item.businessTypes.length
+        ? item.businessTypes.map(String).map((t) => t.toLowerCase())
+        : [item.businessType || "hotel"],
+      accountStatus: norm(item.status) === "SUSPENDED" ? "SUSPENDED" : "ACTIVE",
       userName: item.userName || "",
       userEmail: item.userEmail || "",
       phone: item.phone || "",
@@ -183,6 +194,8 @@ export default function AdminOwnersPage() {
       businessName: "",
       businessLicenseNo: `LIC-${Math.floor(1000 + Math.random() * 9000)}`,
       businessType: "hotel",
+      businessTypes: ["hotel"],
+      accountStatus: "ACTIVE",
       userName: "",
       userEmail: "",
       phone: "",
@@ -213,9 +226,14 @@ export default function AdminOwnersPage() {
         setIsCreating(false);
         toast.success("Owner created successfully");
       } else if (editTarget) {
+        const businessTypes = [...new Set(formState.businessTypes.map((t) => String(t).toLowerCase()))];
+        const accountStatus = norm(formState.accountStatus);
         const payload = {
           ...editTarget,
           ...formState,
+          businessType: businessTypes[0] || "hotel",
+          businessTypes,
+          status: accountStatus,
           verifiedAt:
             formState.verificationStatus === "VERIFIED" && !editTarget.verifiedAt
               ? new Date().toISOString()
@@ -225,8 +243,14 @@ export default function AdminOwnersPage() {
         };
         try {
           await managementService.updateOwner(editTarget.id, payload);
+          // Sync the business contract so the owner dashboard unlocks the right verticals
+          await managementService.updateOwnerContract(editTarget.id, businessTypes);
+          // Sync account status so the owner dashboard shows the suspension screen
+          if (norm(editTarget.status) !== accountStatus) {
+            await managementService.updateOwnerStatus(editTarget.id, accountStatus);
+          }
         } catch {
-          // fallback
+          // fallback (offline / demo)
         }
         setOwners((prev) => prev.map((o) => (o.id === editTarget.id ? payload : o)));
         setEditTarget(null);
@@ -241,6 +265,25 @@ export default function AdminOwnersPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Quick toggle for owner account status (drives suspension of the owner dashboard)
+  const handleToggleAccountStatus = async (item, nextStatus) => {
+    const updated = { ...item, status: nextStatus };
+    try {
+      await managementService.updateOwnerStatus(item.id, nextStatus);
+    } catch {
+      // local fallback when backend is offline
+    }
+    setOwners((prev) => prev.map((o) => (o.id === item.id ? updated : o)));
+    if (viewTarget?.id === item.id) {
+      setViewTarget(updated);
+    }
+    toast.success(
+      nextStatus === "SUSPENDED"
+        ? "Owner access suspended (owner dashboard locked)"
+        : "Owner access reactivated"
+    );
   };
 
   // Quick Verification Toggle
@@ -428,6 +471,20 @@ export default function AdminOwnersPage() {
           <option value="restaurant">Restaurant & Dining</option>
           <option value="tour">Tourist & Tours</option>
         </select>
+
+        {/* Account Status (access) Filter */}
+        <select
+          value={accessStatusFilter}
+          onChange={(e) => {
+            setAccessStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-primary transition cursor-pointer"
+        >
+          <option value="ALL">All Access</option>
+          <option value="ACTIVE">Active Access</option>
+          <option value="SUSPENDED">Suspended</option>
+        </select>
       </div>
 
       {/* OWNERS TABLE */}
@@ -451,6 +508,9 @@ export default function AdminOwnersPage() {
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   Verification
                 </th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  Access Status
+                </th>
                 <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -460,13 +520,18 @@ export default function AdminOwnersPage() {
               {paginatedOwners.map((o) => {
                 const cat = getCategoryInfo(o.businessType);
                 const IconComponent = cat.icon;
-                const isVerified = norm(o.verificationStatus) === "VERIFIED";
                 const isPending = norm(o.verificationStatus) === "PENDING";
+                const isSuspended = norm(o.status) === "SUSPENDED";
+                const oTypes = Array.isArray(o.businessTypes) && o.businessTypes.length
+                  ? o.businessTypes.map(String).map((t) => t.toLowerCase())
+                  : [String(o.businessType || "hotel").toLowerCase()];
 
                 return (
                   <tr
                     key={o.id}
-                    className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition"
+                    className={`border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition ${
+                      isSuspended ? "opacity-60" : ""
+                    }`}
                   >
                     {/* Business Name & Type */}
                     <td className="px-5 py-3.5">
@@ -476,11 +541,19 @@ export default function AdminOwnersPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900 dark:text-white leading-tight">{o.businessName}</p>
-                          <span
-                            className={`inline-block mt-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${cat.badgeClass}`}
-                          >
-                            {cat.label}
-                          </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {oTypes.map((t) => {
+                              const ci = getCategoryInfo(t);
+                              return (
+                                <span
+                                  key={t}
+                                  className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium border ${ci.badgeClass}`}
+                                >
+                                  {ci.label}
+                                </span>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -520,6 +593,35 @@ export default function AdminOwnersPage() {
                             {o.verifiedAt.slice(0, 10)}
                           </p>
                         )}
+                      </div>
+                    </td>
+
+                    {/* Access Status (owner dashboard access) */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        {isSuspended ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-800">
+                            <XCircle className="w-3.5 h-3.5" />
+                            Suspended
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#edf5f0] text-[#1b3b2b] border border-[#1b3b2b]/20 dark:bg-[#16291e] dark:text-emerald-300 dark:border-emerald-800">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Active
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAccountStatus(o, isSuspended ? "ACTIVE" : "SUSPENDED")}
+                          className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                            isSuspended
+                              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60"
+                              : "text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-800/60"
+                          }`}
+                          title={isSuspended ? "Reactivate owner access" : "Suspend owner access (locks their dashboard)"}
+                        >
+                          {isSuspended ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                        </button>
                       </div>
                     </td>
 
@@ -717,9 +819,19 @@ export default function AdminOwnersPage() {
                       {viewTarget.businessLicenseNo}
                     </span>
                     <span className="text-gray-300 dark:text-gray-700">•</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                      {getCategoryInfo(viewTarget.businessType).label}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {(Array.isArray(viewTarget.businessTypes) && viewTarget.businessTypes.length
+                        ? viewTarget.businessTypes.map(String).map((t) => t.toLowerCase())
+                        : [String(viewTarget.businessType || "hotel").toLowerCase()]
+                      ).map((t) => {
+                        const ci = getCategoryInfo(t);
+                        return (
+                          <span key={t} className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium border ${ci.badgeClass}`}>
+                            {ci.label}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -732,13 +844,26 @@ export default function AdminOwnersPage() {
             </div>
 
             {/* Verification Banner */}
-            <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs text-gray-400 dark:text-gray-500">Platform Status</p>
-                <div className="mt-1">{getStatusBadge(viewTarget.verificationStatus)}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  {getStatusBadge(viewTarget.verificationStatus)}
+                  {norm(viewTarget.status) === "SUSPENDED" ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-800">
+                      <XCircle className="w-3.5 h-3.5" />
+                      Suspended Access
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#edf5f0] text-[#1b3b2b] border border-[#1b3b2b]/20 dark:bg-[#16291e] dark:text-emerald-300 dark:border-emerald-800">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Access Active
+                    </span>
+                  )}
+                </div>
               </div>
               {/* Quick Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 justify-end">
                 {norm(viewTarget.verificationStatus) !== "VERIFIED" && (
                   <button
                     type="button"
@@ -759,6 +884,32 @@ export default function AdminOwnersPage() {
                     Reject
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleToggleAccountStatus(
+                      viewTarget,
+                      norm(viewTarget.status) === "SUSPENDED" ? "ACTIVE" : "SUSPENDED"
+                    )
+                  }
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer border ${
+                    norm(viewTarget.status) === "SUSPENDED"
+                      ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-emerald-300 dark:border-emerald-900"
+                      : "text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-300 dark:border-rose-900"
+                  }`}
+                >
+                  {norm(viewTarget.status) === "SUSPENDED" ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      Reactivate
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-3.5 h-3.5" />
+                      Suspend
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -903,32 +1054,71 @@ export default function AdminOwnersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Business Category *
+                    Business Verticals *
+                    <span className="font-normal text-gray-400 dark:text-gray-500"> (what the owner manages)</span>
                   </label>
-                  <select
-                    value={formState.businessType}
-                    onChange={(e) => setFormState({ ...formState, businessType: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="hotel">Hotel & Accommodations</option>
-                    <option value="restaurant">Restaurant & Dining</option>
-                    <option value="tour">Tourists & Attractions</option>
-                  </select>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {Object.entries(BIZ_CATEGORIES).map(([key, ci]) => {
+                      const cur = formState.businessTypes.map((t) => String(t).toLowerCase());
+                      const checked = cur.includes(key);
+                      return (
+                        <button
+                          type="button"
+                          key={key}
+                          onClick={() =>
+                            setFormState({
+                              ...formState,
+                              businessTypes: checked
+                                ? cur.filter((x) => x !== key)
+                                : [...cur, key],
+                            })
+                          }
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition cursor-pointer ${
+                            checked
+                              ? "bg-[#1b3b2b] text-white border-[#1b3b2b]"
+                              : "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                          }`}
+                        >
+                          {checked ? "✓ " : ""}
+                          {ci.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">
+                    Generic owner dashboards are limited to 2 verticals.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Verification Status *
-                  </label>
-                  <select
-                    value={formState.verificationStatus}
-                    onChange={(e) => setFormState({ ...formState, verificationStatus: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="VERIFIED">VERIFIED (Approved)</option>
-                    <option value="PENDING">PENDING (In Review)</option>
-                    <option value="REJECTED">REJECTED (Declined)</option>
-                  </select>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Verification Status *
+                    </label>
+                    <select
+                      value={formState.verificationStatus}
+                      onChange={(e) => setFormState({ ...formState, verificationStatus: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary cursor-pointer"
+                    >
+                      <option value="VERIFIED">VERIFIED (Approved)</option>
+                      <option value="PENDING">PENDING (In Review)</option>
+                      <option value="REJECTED">REJECTED (Declined)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Account Access *
+                      <span className="font-normal text-gray-400 dark:text-gray-500"> (owner dashboard)</span>
+                    </label>
+                    <select
+                      value={formState.accountStatus}
+                      onChange={(e) => setFormState({ ...formState, accountStatus: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary cursor-pointer"
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="SUSPENDED">SUSPENDED (Lock Dashboard)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

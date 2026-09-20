@@ -105,24 +105,47 @@ const FALLBACK_OFFERINGS = [
 ];
 
 export const ownerService = {
-  getDashboardStats: async (ownerId = 1) => {
+  getPermissions: async () => {
+    const response = await axiosClient.get('/owner/permissions');
+    return response.data;
+  },
+
+  getDashboardStats: async (ownerId) => {
     try {
       const response = await axiosClient.get('/owner/dashboard-stats', {
-        params: { ownerId },
+        params: ownerId ? { ownerId } : {},
       });
       return response.data;
-    } catch {
+    } catch (err) {
+      if (err?.response?.status === 403 || err?.response?.status === 401) {
+        return {
+          ownerId: ownerId,
+          businessName: "No Contracted Business",
+          totalBookings: 0,
+          activeServices: 0,
+          totalRevenue: 0,
+          pendingOrders: 0,
+          revenueTrend: [],
+          recentBookings: [],
+        };
+      }
       return FALLBACK_STATS;
     }
   },
 
-  getBookings: async (ownerId = 1, status = '') => {
+  getBookings: async (ownerId, status = '') => {
     try {
       const response = await axiosClient.get('/owner/bookings', {
-        params: { ownerId, status: status || undefined },
+        params: {
+          ...(ownerId ? { ownerId } : {}),
+          ...(status ? { status } : {}),
+        },
       });
       return response.data;
-    } catch {
+    } catch (err) {
+      if (err?.response?.status === 403 || err?.response?.status === 401) {
+        return [];
+      }
       if (!status || status === 'ALL') return FALLBACK_STATS.recentBookings;
       return FALLBACK_STATS.recentBookings.filter((b) => b.status === status);
     }
@@ -136,29 +159,38 @@ export const ownerService = {
         { params: { status } }
       );
       return response.data;
-    } catch {
+    } catch (err) {
+      if (err?.response?.status === 403) {
+        throw new Error(err?.response?.data?.message || "Access denied: you do not have permission to update this booking.");
+      }
       return { id, bookingType, status };
     }
   },
 
-  getServices: async (ownerId = 1) => {
+  getServices: async (ownerId) => {
     try {
       const response = await axiosClient.get('/owner/services', {
-        params: { ownerId },
+        params: ownerId ? { ownerId } : {},
       });
       return response.data;
-    } catch {
+    } catch (err) {
+      if (err?.response?.status === 403 || err?.response?.status === 401) {
+        return [];
+      }
       return FALLBACK_OFFERINGS;
     }
   },
 
-  createService: async (ownerId = 1, offeringData) => {
+  createService: async (ownerId, offeringData) => {
     try {
       const response = await axiosClient.post('/owner/services', offeringData, {
-        params: { ownerId },
+        params: ownerId ? { ownerId } : {},
       });
       return response.data;
-    } catch {
+    } catch (err) {
+      if (err?.response?.status === 403) {
+        throw new Error(err?.response?.data?.message || "Access denied: you do not have permission to create offerings for this business type.");
+      }
       return {
         id: Date.now(),
         ...offeringData,

@@ -19,7 +19,50 @@ export default function BusinessGuard({ business, children }) {
     businessTypes,
     activeCount,
     lockedCount,
+    isSuspended,
   } = useOwnerBusiness();
+
+  if (isSuspended) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 animate-fade-in-up">
+        <div className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-3xl border border-red-200 dark:border-red-900/50 shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-br from-red-950 via-red-900 to-gray-950 p-8 text-white text-center relative overflow-hidden">
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="w-16 h-16 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center mb-3 shadow-inner">
+                <ShieldAlert className="w-9 h-9 text-red-400 animate-pulse" />
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-bold mb-2">
+                <span>Account Suspended</span>
+              </div>
+              <h2 className="text-2xl font-black text-white">Operations Temporarily Frozen</h2>
+              <p className="text-xs sm:text-sm text-red-200/80 max-w-md mt-2 font-normal">
+                Your owner account has been suspended by the platform administrator. All business operations, offerings management, and booking processing have been paused.
+              </p>
+            </div>
+          </div>
+          <div className="p-6 sm:p-8 space-y-5">
+            <div className="bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 rounded-2xl p-5 text-xs text-red-800 dark:text-red-300 space-y-2">
+              <div className="font-bold flex items-center gap-1.5 text-sm text-red-900 dark:text-red-200">
+                <AlertTriangle className="w-4 h-4" /> Account Safety Notice
+              </div>
+              <p>
+                Existing listings and historical booking records are securely preserved in the system. To reinstate active operations or resolve contract status, please reach out to the administration team.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+              <Link
+                to="/owner/help"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Contact Administrator</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isLocked = isBusinessLocked(business);
 

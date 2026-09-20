@@ -27,6 +27,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useOwnerBusiness } from "../../context/OwnerBusinessContext";
+import { usePermissions } from "../../context/PermissionsContext";
+import { permissionForPage } from "../../utils/permissions";
 import Logo from "../ui/Logo";
 
 const sections = [
@@ -42,13 +45,13 @@ const sections = [
       { icon: Users, text: "Users", path: "/admin/users" },
       { icon: ShieldCheck, text: "Roles & Permissions", path: "/admin/roles" },
       { icon: Building2, text: "Owners / Businesses", path: "/admin/owners" },
-      { icon: MapPin, text: "Tourist Places", path: "/admin/places" },
-      { icon: Hotel, text: "Hotels", path: "/admin/hotels" },
-      { icon: BedDouble, text: "Rooms", path: "/admin/rooms" },
-      { icon: Ticket, text: "Tickets", path: "/admin/tickets" },
-      { icon: UtensilsCrossed, text: "Restaurants", path: "/admin/restaurants" },
-      { icon: ShoppingBag, text: "Food & Orders", path: "/admin/food-orders" },
-      { icon: Package, text: "Tour Packages", path: "/admin/packages" },
+      { icon: MapPin, text: "Tourist Places", path: "/admin/places", biz: "tour" },
+      { icon: Hotel, text: "Hotels", path: "/admin/hotels", biz: "hotel" },
+      { icon: BedDouble, text: "Rooms", path: "/admin/rooms", biz: "hotel" },
+      { icon: Ticket, text: "Tickets", path: "/admin/tickets", biz: "tour" },
+      { icon: UtensilsCrossed, text: "Restaurants", path: "/admin/restaurants", biz: "restaurant" },
+      { icon: ShoppingBag, text: "Food & Orders", path: "/admin/food-orders", biz: "restaurant" },
+      { icon: Package, text: "Tour Packages", path: "/admin/packages", biz: "tour" },
       { icon: CalendarCheck, text: "Bookings", path: "/admin/bookings" },
       { icon: Wallet, text: "Payments", path: "/admin/payments" },
       { icon: Star, text: "Reviews & Ratings", path: "/admin/reviews" },
@@ -73,6 +76,8 @@ export default function AdminSidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { isDark } = useTheme();
+  const { businessTypes, isSuspended } = useOwnerBusiness();
+  const { can } = usePermissions();
 
   const handleLogout = () => {
     logout();
@@ -101,7 +106,15 @@ export default function AdminSidebar({ collapsed, onToggle }) {
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3">
-        {sections.map((section) => (
+        {sections.map((section) => {
+          const visibleItems = isSuspended
+            ? []
+            : section.items.filter(
+                (item) =>
+                  (!item.biz || businessTypes.includes(item.biz)) &&
+                  can(permissionForPage(item.path))
+              );
+          return (
           <div key={section.label} className="mb-4">
             <p
               className={`text-[10px] font-semibold text-gray-300 uppercase tracking-wider px-2.5 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
@@ -111,7 +124,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
               {section.label}
             </p>
             <div className="space-y-0.5">
-              {section.items.map((item) => {
+              {visibleItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
@@ -139,7 +152,8 @@ export default function AdminSidebar({ collapsed, onToggle }) {
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="border-t border-gray-100 dark:border-gray-800 py-2.5 space-y-0.5">

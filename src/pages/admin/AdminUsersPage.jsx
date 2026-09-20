@@ -25,9 +25,22 @@ import { userAttachmentService } from "../../services/userAttachmentService";
 import AvatarUpload from "../../components/ui/AvatarUpload";
 import { useToast } from "../../components/ui/Toast";
 import { AUTH_USER_STORAGE_KEY } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { setOwnerRoleOverride } from "../../utils/rbac";
 
 const norm = (s) => String(s || "").toUpperCase();
+
+// Network / backend-down / 5xx, or a missing route (404), is treated as
+// "offline" so the demo fallback stays usable. Any other status (400/401/403)
+// is a genuine rejection and must surface to the user instead of silently
+// pretending the edit succeeded.
+const shouldDemoFallback = (e) => {
+  if (!e) return false;
+  if (e.request && !e.response) return true;
+  const status = e.response?.status;
+  if (status == null) return true;
+  return status === 404 || status >= 500;
+};
 
 // If the edited account is the one currently signed in, write the change
 // through to the session so every open tab (owner dashboard included) reflects
@@ -58,13 +71,44 @@ const roleColor = (role) =>
 
 const ROLE_LABELS = {
   ADMIN: "ADMIN (System Administrator)",
+  SUPEROWNER: "SUPEROWNER (All Verticals)",
   OWNER: "OWNER (Hotel/Restaurant/Tour Partner)",
+  OWNER_HOTEL: "OWNER_HOTEL (Hotel Only)",
+  OWNER_TOUR: "OWNER_TOUR (Tour Only)",
+  OWNER_RESTAURANT: "OWNER_RESTAURANT (Restaurant Only)",
   USER: "USER (Customer / Tourist)",
   TOURIST: "TOURIST (Customer / Tourist)",
 };
 
+// Owner-like roles get a Business Access selector below. Scoped roles are
+// pinned to one vertical; generic OWNER / SUPEROWNER allow up to two / three.
+const OWNER_LIKE_ROLES = ["OWNER", "SUPEROWNER", "OWNER_HOTEL", "OWNER_TOUR", "OWNER_RESTAURANT"];
+
+// Legacy/typo'd role rows that still exist in the DB but should not be offered
+// in the Platform Role dropdown.
+const HIDDEN_ROLES = new Set(["SUPER_OWNER", "OWNER_RESTUARANT"]);
+
+const OWNER_BIZ_OPTIONS = [
+  { id: "hotel", label: "Hotel & Stays" },
+  { id: "restaurant", label: "Restaurant & Dining" },
+  { id: "tour", label: "Tourist & Tours" },
+];
+
+const OWNER_ROLE_BIZ_SUGGEST = {
+  SUPEROWNER: ["hotel", "restaurant", "tour"],
+  OWNER_HOTEL: ["hotel"],
+  OWNER_TOUR: ["tour"],
+  OWNER_RESTAURANT: ["restaurant"],
+};
+
+const normalizeBiz = (list) =>
+  [...new Set((list || []).map(String).map((b) => b.toLowerCase()).filter((b) =>
+    ["hotel", "restaurant", "tour"].includes(b)
+  ))];
+
 export default function AdminUsersPage() {
   const toast = useToast();
+  const { markReloginForUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [roleOptions, setRoleOptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +132,7 @@ export default function AdminUsersPage() {
     gender: "Male",
     status: "ACTIVE",
     role: "USER",
+    assignedBusinesses: [],
   });
   const [avatarFile, setAvatarFile] = useState(null);
   const [existingAvatar, setExistingAvatar] = useState([]);
@@ -98,7 +143,8 @@ export default function AdminUsersPage() {
       const names = (roleData || [])
         .map((r) => (typeof r === "string" ? r : r?.name))
         .filter(Boolean)
-        .map((n) => String(n).toUpperCase());
+        .map((n) => String(n).toUpperCase())
+        .filter((n) => !HIDDEN_ROLES.has(n));
       setRoleOptions(names.length ? [...new Set(names)] : ["ADMIN", "OWNER", "USER"]);
     } catch (error) {
       console.error("Error fetching roles:", error);
@@ -173,6 +219,10 @@ export default function AdminUsersPage() {
       gender: u.gender || "Male",
       status: u.status || "ACTIVE",
       role: (u.roles && u.roles[0]) || "USER",
+      assignedBusinesses:
+        normalizeBiz(u.assignedBusinesses).length > 0
+          ? normalizeBiz(u.assignedBusinesses)
+          : OWNER_ROLE_BIZ_SUGGEST[u.role || (u.roles && u.roles[0])] || [],
     });
     loadRoles();
     const attachments = await userAttachmentService.getUserAttachments(u.id).catch(() => []);
@@ -216,23 +266,39 @@ export default function AdminUsersPage() {
       toast.error("Profile photo upload failed. Saving other changes.");
     }
     try {
-      const payload = {
+      const isOwnerLike = OWNER_LIKE_ROLES.includes(editForm.role);
+      const patch = {
         ...editForm,
         roles: [editForm.role],
+        ...(isOwnerLike ? { assignedBusinesses: normalizeBiz(editForm.assignedBusinesses) } : {}),
       };
-      await managementService.updateUser(editTarget.id, payload);
+      await managementService.updateUser(editTarget.id, patch);
       setUsers((prev) =>
         prev.map((u) =>
           u.id === editTarget.id
-            ? { ...u, ...payload, roles: [editForm.role], imageUrl: uploadedUrl ?? u.imageUrl }
+            ? { ...u, ...patch, imageUrl: uploadedUrl ?? u.imageUrl }
             : u
         )
       );
       setEditTarget(null);
       toast.success("User updated successfully");
-      syncSignedInSession(editTarget, payload);
+      const prevRole = editTarget.roles?.[0] || editTarget.role;
+      const nextRole = patch.roles?.[0];
+      if (nextRole && nextRole !== prevRole) {
+        // A role change invalidates the account's existing session: close it in
+        // every open tab and send it to the login page (this tab included) so the
+        // user re-authenticates and picks up the new role from the backend.
+        markReloginForUser(editTarget);
+      } else {
+        syncSignedInSession(editTarget, patch);
+      }
     } catch (error) {
       console.error("Error updating user:", error);
+      const offline = shouldDemoFallback(error);
+      if (!offline) {
+        toast.error(error?.response?.data?.message || "Failed to update user. Please try again.");
+        return;
+      }
       // Optimistic update fallback so demo / offline mock works smoothly
       setUsers((prev) =>
         prev.map((u) =>
@@ -243,7 +309,7 @@ export default function AdminUsersPage() {
       );
       setEditTarget(null);
       toast.success("User updated (offline mode)");
-      syncSignedInSession(editTarget, payload);
+      syncSignedInSession(editTarget, { ...editForm, roles: [editForm.role] });
     } finally {
       setSaving(false);
     }
@@ -772,7 +838,18 @@ export default function AdminUsersPage() {
                   </label>
                   <select
                     value={editForm.role}
-                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                    onChange={(e) => {
+                      const nextRole = e.target.value;
+                      const suggested = OWNER_ROLE_BIZ_SUGGEST[nextRole];
+                      setEditForm({
+                        ...editForm,
+                        role: nextRole,
+                        assignedBusinesses:
+                          suggested ||
+                          normalizeBiz(editForm.assignedBusinesses) ||
+                          (nextRole === "OWNER" ? ["hotel", "restaurant"] : []),
+                      });
+                    }}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-500"
                   >
                     {[
@@ -784,8 +861,7 @@ export default function AdminUsersPage() {
                     ))}
                   </select>
                 </div>
-
-                <div>
+              <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                     Account Status *
                   </label>
@@ -801,6 +877,52 @@ export default function AdminUsersPage() {
                   </select>
                 </div>
               </div>
+
+              {OWNER_LIKE_ROLES.includes(editForm.role) && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Business Access
+                  </label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {OWNER_BIZ_OPTIONS.map((b) => {
+                      const cur = normalizeBiz(editForm.assignedBusinesses);
+                      const checked = cur.includes(b.id);
+                      const licenseMax = editForm.role === "SUPEROWNER" ? 3 : 2;
+                      const disabled = !checked && cur.length >= licenseMax;
+                      return (
+                        <button
+                          type="button"
+                          key={b.id}
+                          disabled={disabled}
+                          onClick={() =>
+                            setEditForm({
+                              ...editForm,
+                              assignedBusinesses: checked
+                                ? cur.filter((x) => x !== b.id)
+                                : [...cur, b.id],
+                            })
+                          }
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                            checked
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                          }`}
+                        >
+                          {checked ? "✓ " : ""}
+                          {b.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">
+                    {editForm.role === "SUPEROWNER"
+                      ? "Super owner manages all verticals (up to 3)."
+                      : editForm.role === "OWNER"
+                        ? "Generic owner manages the selected verticals (up to 2)."
+                        : "Scoped owner manages a single vertical."}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
