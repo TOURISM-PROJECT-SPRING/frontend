@@ -1,12 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Logo from "../components/ui/Logo";
 import Icon from "../components/ui/Icon";
 import { useAuth } from "../context/AuthContext";
-import { ROLES, homePathFor } from "../utils/rbac";
+import { homePathFor } from "../utils/rbac";
 import { img } from "../data/site";
+import { getSocialToken, preloadSocialSdks } from "../services/socialAuth";
 
 const SIDE_IMG = img("Angkor Wat, reflejo 1.jpg", 1400);
+
+// Brand glyphs for the social sign-in buttons (kept local so the shared line-
+// icon set stays brand-agnostic).
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.4 3.63v3h3.88c2.27-2.1 3.57-5.17 3.57-8.82Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.94-2.91l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.72-4.95H1.27v3.1A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.28 14.29a7.2 7.2 0 0 1 0-4.58v-3.1H1.27a12 12 0 0 0 0 10.78l4.01-3.1Z" />
+      <path fill="#EA4335" d="M12 4.76c1.76 0 3.34.6 4.58 1.79l3.44-3.44A11.97 11.97 0 0 0 1.27 6.6l4 3.1c.94-2.84 3.6-4.94 6.73-4.94Z" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.8-4.67 4.54-4.67 1.31 0 2.69.23 2.69.23v2.96h-1.52c-1.49 0-1.95.93-1.95 1.87V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12Z" />
+    </svg>
+  );
+}
 
 function Field({ icon, label, type = "text", placeholder, value, onChange, autoComplete, trailing }) {
   return (
@@ -32,13 +54,19 @@ export default function LoginPage({ mode = "login" }) {
   const isLogin = mode === "login";
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register } = useAuth();
+  const { login, register, socialLogin } = useAuth();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [form, setForm] = useState({ fullname: "", username: "", email: "", password: "" });
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Warm up the Google / Facebook SDKs on mount so the popup can open inside the
+  // user gesture when a social button is clicked.
+  useEffect(() => {
+    preloadSocialSdks();
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -59,6 +87,23 @@ export default function LoginPage({ mode = "login" }) {
       navigate(dest, { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const socialAuth = async (provider) => {
+    setError(null);
+    setLoading(true);
+    try {
+      // 1. Open the provider's official dialog and get a real OAuth token.
+      const providerToken = await getSocialToken(provider);
+      // 2. Verify it server-side and persist the backend-issued session JWT.
+      const auth = await socialLogin({ provider, token: providerToken });
+      const dest = location.state?.from || homePathFor(auth?.user);
+      navigate(dest, { replace: true });
+    } catch (err) {
+      setError(err.message || "Could not sign in with that provider.");
     } finally {
       setLoading(false);
     }
@@ -188,146 +233,29 @@ export default function LoginPage({ mode = "login" }) {
 
           <div className="my-6 flex items-center gap-4">
             <span className="h-px flex-1 bg-line" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted">quick demo access</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted">or continue with</span>
             <span className="h-px flex-1 bg-line" />
           </div>
 
-          <div className="rounded-xl border border-brand-100 bg-brand-50/50 p-3.5">
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-brand-800">
-              <Icon name="info" size={13} className="text-gold-600" />
-              The backend is a single source of truth — demo buttons use sample accounts when the API is offline.
-            </p>
-<div className="mt-3">
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    setError(null);
-                    setLoading(true);
-                    try {
-                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER, forceDemo: true });
-                      navigate(homePathFor(auth?.user), { replace: true });
-                    } catch (err) {
-                      setError(err.message || "Could not start the demo.");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
-                >
-                  <Icon name="briefcase" size={17} />
-                  Owner demo
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    setError(null);
-                    setLoading(true);
-                    try {
-                      const auth = await login({ username: "demo", password: "demo", role: ROLES.ADMIN, forceDemo: true });
-                      navigate(homePathFor(auth?.user), { replace: true });
-                    } catch (err) {
-                      setError(err.message || "Could not start the demo.");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
-                >
-                  <Icon name="shield" size={17} />
-                  Admin demo
-                </button>
-              </div>
-
-              <p className="mt-3 mb-1.5 text-center text-[11px] font-bold uppercase tracking-widest text-muted">
-                Owner by vertical
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    setError(null);
-                    setLoading(true);
-                    try {
-                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER_HOTEL, forceDemo: true });
-                      navigate(homePathFor(auth?.user), { replace: true });
-                    } catch (err) {
-                      setError(err.message || "Could not start the demo.");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
-                >
-                  <Icon name="bed" size={15} />
-                  Hotel owner
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    setError(null);
-                    setLoading(true);
-                    try {
-                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER_TOUR, forceDemo: true });
-                      navigate(homePathFor(auth?.user), { replace: true });
-                    } catch (err) {
-                      setError(err.message || "Could not start the demo.");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
-                >
-                  <Icon name="ticket" size={15} />
-                  Tour owner
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={async () => {
-                    setError(null);
-                    setLoading(true);
-                    try {
-                      const auth = await login({ username: "demo", password: "demo", role: ROLES.OWNER_RESTAURANT, forceDemo: true });
-                      navigate(homePathFor(auth?.user), { replace: true });
-                    } catch (err) {
-                      setError(err.message || "Could not start the demo.");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-70"
-                >
-                  <Icon name="utensils" size={15} />
-                  Restaurant owner
-                </button>
-              </div>
-
-              <button
-                type="button"
-                disabled={loading}
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  try {
-                    const auth = await login({ username: "demo", password: "demo", role: ROLES.SUPEROWNER, forceDemo: true });
-                    navigate(homePathFor(auth?.user), { replace: true });
-                  } catch (err) {
-                    setError(err.message || "Could not start the demo.");
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-gold-300 bg-gold-50 text-xs font-semibold text-gold-800 transition-colors hover:bg-gold-100 disabled:opacity-70"
-              >
-                <Icon name="award" size={15} />
-                Super owner (all manage pages)
-              </button>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => socialAuth("google")}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow disabled:opacity-70"
+            >
+              <GoogleIcon />
+              Google
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => socialAuth("facebook")}
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow disabled:opacity-70"
+            >
+              <FacebookIcon />
+              Facebook
+            </button>
           </div>
 
           <p className="mt-8 text-center text-sm text-muted">

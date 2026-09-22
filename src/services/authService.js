@@ -10,6 +10,12 @@ export const authService = {
     });
     return response.data;
   },
+  // Social / OAuth sign-in. `provider` is "google" or "facebook"; a backend
+  // auth token (id token / access token) can be forwarded via `token`.
+  loginWithProvider: async ({ provider, token } = {}) => {
+    const response = await axiosClient.post(`/auth/social/${provider}`, { token });
+    return response.data;
+  },
   register: async ({ fullname, fullName, username, email, password } = {}) => {
     const response = await axiosClient.post('/auth/register', {
       fullname: fullname || fullName,

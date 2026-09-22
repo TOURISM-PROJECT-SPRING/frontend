@@ -130,6 +130,37 @@ export function AuthProvider({ children }) {
     [persist]
   );
 
+  // Social / OAuth sign-in (Google, Facebook). Forwards the provider token to
+  // the backend; when the social endpoint is unreachable (backend offline) it
+  // falls back to a sample account so the app stays usable, mirroring login().
+  const socialLogin = useCallback(
+    async ({ provider, token } = {}) => {
+      try {
+        const data = await authService.loginWithProvider({ provider, token });
+        persist(data.accessToken, data.user || null);
+        return { user: data.user, demo: false };
+      } catch (e) {
+        if (shouldDemoFallback(e)) {
+          const label = provider === "facebook" ? "Facebook" : "Google";
+          const demo = {
+            ...DEMO_USER,
+            fullname: `${label} User`,
+            username: `${provider}_user`,
+            email: `${provider}@sovannomnour.app`,
+          };
+          persist("demo-token", demo);
+          return { user: demo, demo: true };
+        }
+        throw new Error(
+          e?.response?.data?.message ||
+            e?.response?.data?.error ||
+            `Could not sign in with ${provider}.`
+        );
+      }
+    },
+    [persist]
+  );
+
   const register = useCallback(
     async ({ fullname, username, email, password }) => {
       try {
@@ -381,13 +412,14 @@ export function AuthProvider({ children }) {
       canUseManager: canUseManager(user),
       login,
       register,
+      socialLogin,
       logout,
       switchTestAccount,
       refreshUser,
       updateUser,
       markReloginForUser,
     }),
-    [user, token, ready, avatarUrl, setAvatarUrl, login, register, logout, switchTestAccount, refreshUser, updateUser, markReloginForUser]
+    [user, token, ready, avatarUrl, setAvatarUrl, login, register, socialLogin, logout, switchTestAccount, refreshUser, updateUser, markReloginForUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
