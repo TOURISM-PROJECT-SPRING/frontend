@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 
 const ThemeContext = createContext();
 
@@ -28,7 +29,20 @@ function readStoredMode() {
 const prefersDark = () =>
   typeof window !== "undefined" && window.matchMedia(SYSTEM_QUERY).matches;
 
+// Dark mode is only applied on the management consoles (/admin and /owner).
+// Public-facing pages always render in light mode.
+const CONSOLE_PREFIXES = ["/admin", "/owner"];
+
+function isConsolePath(pathname) {
+  return CONSOLE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
 export function ThemeProvider({ children }) {
+  const { pathname } = useLocation();
+  const isConsole = isConsolePath(pathname);
+
   const [mode, setModeState] = useState(readStoredMode);
   const [systemDark, setSystemDark] = useState(prefersDark);
 
@@ -40,7 +54,11 @@ export function ThemeProvider({ children }) {
     return () => media.removeEventListener("change", onChange);
   }, []);
 
-  const isDark = mode === THEME_MODES.DARK || (mode === THEME_MODES.SYSTEM && systemDark);
+  // Dark mode is only honored inside the admin/owner consoles. Public pages
+  // stay light, so `.dark` is never applied to them regardless of preference.
+  const isDark =
+    isConsole &&
+    (mode === THEME_MODES.DARK || (mode === THEME_MODES.SYSTEM && systemDark));
 
   // Apply before the browser paints so the color transition animates smoothly
   // instead of flashing the light theme first.
@@ -49,12 +67,16 @@ export function ThemeProvider({ children }) {
   }, [isDark]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, mode);
-    } catch {
-      // Persisting the preference is best-effort.
+    // Only persist the preference while inside a console; stepping back to the
+    // public site must not carry a stale dark mode setting around.
+    if (isConsole) {
+      try {
+        localStorage.setItem(STORAGE_KEY, mode);
+      } catch {
+        // Persisting the preference is best-effort.
+      }
     }
-  }, [mode]);
+  }, [mode, isConsole]);
 
   const setThemeMode = useCallback((next) => {
     setModeState(
