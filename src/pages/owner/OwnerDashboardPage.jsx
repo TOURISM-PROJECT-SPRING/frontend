@@ -675,7 +675,7 @@ export default function OwnerDashboardPage() {
       {/* ADD OFFERING MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-lift dark:bg-card dark:border-line animate-scalein">
+          <div className="max-h-[90vh] overflow-y-auto w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-lift dark:bg-card dark:border-line animate-scalein">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-display text-lg font-bold text-brand-900 dark:text-brand-100">
                 Publish New Offering

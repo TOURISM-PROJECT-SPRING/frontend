@@ -99,6 +99,9 @@ function OwnerRoleSync() {
 
 export default function OwnerDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const closeSidebar = () => setSidebarOpen(false);
 
   return (
     <OwnerBusinessProvider>
@@ -107,16 +110,18 @@ export default function OwnerDashboard() {
         <Sidebar
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          open={sidebarOpen}
+          onClose={closeSidebar}
         />
 
         <div
-          className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
-            sidebarCollapsed ? "ml-[72px]" : "ml-64"
+          className={`flex-1 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${
+            sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-64"
           }`}
         >
-          <Topbar />
+          <Topbar onMenu={() => setSidebarOpen(true)} />
 
-          <main className="flex-1 p-5 overflow-y-auto">
+          <main className="flex-1 p-3 sm:p-5 lg:p-6 overflow-y-auto">
             <Routes>
               <Route index element={<DashboardOverview />} />
 

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useOwnerBusiness } from "../../context/OwnerBusinessContext";
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, open = false, onClose }) {
   const location = useLocation();
   const {
     hasHotel,
@@ -114,11 +114,20 @@ export default function Sidebar({ collapsed, onToggle }) {
   });
 
   return (
-    <aside
-      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800 flex flex-col z-40 transition-all duration-300 ${
-        collapsed ? "w-[72px]" : "w-64"
-      }`}
-    >
+    <>
+      {/* Mobile drawer backdrop */}
+      {open && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-gray-950/40 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800 flex flex-col z-50 transition-[width,transform] duration-300 w-64 ${
+          collapsed ? "lg:w-[72px]" : "lg:w-64"
+        } ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      >
       {/* Branding */}
       <div className="flex items-center gap-3 px-5 h-14 border-b border-gray-100 dark:border-gray-800 shrink-0">
         <div className="w-8 h-8 bg-[#1b3b2b] rounded-lg flex items-center justify-center shrink-0 shadow-sm border border-[#2d6a4f]/30">
@@ -175,6 +184,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                     <Link
                       key={item.path}
                       to={item.path}
+                      onClick={onClose}
                       className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-[13px] font-medium transition-all ${
                         isActive
                           ? "bg-[#1b3b2b] text-white shadow-xs font-semibold dark:bg-[#1b3b2b] dark:text-emerald-100"
@@ -211,6 +221,7 @@ export default function Sidebar({ collapsed, onToggle }) {
       <div className="border-t border-gray-100 dark:border-gray-800 px-2.5 py-2.5 space-y-0.5">
         <Link
           to="/owner/help"
+          onClick={onClose}
           className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition ${
             collapsed ? "justify-center" : ""
           }`}
@@ -221,7 +232,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         </Link>
         <button
           onClick={onToggle}
-          className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition w-full ${
+          className={`hidden lg:flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition w-full ${
             collapsed ? "justify-center" : ""
           }`}
         >
@@ -236,5 +247,6 @@ export default function Sidebar({ collapsed, onToggle }) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

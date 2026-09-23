@@ -13,6 +13,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Menu,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
@@ -23,7 +24,7 @@ const THEME_CYCLE = ["light", "dark", "system"];
 const THEME_LABEL = { light: "Light", dark: "Dark", system: "System" };
 const THEME_ICON = { light: Sun, dark: Moon, system: Monitor };
 
-export default function AdminTopbar() {
+export default function AdminTopbar({ onMenu }) {
   const navigate = useNavigate();
   const { user, userId, logout, avatarUrl, setAvatarUrl } = useAuth();
   const { mode, setThemeMode } = useTheme();
@@ -84,9 +85,17 @@ export default function AdminTopbar() {
   };
 
   return (
-    <header className="h-14 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-5 shrink-0 animate-slide-down relative z-30">
-      <div className="flex items-center">
-        <div className={`relative transition-all duration-200 ${searchFocused ? "w-80" : "w-64"}`}>
+    <header className="h-14 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-3 sm:px-5 shrink-0 animate-slide-down relative z-30">
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          onClick={onMenu}
+          aria-label="Menu"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 lg:hidden"
+        >
+          <Menu className="w-4.5 h-4.5" />
+        </button>
+        <div className={`hidden md:block relative transition-all duration-200 ${searchFocused ? "w-80" : "w-64"}`}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
           <input
             type="text"
@@ -109,7 +118,7 @@ export default function AdminTopbar() {
           <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">5</span>
         </button>
 
-        <button className="relative p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+        <button className="relative p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition hidden sm:grid">
           <MessageSquare className="w-4.5 h-4.5 text-gray-500 dark:text-gray-400" />
           <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">3</span>
         </button>

@@ -414,7 +414,7 @@ export default function OwnerRoomsPage() {
       {/* Add / Edit Room Modal */}
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden animate-scale-up">
+          <div className="max-h-[90vh] overflow-y-auto w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden animate-scale-up">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                 {editRoom ? "Edit Hotel Room" : "Add New Hotel Room"}

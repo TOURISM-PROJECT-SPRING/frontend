@@ -11,12 +11,13 @@ import {
   Settings,
   LogOut,
   Lock,
+  Menu,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useOwnerBusiness } from "../../context/OwnerBusinessContext";
 import ThemeMenu from "../ui/ThemeMenu";
 
-export default function Topbar() {
+export default function Topbar({ onMenu }) {
   const navigate = useNavigate();
   const { user, avatarUrl, logout } = useAuth();
   const {
@@ -65,8 +66,17 @@ export default function Topbar() {
   };
 
   return (
-    <header className="h-16 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 flex items-center justify-end px-6 shrink-0 animate-slide-down relative z-30">
-      <div className="flex items-center gap-2 ml-4 shrink-0">
+    <header className="h-16 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 flex items-center justify-end px-3 sm:px-6 shrink-0 animate-slide-down relative z-30">
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={onMenu}
+          aria-label="Menu"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 mr-auto lg:hidden"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         {/* Active Business Permissions Pill */}
         <div
           className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold shadow-xs select-none ${
@@ -99,7 +109,7 @@ export default function Topbar() {
           )}
         </div>
 
-        <div className={`relative transition-all duration-200 ${searchFocused ? "w-64" : "w-44 lg:w-52"}`}>
+        <div className={`hidden md:block relative transition-all duration-200 ${searchFocused ? "w-64" : "w-44 lg:w-52"}`}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
@@ -120,7 +130,7 @@ export default function Topbar() {
           <span className="absolute top-1 right-1 w-4 h-4 bg-[#f4b938] text-gray-900 text-[9px] font-black rounded-full flex items-center justify-center animate-pulse-soft">3</span>
         </button>
 
-        <button className="relative p-2 rounded-xl hover:bg-[#edf5f0] dark:hover:bg-gray-800 transition">
+        <button className="relative p-2 rounded-xl hover:bg-[#edf5f0] dark:hover:bg-gray-800 transition hidden sm:grid">
           <MessageSquare className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           <span className="absolute top-1 right-1 w-4 h-4 bg-[#1b3b2b] text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse-soft">1</span>
         </button>
@@ -128,7 +138,7 @@ export default function Topbar() {
         {/* Theme mode selector (Light / Dark / System) */}
         <ThemeMenu />
 
-        <button onClick={toggleFullscreen} className="p-2 rounded-xl hover:bg-[#edf5f0] dark:hover:bg-gray-800 transition">
+        <button onClick={toggleFullscreen} className="hidden sm:grid p-2 rounded-xl hover:bg-[#edf5f0] dark:hover:bg-gray-800 transition">
           {isFullscreen ? <Minimize2 className="w-5 h-5 text-gray-500 dark:text-gray-400" /> : <Maximize2 className="w-5 h-5 text-gray-500 dark:text-gray-400" />}
         </button>
 

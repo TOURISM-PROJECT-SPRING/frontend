@@ -71,7 +71,7 @@ const sections = [
   },
 ];
 
-export default function AdminSidebar({ collapsed, onToggle }) {
+export default function AdminSidebar({ collapsed, onToggle, open = false, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -85,11 +85,20 @@ export default function AdminSidebar({ collapsed, onToggle }) {
   };
 
   return (
-    <aside
-      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800 flex flex-col z-40 overflow-hidden transition-[width] duration-300 ease-in-out ${
-        collapsed ? "w-[72px]" : "w-64"
-      }`}
-    >
+    <>
+      {/* Mobile drawer backdrop */}
+      {open && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-gray-950/40 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800 flex flex-col z-50 overflow-hidden transition-[width,transform] duration-300 ease-in-out w-64 ${
+          collapsed ? "lg:w-[72px]" : "lg:w-64"
+        } ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      >
       <div
         className={`flex items-center h-14 border-b border-gray-100 dark:border-gray-800 shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
           collapsed ? "px-5" : "px-4"
@@ -130,6 +139,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={onClose}
                     className={`flex items-center rounded-lg text-[13px] font-medium overflow-hidden transition-all duration-300 ease-in-out ${
                       collapsed ? "gap-0 px-[27px] py-2" : "gap-2.5 px-2.5 py-2"
                     } ${
@@ -159,6 +169,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
       <div className="border-t border-gray-100 dark:border-gray-800 py-2.5 space-y-0.5">
         <Link
           to="/"
+          onClick={onClose}
           className={`flex items-center rounded-lg text-[13px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 overflow-hidden transition-all duration-300 ease-in-out ${
             collapsed ? "gap-0 px-[27px] py-2" : "gap-2.5 px-2.5 py-2"
           }`}
@@ -192,7 +203,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
         </button>
         <button
           onClick={onToggle}
-          className={`flex items-center rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 overflow-hidden transition-all duration-300 ease-in-out w-full ${
+          className={`hidden lg:flex items-center rounded-lg text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 overflow-hidden transition-all duration-300 ease-in-out w-full ${
             collapsed ? "gap-0 px-[27px] py-2" : "gap-2.5 px-2.5 py-2"
           }`}
         >
@@ -211,5 +222,6 @@ export default function AdminSidebar({ collapsed, onToggle }) {
         </button>
       </div>
     </aside>
+    </>
   );
 }
