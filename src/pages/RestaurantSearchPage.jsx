@@ -33,6 +33,8 @@ export default function RestaurantSearchPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
+  // Which card's "Book a table" was clicked — preselects the reservation modal.
+  const [reserveFor, setReserveFor] = useState(null);
 
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
@@ -72,6 +74,11 @@ export default function RestaurantSearchPage() {
     toast[saved ? "success" : "info"](
       saved ? `Saved "${r.name}" to My trips.` : `Removed "${r.name}" from My trips.`
     );
+  };
+
+  const openReserve = (r) => {
+    setReserveFor(r || null);
+    setReserveOpen(true);
   };
 
   return (
@@ -157,6 +164,7 @@ export default function RestaurantSearchPage() {
                   restaurant={r}
                   favorite={isSaved("restaurant", r.id)}
                   onToggleFavorite={toggleFavorite}
+                  onBookTable={openReserve}
                 />
               ))
             )}
@@ -181,8 +189,12 @@ export default function RestaurantSearchPage() {
       <MapModal open={mapOpen} onClose={() => setMapOpen(false)} restaurants={visible} title={title} />
       <ReservationModal
         open={reserveOpen}
-        onClose={() => setReserveOpen(false)}
+        onClose={() => {
+          setReserveOpen(false);
+          setReserveFor(null);
+        }}
         restaurants={visible.length ? visible : all}
+        initialRestaurantId={reserveFor?.id}
       />
       <FloatingTripCart />
     </div>

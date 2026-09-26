@@ -22,29 +22,29 @@ function GoogleIcon() {
   );
 }
 
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.8-4.67 4.54-4.67 1.31 0 2.69.23 2.69.23v2.96h-1.52c-1.49 0-1.95.93-1.95 1.87V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12Z" />
-    </svg>
-  );
-}
-
 function Field({ icon, label, type = "text", placeholder, value, onChange, autoComplete, trailing }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-semibold text-brand-800">{label}</span>
-      <div className="flex items-center gap-2.5 rounded-xl border border-line bg-white px-3.5 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/15">
-        <Icon name={icon} size={18} className="text-muted" />
+      <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-brand-800">{label}</span>
+      <div className="relative">
+        {icon && (
+          <Icon
+            name={icon}
+            size={17}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted/60"
+          />
+        )}
         <input
           type={type}
-          placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
           autoComplete={autoComplete}
-          className="h-11 w-full bg-transparent text-sm text-ink placeholder:text-muted/60 focus:outline-none"
+          className="h-12 w-full rounded-xl border border-line bg-white pl-11 pr-11 text-[15px] text-ink outline-none transition-all duration-200 placeholder:text-muted/50 focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15"
         />
-        {trailing}
+        {trailing && (
+          <span className="absolute right-3.5 top-1/2 -translate-y-1/2">{trailing}</span>
+        )}
       </div>
     </label>
   );
@@ -62,8 +62,8 @@ export default function LoginPage({ mode = "login" }) {
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Warm up the Google / Facebook SDKs on mount so the popup can open inside the
-  // user gesture when a social button is clicked.
+  // Warm up the Google SDK on mount so its popup can open inside the user
+  // gesture when the Google button is clicked.
   useEffect(() => {
     preloadSocialSdks();
   }, []);
@@ -121,9 +121,6 @@ export default function LoginPage({ mode = "login" }) {
             <Link to="/">
               <Logo tone="light" />
             </Link>
-            <button className="flex items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur">
-              EN <Icon name="chevron-down" size={15} />
-            </button>
           </div>
 
           <div className="max-w-md">
@@ -141,6 +138,7 @@ export default function LoginPage({ mode = "login" }) {
           </div>
         </div>
       </div>
+
 
       {/* Right form */}
       <div className="relative flex items-center justify-center bg-cream px-5 py-10 sm:px-10">
@@ -237,26 +235,15 @@ export default function LoginPage({ mode = "login" }) {
             <span className="h-px flex-1 bg-line" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => socialAuth("google")}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow disabled:opacity-70"
-            >
-              <GoogleIcon />
-              Google
-            </button>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => socialAuth("facebook")}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow disabled:opacity-70"
-            >
-              <FacebookIcon />
-              Facebook
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => socialAuth("google")}
+            className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow-md disabled:opacity-70"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
 
           <p className="mt-8 text-center text-sm text-muted">
             {isLogin ? "Don't have an account? " : "Already have an account? "}

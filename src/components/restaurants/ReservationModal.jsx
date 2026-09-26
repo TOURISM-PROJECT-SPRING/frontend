@@ -33,7 +33,9 @@ export default function ReservationModal({ open, onClose, restaurants = [], init
     }
   }, [open, initialRestaurantId, restaurants]);
 
-  const chosen = restaurants.find((r) => r.id === restaurantId) || restaurants[0];
+  // <select> always hands back a string, so compare loosely — otherwise picking
+  // a restaurant from the dropdown silently falls back to the first one.
+  const chosen = restaurants.find((r) => String(r.id) === String(restaurantId)) || restaurants[0];
 
   const fieldClass =
     "h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm font-medium text-ink outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/10";

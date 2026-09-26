@@ -12,6 +12,23 @@ import RatingDots from "../components/hotels/RatingDots";
 import ReviewCard from "../components/hotels/detail/ReviewCard";
 import RatingBar from "../components/hotels/detail/RatingBar";
 import ActivityGallery from "../components/tours/ActivityGallery";
+import ActivitySectionNav from "../components/tours/ActivitySectionNav";
+import ActivityMobileBookBar from "../components/tours/ActivityMobileBookBar";
+
+// Anchor targets for the jump nav, in document order. Kept at module scope so
+// the array identity is stable and the IntersectionObserver effect doesn't
+// re-subscribe on every render.
+const SECTIONS = [
+  { id: "highlights", label: "Highlights" },
+  { id: "overview", label: "Overview" },
+  { id: "included", label: "Included" },
+  { id: "itinerary", label: "Itinerary" },
+  { id: "good-to-know", label: "Good to know" },
+  { id: "reviews", label: "Reviews" },
+];
+
+// Site header is h-18 (72px) and the jump nav adds ~45px beneath it.
+const SECTION_SCROLL_MT = "scroll-mt-[132px]";
 
 function isoPlus(n) {
   const d = new Date();
@@ -21,8 +38,14 @@ function isoPlus(n) {
 
 function Section({ id, title, children }) {
   return (
-    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-28 border-t border-line pt-8 first:border-t-0 first:pt-0">
-      <h2 id={`${id}-h`} className="font-display text-2xl font-bold text-brand-900">{title}</h2>
+    <section
+      id={id}
+      aria-labelledby={`${id}-h`}
+      className={`${SECTION_SCROLL_MT} border-t border-line pt-8 first:border-t-0 first:pt-0`}
+    >
+      <h2 id={`${id}-h`} className="font-display text-2xl font-bold text-brand-900">
+        {title}
+      </h2>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -47,7 +70,9 @@ export default function ActivityDetailPage() {
   const rating = activity?.rating != null ? Number(activity.rating) : null;
 
   const [guests, setGuests] = useState(2);
-  const [date, setDate] = useState("");
+  // Default to a real date rather than an empty input — the checkout silently
+  // fell back to +7 days, so the field looked unset while booking a set date.
+  const [date, setDate] = useState(() => isoPlus(7));
 
   useEffect(() => {
     if (!activity) return;
@@ -138,7 +163,7 @@ export default function ActivityDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-28 sm:px-6 lg:px-8 lg:pb-0">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="hide-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap px-1 py-5 text-sm text-muted">
           {activity.location && (
@@ -208,8 +233,13 @@ export default function ActivityDetailPage() {
           </div>
         </header>
 
+        {/* Sticky jump nav */}
+        <div className="mt-4">
+          <ActivitySectionNav sections={SECTIONS} />
+        </div>
+
         {/* Gallery */}
-        <div className="mt-6">
+        <div className="mt-5">
           <ActivityGallery images={activity.galleryImages} title={activity.title} />
         </div>
 
@@ -349,22 +379,35 @@ export default function ActivityDetailPage() {
                     <Icon name="users" size={14} className="text-brand-500" /> Guests
                   </span>
                   <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-3">
-                    <button type="button" onClick={() => setGuests((g) => Math.max(1, g - 1))} aria-label="Fewer guests" className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 hover:bg-brand-50">
+                    <button type="button" onClick={() => setGuests((g) => Math.max(1, g - 1))} aria-label="Fewer guests" className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 transition hover:bg-brand-50">
                       <Icon name="minus" size={16} />
                     </button>
                     <span className="min-w-[3ch] text-center text-lg font-bold text-brand-800">{guests}</span>
-                    <button type="button" onClick={() => setGuests((g) => Math.min(20, g + 1))} aria-label="More guests" className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800">
+                    <button type="button" onClick={() => setGuests((g) => Math.min(20, g + 1))} aria-label="More guests" className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white transition hover:bg-brand-800">
                       <Icon name="plus" size={16} />
                     </button>
                   </div>
+                  <p className="mt-1.5 text-[12px] leading-snug text-muted">{activity.groupSize}</p>
                 </div>
               </div>
 
-              {price && (
-                <div className="mt-4 flex items-center justify-between rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
-                  <span className="text-sm font-semibold text-brand-800">Total</span>
-                  <span className="font-display text-xl font-bold text-brand-800">{money(total)} <span className="text-xs font-medium text-muted">for {guests}</span></span>
+              {price ? (
+                <div className="mt-4 space-y-1.5 rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3">
+                  <div className="flex items-center justify-between text-[13px] text-brand-800/80">
+                    <span>
+                      {money(price)} × {guests} {guests === 1 ? "guest" : "guests"}
+                    </span>
+                    <span className="font-semibold">{money(total)}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-brand-100 pt-1.5">
+                    <span className="text-sm font-bold text-brand-800">Total</span>
+                    <span className="font-display text-xl font-bold text-brand-800">{money(total)}</span>
+                  </div>
                 </div>
+              ) : (
+                <p className="mt-4 rounded-xl border border-line bg-canvas px-4 py-3 text-center text-[13px] text-muted">
+                  This experience is priced on request. Contact the operator for availability.
+                </p>
               )}
 
               <button
@@ -427,6 +470,13 @@ export default function ActivityDetailPage() {
           </div>
         )}
       </div>
+
+      <ActivityMobileBookBar
+        price={price}
+        total={price ? money(total) : null}
+        guests={guests}
+        onReserve={onReserve}
+      />
     </div>
   );
 }

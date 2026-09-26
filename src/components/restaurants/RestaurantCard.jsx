@@ -13,6 +13,7 @@ export default function RestaurantCard({
   restaurant: r,
   favorite,
   onToggleFavorite,
+  onBookTable,
   highlighted = false,
 }) {
   return (
@@ -77,15 +78,25 @@ export default function RestaurantCard({
 
         <RestaurantMeta restaurant={r} />
 
-        {r.hasMenu && (
-          <Link
-            to={`${r.href}#menu`}
-            className="mt-0.5 inline-flex w-fit items-center gap-1.5 text-[15px] font-semibold text-brand-700 transition hover:text-brand-900"
+        <div className="mt-1 flex flex-wrap items-center gap-2.5">
+          {r.hasMenu && (
+            <Link
+              to={`${r.href}#menu`}
+              className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-brand-700 transition hover:text-brand-900"
+            >
+              <Icon name="menu" size={16} className="text-brand-600" />
+              Menu
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => onBookTable?.(r)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-700 px-3.5 py-2 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md active:scale-[0.98]"
           >
-            <Icon name="menu" size={16} className="text-brand-600" />
-            Menu
-          </Link>
-        )}
+            <Icon name="utensils" size={15} />
+            Book a table
+          </button>
+        </div>
 
         <div className="mt-1 flex flex-col gap-1">
           {r.excerpts?.slice(0, 2).map((e, i) => (

@@ -130,9 +130,9 @@ export function AuthProvider({ children }) {
     [persist]
   );
 
-  // Social / OAuth sign-in (Google, Facebook). Forwards the provider token to
-  // the backend; when the social endpoint is unreachable (backend offline) it
-  // falls back to a sample account so the app stays usable, mirroring login().
+  // Social / OAuth sign-in (Google). Forwards the provider credential to the
+  // backend; when the social endpoint is unreachable (backend offline) it falls
+  // back to a sample account so the app stays usable, mirroring login().
   const socialLogin = useCallback(
     async ({ provider, token } = {}) => {
       try {
@@ -141,10 +141,9 @@ export function AuthProvider({ children }) {
         return { user: data.user, demo: false };
       } catch (e) {
         if (shouldDemoFallback(e)) {
-          const label = provider === "facebook" ? "Facebook" : "Google";
           const demo = {
             ...DEMO_USER,
-            fullname: `${label} User`,
+            fullname: "Google User",
             username: `${provider}_user`,
             email: `${provider}@sovannomnour.app`,
           };

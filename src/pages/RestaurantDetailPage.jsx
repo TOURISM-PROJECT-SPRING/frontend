@@ -20,6 +20,8 @@ import LocationSection from "../components/restaurants/detail/LocationSection";
 import ReviewsSection from "../components/restaurants/detail/ReviewsSection";
 import ReviewModal from "../components/restaurants/detail/ReviewModal";
 import DetailSkeleton from "../components/restaurants/detail/DetailSkeleton";
+import DiningMenu from "../components/restaurants/DiningMenu";
+import DiningCart from "../components/restaurants/DiningCart";
 
 function scrollToId(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -37,6 +39,32 @@ export default function RestaurantDetailPage() {
   const [guestReviews, setGuestReviews] = useState([]);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
+
+  // Order-for-pickup cart. Kept local to the page: a food order is scoped to one
+  // restaurant, so it deliberately does not live in the global favorites/trip
+  // cart. Rows are `{ id, title, image, price, qty }` — the shape both
+  // DiningMenu and DiningCart expect.
+  const [order, setOrder] = useState([]);
+  const [orderOpen, setOrderOpen] = useState(false);
+
+  const menu = restaurant?.menu || [];
+  const orderCount = order.reduce((n, i) => n + i.qty, 0);
+
+  const addDish = (dish) => {
+    setOrder((rows) => {
+      const hit = rows.find((r) => String(r.id) === String(dish.id));
+      if (hit) return rows.map((r) => (String(r.id) === String(dish.id) ? { ...r, qty: r.qty + 1 } : r));
+      return [...rows, { id: dish.id, title: dish.title, image: dish.image, price: dish.price, qty: 1 }];
+    });
+  };
+
+  const setDishQty = (dishId, qty) => {
+    setOrder((rows) =>
+      qty > 0
+        ? rows.map((r) => (String(r.id) === String(dishId) ? { ...r, qty } : r))
+        : rows.filter((r) => String(r.id) !== String(dishId))
+    );
+  };
 
   const favorite = restaurant ? isSaved("restaurant", restaurant.id) : false;
 
@@ -151,10 +179,39 @@ export default function RestaurantDetailPage() {
               groups={restaurant.allFeatures}
               title={restaurant.title}
             />
+
+            <DiningMenu
+              menu={menu}
+              cart={order}
+              cartCount={orderCount}
+              onAdd={addDish}
+              onSetQty={setDishQty}
+              onOpenCart={() => setOrderOpen(true)}
+            />
           </div>
 
           <aside className="space-y-6 self-start lg:sticky lg:top-[124px]">
             <OpeningHours hours={restaurant.openingHours} open={restaurant.open !== false} />
+
+            {menu.length > 0 && (
+              <div className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Order online</p>
+                <p className="mt-1 font-display text-lg font-bold text-brand-900">Food for pickup</p>
+                <p className="mt-1 text-sm text-muted">
+                  {orderCount > 0
+                    ? `${orderCount} item${orderCount > 1 ? "s" : ""} in your order — ready in about 20 minutes.`
+                    : `Order from the kitchen and pick up when you're ready. ${menu.length} dishes on the menu.`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setOrderOpen(true)}
+                  className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md active:scale-[0.99]"
+                >
+                  <Icon name="shopping-cart" size={17} />
+                  {orderCount > 0 ? `View order (${orderCount})` : "Start your order"}
+                </button>
+              </div>
+            )}
 
             <div className="rounded-2xl border border-line bg-white p-6 shadow-soft">
               <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Reserve</p>
@@ -234,6 +291,24 @@ export default function RestaurantDetailPage() {
           );
         }}
       />
+
+      {menu.length > 0 && (
+        <DiningCart
+          restaurant={restaurant}
+          cart={order}
+          source={source}
+          open={orderOpen}
+          onOpen={() => setOrderOpen(true)}
+          onClose={() => setOrderOpen(false)}
+          onSetQty={setDishQty}
+          onRemove={(dishId) => setDishQty(dishId, 0)}
+          onClear={() => setOrder([])}
+          onPlaced={() => {
+            setOrder([]);
+            setOrderOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

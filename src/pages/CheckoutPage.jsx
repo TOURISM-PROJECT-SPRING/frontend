@@ -195,7 +195,11 @@ export default function CheckoutPage() {
         toast.error("The payment was rejected. Please try again.");
       }
     } catch (err) {
-      toast.error(err?.message || "Booking couldn't be placed — the backend is unreachable.");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Booking couldn't be placed — please try again."
+      );
     }
     setSubmitting(false);
   };

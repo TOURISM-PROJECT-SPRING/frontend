@@ -3,7 +3,6 @@ import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import RoleGuard from "./components/manager/RoleGuard";
-import { useAuth } from "./context/AuthContext";
 import { useInbox } from "./context/InboxContext";
 import MyTrips from "./components/explore/MyTrips";
 import HomePage from "./pages/HomePage";
@@ -27,7 +26,7 @@ import TripPlannerPage from "./pages/TripPlannerPage";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerRoute from "./components/owner/OwnerRoute";
 import AdminDashboard from "./pages/AdminDashboard";
-import { ROLES, homePathFor } from "./utils/rbac";
+import { ROLES } from "./utils/rbac";
 
 function PublicLayout() {
   const { selectedBooking, closeBookingDetails } = useInbox();
@@ -73,34 +72,11 @@ function PublicLayout() {
   );
 }
 
-// Auth pages are only for guests — a signed-in admin/owner/user is bounced to
-// their role home instead of being shown a login form again.
-function GuestOnly({ children }) {
-  const { isAuthenticated, ready, user } = useAuth();
-  if (!ready) return null;
-  if (isAuthenticated) return <Navigate to={homePathFor(user)} replace />;
-  return children;
-}
-
 function App() {
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={
-          <GuestOnly>
-            <LoginPage mode="login" />
-          </GuestOnly>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <GuestOnly>
-            <LoginPage mode="register" />
-          </GuestOnly>
-        }
-      />
+      <Route path="/login" element={<LoginPage mode="login" />} />
+      <Route path="/register" element={<LoginPage mode="register" />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route
         path="/owner/*"

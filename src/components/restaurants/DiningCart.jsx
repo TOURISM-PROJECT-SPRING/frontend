@@ -10,6 +10,10 @@ import { cartService } from "../../services/cartService";
 import { orderService } from "../../services/orderService";
 import { paymentService } from "../../services/paymentService";
 
+// Prep window for a pickup order. Must be in the future: the backend rejects
+// a pickupTime that has already passed by the time the request lands.
+const PICKUP_LEAD_MS = 30 * 60 * 1000;
+
 function CartRow({ item, onSetQty, onRemove }) {
   const line = (Number(item.price) || 0) * item.qty;
   return (
@@ -77,6 +81,11 @@ export default function DiningCart({
   const count = cart.reduce((n, i) => n + i.qty, 0);
   const subtotal = cart.reduce((n, i) => n + (Number(i.price) || 0) * i.qty, 0);
 
+  // The backend rejects a pickupTime that is not in the future
+  // ("Pickup time must be in the future"), so schedule a short prep window
+  // rather than sending "now" — the server clock is always a tick ahead.
+  const pickupTime = () => new Date(Date.now() + PICKUP_LEAD_MS).toISOString();
+
   useEffect(() => {
     if (!open) return undefined;
     const h = (e) => e.key === "Escape" && onClose();
@@ -103,13 +112,15 @@ export default function DiningCart({
             quantity: item.qty,
           });
         }
-        const order = await orderService.placeOrderFromCart(userId, restaurant.id, new Date());
+        const order = await orderService.placeOrderFromCart(userId, restaurant.id, pickupTime());
         await paymentService.processPayment({ foodOrderIds: [order.id], paymentMethod: "Card" });
       }
       toast.success(`Order placed at ${restaurant.title}!`);
       onPlaced();
     } catch (err) {
-      toast.error(err?.message || "Couldn't place your order — please try again.");
+      toast.error(
+        err?.response?.data?.message || err?.message || "Couldn't place your order — please try again."
+      );
     } finally {
       setPlacing(false);
     }

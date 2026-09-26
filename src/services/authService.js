@@ -10,8 +10,8 @@ export const authService = {
     });
     return response.data;
   },
-  // Social / OAuth sign-in. `provider` is "google" or "facebook"; a backend
-  // auth token (id token / access token) can be forwarded via `token`.
+  // Social / OAuth sign-in. Google forwards a provider access token via `token`
+  // and the backend verifies it server-side.
   loginWithProvider: async ({ provider, token } = {}) => {
     const response = await axiosClient.post(`/auth/social/${provider}`, { token });
     return response.data;

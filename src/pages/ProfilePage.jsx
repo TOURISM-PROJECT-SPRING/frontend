@@ -44,7 +44,7 @@ export default function ProfilePage() {
   const [form, setForm] = useState({
     fullname: user?.fullname || "Sokha Dara",
     username: user?.username || "sokhadara",
-    email: user?.email || "sokha.dara@example.com",
+    email: user?.email || "",
     phone: user?.phone || "",
     address: user?.address || "",
     city: "Phnom Penh",
@@ -100,14 +100,14 @@ export default function ProfilePage() {
   }, [bookings, tripFilter]);
 
   const saveAccount = async () => {
-    if (!form.fullname.trim() || !form.email.trim()) {
-      toast.error("Full name and email are required.");
+    if (!form.fullname.trim()) {
+      toast.error("Full name is required.");
       return;
     }
     try {
       const patch = {
         fullname: form.fullname.trim(),
-        email: form.email.trim(),
+        email: form.email.trim() || null,
         phone: form.phone?.trim() || "",
         address: form.address?.trim() || "",
       };
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                     <span className="hidden sm:inline text-emerald-400">•</span>
                     <span className="flex items-center gap-1.5">
                       <Icon name="mail" size={14} className="text-gold-400" />
-                      {form.email}
+                      {form.email || "Email not provided"}
                     </span>
                     <span className="hidden sm:inline text-emerald-400">•</span>
                     <span className="flex items-center gap-1.5">

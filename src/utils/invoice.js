@@ -1,5 +1,7 @@
 // Opens a print-ready invoice in a new window so travelers can save it as PDF
 // or print it. No external PDF library required.
+import { longDate } from "../components/checkout/checkoutData";
+
 export function openInvoicePdf({ booking, money, contact, reference, payMethod, payTiming, chargeDateLabel }) {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
