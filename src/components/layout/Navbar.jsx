@@ -307,10 +307,10 @@ export default function Navbar() {
                         >
                           <div className="flex items-center gap-2.5">
                             <Icon name="grid" size={16} className="text-gold-600" />
-                            <span>Owner Dashboard</span>
+                            <span>Partner Dashboard</span>
                           </div>
                           <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[9px] font-extrabold text-gold-800">
-                            Owner
+                            Partner
                           </span>
                         </Link>
                       )}
@@ -427,7 +427,7 @@ export default function Navbar() {
                     className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-900 hover:bg-brand-50"
                   >
                     <Icon name="grid" size={16} className="text-gold-600" />
-                    <span>Owner Dashboard</span>
+                    <span>Partner Dashboard</span>
                   </Link>
                 )}
                 <button

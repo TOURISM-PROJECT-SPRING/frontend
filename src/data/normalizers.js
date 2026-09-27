@@ -208,7 +208,9 @@ export function normalizeFoodOrder(o) {
     date: fmtDate(o.pickupTime),
     status: titleCase(o.status),
     amount: toNumber(o.totalPrice),
-    itemCount: Array.isArray(o.items) ? o.items.length : null,
+    itemCount: Array.isArray(o.items)
+      ? o.items.reduce((n, i) => n + (Number(i?.quantity) || 0), 0)
+      : null,
     image: null,
   };
 }

@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Sparkles,
   Users,
+  UtensilsCrossed,
 } from "lucide-react";
 import { formatPrice } from "../utils/helpers";
 
@@ -38,10 +39,11 @@ export default function InboxPage() {
       if (activeTab === "unread" && alert.isRead) return false;
       if (activeTab === "stays" && alert.type !== "hotel_booking") return false;
       if (activeTab === "tours" && alert.type !== "ticket_booking") return false;
+      if (activeTab === "dining" && alert.type !== "food_order") return false;
 
       if (search.trim()) {
         const q = search.toLowerCase();
-        const text = `${alert.title} ${alert.subtitle} ${alert.hotelName || ""} ${alert.roomType || ""} ${alert.referenceNo || ""}`.toLowerCase();
+        const text = `${alert.title} ${alert.subtitle} ${alert.hotelName || ""} ${alert.roomType || ""} ${alert.restaurantName || ""} ${alert.referenceNo || ""}`.toLowerCase();
         return text.includes(q);
       }
       return true;
@@ -148,6 +150,16 @@ export default function InboxPage() {
             >
               Tours & Tickets
             </button>
+            <button
+              onClick={() => setActiveTab("dining")}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
+                activeTab === "dining"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              Dining ({alerts.filter((a) => a.type === "food_order").length})
+            </button>
           </div>
 
           {/* Search */}
@@ -220,11 +232,15 @@ export default function InboxPage() {
                       className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
                         alert.type === "hotel_booking"
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                          : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          : alert.type === "food_order"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                       }`}
                     >
                       {alert.type === "hotel_booking" ? (
                         <Hotel className="w-6 h-6" />
+                      ) : alert.type === "food_order" ? (
+                        <UtensilsCrossed className="w-6 h-6" />
                       ) : (
                         <Ticket className="w-6 h-6" />
                       )}

@@ -36,12 +36,16 @@ export default function OwnerMenuPage() {
     try {
       const [foodList, restList, catList] = await Promise.all([
         foodService.getAllFoods().catch(() => []),
-        restaurantService.getAllRestaurants().catch(() => []),
+        restaurantService.getMyRestaurants().catch(() => []),
         foodCategoryService.getAllFoodCategories().catch(() => []),
       ]);
-      setFoods(foodList || []);
       setRestaurants(restList || []);
       setCategories(catList || []);
+      // Only dishes belonging to restaurants this partner actually owns. The
+      // foods endpoint is global, so without this an owner would see (and be
+      // able to edit) every other restaurant's menu.
+      const ownedIds = new Set((restList || []).map((r) => String(r.id)));
+      setFoods((foodList || []).filter((f) => ownedIds.has(String(f.restaurantId))));
     } catch (error) {
       console.error("Error loading menu data:", error);
     } finally {

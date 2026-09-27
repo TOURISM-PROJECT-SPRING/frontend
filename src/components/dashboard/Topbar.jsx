@@ -39,7 +39,7 @@ export default function Topbar({ onMenu }) {
     year: "numeric",
   });
 
-  const displayName = user?.fullname || "Business Owner";
+  const displayName = user?.fullname || "Partner";
   const activeBadge = BUSINESS_TYPES.filter((b) => businessTypes.includes(b.id))
     .map((b) => b.badge)
     .join(" · ");
@@ -160,7 +160,7 @@ export default function Topbar({ onMenu }) {
             <div className="hidden md:block leading-none text-left">
               <p className="text-sm font-bold text-gray-900 dark:text-white">{displayName}</p>
               <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                {activeBadge || "Business Owner"}
+                {activeBadge || "Partner"}
               </p>
             </div>
           </button>
@@ -171,9 +171,9 @@ export default function Topbar({ onMenu }) {
               <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-xl py-2 z-50 animate-scale-in">
                 <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-800">
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{displayName}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{user?.email || "owner@smarttourism.com"}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{user?.email || "owner@sovanndomnour.com"}</p>
                   <span className="inline-block mt-1 text-[10px] font-bold text-[#1b3b2b] bg-[#edf5f0] border border-[#1b3b2b]/20 dark:text-emerald-300 dark:bg-[#16291e] px-2 py-0.5 rounded">
-                    {activeBadge || "Owner Account"}
+                    {activeBadge || "Partner"}
                   </span>
                 </div>
 

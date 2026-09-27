@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { createPortal } from "react-dom";
 import { useRestaurant } from "../hooks/useResource";
 import { buildRestaurantDetail } from "../data/restaurantDetail";
 import { useAuth } from "../context/AuthContext";
@@ -38,7 +37,6 @@ export default function RestaurantDetailPage() {
   const restaurant = useMemo(() => buildRestaurantDetail(items[0]), [items]);
   const [guestReviews, setGuestReviews] = useState([]);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [reserveOpen, setReserveOpen] = useState(false);
 
   // Order-for-pickup cart. Kept local to the page: a food order is scoped to one
   // restaurant, so it deliberately does not live in the global favorites/trip
@@ -213,30 +211,15 @@ export default function RestaurantDetailPage() {
               </div>
             )}
 
-            <div className="rounded-2xl border border-line bg-white p-6 shadow-soft">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Reserve</p>
-              <p className="mt-1 font-display text-lg font-bold text-brand-900">Book a table</p>
-              <p className="mt-1 text-sm text-muted">
-                {restaurant.open !== false ? "Open now — reserve your spot for tonight." : "Send a reservation request and we'll confirm by phone."}
-              </p>
-              <button
-                type="button"
-                onClick={() => setReserveOpen(true)}
-                className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md active:scale-[0.99]"
-              >
-                <Icon name="utensils" size={17} />
-                Reserve a Table
-              </button>
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
-              >
-                <Icon name="map-pin" size={17} />
-                Get Directions
-              </a>
-            </div>
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-300 bg-white text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50"
+            >
+              <Icon name="map-pin" size={17} />
+              Get Directions
+            </a>
           </aside>
         </div>
 
@@ -278,20 +261,6 @@ export default function RestaurantDetailPage() {
         }}
       />
 
-      <ReserveModal
-        open={reserveOpen}
-        onClose={() => setReserveOpen(false)}
-        title={restaurant.title}
-        onConfirm={(payload) => {
-          setReserveOpen(false);
-          toast.success(
-            `Reservation requested for ${payload.guests} guest${payload.guests > 1 ? "s" : ""}${
-              payload.date ? ` on ${payload.date}` : ""
-            }${payload.time ? ` at ${payload.time}` : ""}.`
-          );
-        }}
-      />
-
       {menu.length > 0 && (
         <DiningCart
           restaurant={restaurant}
@@ -313,67 +282,3 @@ export default function RestaurantDetailPage() {
   );
 }
 
-/* --------------------- Compact reservation request --------------------- */
-function ReserveModal({ open, onClose, title, onConfirm }) {
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("19:00");
-  const [guests, setGuests] = useState(2);
-  if (!open) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-brand-950/50 p-4 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label="Reserve a table">
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md animate-scalein rounded-2xl border border-line bg-white p-6 shadow-lift">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="font-display text-xl font-bold text-brand-900">Reserve a table</h3>
-            {title && <p className="mt-0.5 text-sm text-muted">{title}</p>}
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-brand-50 hover:text-brand-700">
-            <Icon name="x" size={18} />
-          </button>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          <label className="block">
-            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
-              <Icon name="calendar" size={14} className="text-brand-500" /> Date
-            </span>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400" />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
-              <Icon name="clock" size={14} className="text-brand-500" /> Time
-            </span>
-            <select value={time} onChange={(e) => setTime(e.target.value)} className="h-11 w-full rounded-xl border border-line bg-canvas px-3 text-sm outline-none focus:border-brand-400">
-              {["11:00", "12:00", "13:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"].map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </label>
-          <div>
-            <span className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-brand-800">
-              <Icon name="users" size={14} className="text-brand-500" /> Guests
-            </span>
-            <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas px-3">
-              <button type="button" onClick={() => setGuests((g) => Math.max(1, g - 1))} aria-label="Fewer guests" className="grid h-10 w-10 place-items-center rounded-lg text-brand-700 hover:bg-brand-50">
-                <Icon name="minus" size={16} />
-              </button>
-              <span className="min-w-[3ch] text-center text-lg font-bold text-brand-800">{guests}</span>
-              <button type="button" onClick={() => setGuests((g) => Math.min(20, g + 1))} aria-label="More guests" className="grid h-10 w-10 place-items-center rounded-lg bg-brand-700 text-white hover:bg-brand-800">
-                <Icon name="plus" size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex gap-3">
-          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-sm font-bold text-brand-800 transition-colors hover:bg-brand-50">Cancel</button>
-          <button type="button" onClick={() => onConfirm({ date, time, guests })} className="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-800">
-            Confirm Reservation
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}

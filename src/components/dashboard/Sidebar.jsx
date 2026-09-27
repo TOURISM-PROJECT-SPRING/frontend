@@ -136,10 +136,10 @@ export default function Sidebar({ collapsed, onToggle, open = false, onClose }) 
         {!collapsed && (
           <div className="min-w-0">
             <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap block leading-tight tracking-tight">
-              Smart Tourism
+              SovannDomNour
             </span>
             <span className="text-[10px] font-bold text-[#1b3b2b] dark:text-emerald-400 uppercase tracking-wider block">
-              Owner Portal
+              Partner Dashboard
             </span>
           </div>
         )}

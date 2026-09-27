@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../ui/Icon";
@@ -6,13 +6,6 @@ import SmartImage from "../ui/SmartImage";
 import { money } from "../../lib/format";
 import { useToast } from "../ui/Toast";
 import { useAuth } from "../../context/AuthContext";
-import { cartService } from "../../services/cartService";
-import { orderService } from "../../services/orderService";
-import { paymentService } from "../../services/paymentService";
-
-// Prep window for a pickup order. Must be in the future: the backend rejects
-// a pickupTime that has already passed by the time the request lands.
-const PICKUP_LEAD_MS = 30 * 60 * 1000;
 
 function CartRow({ item, onSetQty, onRemove }) {
   const line = (Number(item.price) || 0) * item.qty;
@@ -58,8 +51,9 @@ function CartRow({ item, onSetQty, onRemove }) {
 }
 
 // Dining cart for restaurant detail pages: a floating trigger pill (like the
-// trip cart) plus a slide-over order drawer. Checkout posts the food order via
-// cartService + orderService and settles it with the unified payment endpoint.
+// trip cart) plus a slide-over order drawer. "Checkout" hands the order to
+// RestaurantCheckoutPage, which owns pickup time, payment choice and the
+// Bakong KHQR / card / cash settlement.
 export default function DiningCart({
   restaurant,
   cart = [],
@@ -76,15 +70,9 @@ export default function DiningCart({
   const location = useLocation();
   const toast = useToast();
   const { userId } = useAuth();
-  const [placing, setPlacing] = useState(false);
 
   const count = cart.reduce((n, i) => n + i.qty, 0);
   const subtotal = cart.reduce((n, i) => n + (Number(i.price) || 0) * i.qty, 0);
-
-  // The backend rejects a pickupTime that is not in the future
-  // ("Pickup time must be in the future"), so schedule a short prep window
-  // rather than sending "now" — the server clock is always a tick ahead.
-  const pickupTime = () => new Date(Date.now() + PICKUP_LEAD_MS).toISOString();
 
   useEffect(() => {
     if (!open) return undefined;
@@ -93,37 +81,28 @@ export default function DiningCart({
     return () => window.removeEventListener("keydown", h);
   }, [open, onClose]);
 
-  const checkout = async () => {
+  const goToCheckout = () => {
     if (!cart.length) return;
     if (!userId) {
       toast.info("Please sign in to place your order.");
       navigate("/login", { state: { from: location.pathname } });
       return;
     }
-    setPlacing(true);
-    try {
-      if (source === "demo") {
-        await new Promise((r) => setTimeout(r, 700));
-      } else {
-        const created = await cartService.getOrCreateCart(userId, restaurant.id);
-        for (const item of cart) {
-          await cartService.addItem(created.id, {
-            foodId: Number(item.id) || item.id,
-            quantity: item.qty,
-          });
-        }
-        const order = await orderService.placeOrderFromCart(userId, restaurant.id, pickupTime());
-        await paymentService.processPayment({ foodOrderIds: [order.id], paymentMethod: "Card" });
-      }
-      toast.success(`Order placed at ${restaurant.title}!`);
-      onPlaced();
-    } catch (err) {
-      toast.error(
-        err?.response?.data?.message || err?.message || "Couldn't place your order — please try again."
-      );
-    } finally {
-      setPlacing(false);
-    }
+    onPlaced();
+    navigate("/restaurant-checkout", {
+      state: {
+        kind: "restaurant",
+        restaurantId: Number(restaurant.id),
+        restaurantName: restaurant.title,
+        restaurantImage: restaurant.galleryImages?.[0]?.url || restaurant.image,
+        restaurantAddress: [restaurant.address, restaurant.city].filter(Boolean).join(", "),
+        restaurantRating: restaurant.rating,
+        restaurantPhone: restaurant.phone,
+        items: cart.map((i) => ({ id: i.id, title: i.title, image: i.image, price: Number(i.price) || 0, qty: i.qty })),
+        source,
+        returnTo: location.pathname,
+      },
+    });
   };
 
   return (
@@ -213,24 +192,17 @@ export default function DiningCart({
 
               {cart.length > 0 && (
                 <div className="shrink-0 border-t border-line bg-canvas px-5 py-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-muted">Subtotal</span>
-                    <span className="font-display text-xl font-bold text-brand-800">{money(subtotal)}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={checkout}
-                    disabled={placing}
-                    className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {placing ? (
-                      "Placing order…"
-                    ) : (
-                      <>
-                        Place order <Icon name="arrow-right" size={17} />
-                      </>
-                    )}
-                  </button>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-muted">Subtotal</span>
+                  <span className="font-display text-xl font-bold text-brand-800">{money(subtotal)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={goToCheckout}
+                  className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md"
+                >
+                  Checkout <Icon name="arrow-right" size={17} />
+                </button>
                   <button
                     type="button"
                     onClick={onClear}

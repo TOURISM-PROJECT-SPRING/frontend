@@ -257,7 +257,7 @@ export default function OwnerProfilePage() {
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Payment & Business Profile</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem icon={Globe} label="Official Portal" value="https://smarttourism.cambodia.gov.kh" />
+              <InfoItem icon={Globe} label="Official Portal" value="https://sovanndomnour.com" />
               <InfoItem icon={Wallet} label="Settlement Bank" value="ABA Bank ••••4821" />
               <InfoItem icon={Globe} label="Primary Language" value="Khmer / English" />
               <InfoItem icon={Clock} label="Account Status" value={user?.status || "ACTIVE"} />

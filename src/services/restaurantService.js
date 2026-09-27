@@ -22,6 +22,21 @@ export const restaurantService = {
     const restaurants = response.data || [];
     return Promise.all(restaurants.map(withImages));
   },
+  // Owner-scoped list for the partner dashboard. Falls back to the full list if
+  // the backend is older and has no /mine route, so the page never goes blank.
+  getMyRestaurants: async () => {
+    try {
+      const response = await axiosClient.get('/restaurants/mine');
+      return response.data || [];
+    } catch {
+      const response = await axiosClient.get('/restaurants');
+      return response.data || [];
+    }
+  },
+  getMyRestaurantsWithImages: async () => {
+    const restaurants = await restaurantService.getMyRestaurants();
+    return Promise.all(restaurants.map(withImages));
+  },
   getRestaurantById: async (id) => {
     const response = await axiosClient.get(`/restaurants/${id}`);
     return response.data;

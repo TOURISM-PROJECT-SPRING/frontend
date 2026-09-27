@@ -1,6 +1,6 @@
-import { useState } from "react";
 import Icon from "../ui/Icon";
 import SmartImage from "../ui/SmartImage";
+import PromoCodeCard from "./PromoCodeCard";
 import { longDate, cancellationInfo } from "./checkoutData";
 
 function CountdownBanner({ seconds, expired }) {
@@ -10,44 +10,6 @@ function CountdownBanner({ seconds, expired }) {
     <div className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm font-bold ${expired ? "bg-danger/10 text-danger" : "bg-[#F8D9DE] text-[#8a2740]"}`}>
       <Icon name="clock" size={17} className="shrink-0" />
       <span>{expired ? "Reservation hold expired" : `We'll hold your spot for ${mm}:${String(ss).padStart(2, "0")} minutes`}</span>
-    </div>
-  );
-}
-
-function PromoCode({ promo, onApply, onRemove }) {
-  const [code, setCode] = useState("");
-  const [error, setError] = useState("");
-
-  const apply = () => {
-    const ok = onApply(code.trim().toUpperCase());
-    if (ok) { setError(""); setCode(""); }
-    else setError("Invalid promo code");
-  };
-
-  return (
-    <div className="border-t border-line py-4">
-      <h4 className="font-display text-sm font-bold text-brand-800">Promo code</h4>
-      {promo.applied ? (
-        <div className="mt-2 flex items-center justify-between rounded-lg bg-brand-50 px-3 py-2.5">
-          <span className="flex items-center gap-2 text-sm font-bold text-brand-700">
-            <Icon name="check-circle" size={16} /> Promo applied ({promo.code})
-          </span>
-          <button type="button" onClick={onRemove} className="text-xs font-bold text-danger underline underline-offset-2">Remove</button>
-        </div>
-      ) : (
-        <div className="mt-2 flex gap-2">
-          <input
-            value={code}
-            onChange={(e) => { setCode(e.target.value); setError(""); }}
-            onKeyDown={(e) => e.key === "Enter" && apply()}
-            placeholder="Enter promo code"
-            className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white px-3 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15"
-          />
-          <button type="button" onClick={apply} className="h-10 shrink-0 rounded-lg bg-brand-700 px-4 text-sm font-bold text-white transition-colors hover:bg-brand-800">Apply</button>
-        </div>
-      )}
-      {error && <p className="mt-1.5 text-xs font-semibold text-danger">{error}</p>}
-      {!promo.applied && <p className="mt-1.5 text-[11px] text-muted">Try <span className="font-bold">SAVE10</span> for 10% off.</p>}
     </div>
   );
 }
@@ -95,7 +57,7 @@ export default function BookingSummary({ booking, money, promo, onApplyPromo, on
           </p>
         </div>
 
-        <PromoCode money={money} promo={promo} onApply={onApplyPromo} onRemove={onRemovePromo} />
+        <PromoCodeCard promo={promo} onApply={onApplyPromo} onRemove={onRemovePromo} />
 
         {/* Total */}
         <div className="mt-2 flex items-center justify-between rounded-xl bg-canvas px-4 py-3">

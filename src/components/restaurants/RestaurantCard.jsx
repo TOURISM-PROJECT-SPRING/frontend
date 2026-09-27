@@ -13,7 +13,6 @@ export default function RestaurantCard({
   restaurant: r,
   favorite,
   onToggleFavorite,
-  onBookTable,
   highlighted = false,
 }) {
   return (
@@ -88,14 +87,6 @@ export default function RestaurantCard({
               Menu
             </Link>
           )}
-          <button
-            type="button"
-            onClick={() => onBookTable?.(r)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-700 px-3.5 py-2 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow-md active:scale-[0.98]"
-          >
-            <Icon name="utensils" size={15} />
-            Book a table
-          </button>
         </div>
 
         <div className="mt-1 flex flex-col gap-1">

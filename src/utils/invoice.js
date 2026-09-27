@@ -2,7 +2,20 @@
 // or print it. No external PDF library required.
 import { longDate } from "../components/checkout/checkoutData";
 
-export function openInvoicePdf({ booking, money, contact, reference, payMethod, payTiming, chargeDateLabel }) {
+export function openInvoicePdf({
+  booking,
+  money,
+  contact,
+  reference,
+  payMethod,
+  payTiming,
+  chargeDateLabel,
+  lineItems,
+  scheduleLine,
+  summaryLine,
+  dueLabel: dueLabelOverride,
+  footNote,
+}) {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -11,11 +24,12 @@ export function openInvoicePdf({ booking, money, contact, reference, payMethod, 
   });
 
   const dueLabel =
-    payMethod === "cash"
+    dueLabelOverride ||
+    (payMethod === "cash"
       ? "Payable in cash on arrival (USD or KHR)"
       : payTiming === "now"
-      ? "Paid in full online"
-      : `Due ${chargeDateLabel || "the tour date"}`;
+        ? "Paid in full online"
+        : `Due ${chargeDateLabel || "the tour date"}`);
 
   const methodLabel = {
     bakong: "Bakong KHQR",
@@ -26,10 +40,40 @@ export function openInvoicePdf({ booking, money, contact, reference, payMethod, 
   const unit = Number(money.unit) || 0;
   const qty = Number(booking.guests) || 1;
 
+  // Food orders bill several lines at once, so they pass `lineItems` instead
+  // of the single unit x quantity model the tour/hotel flow relies on.
+  const isLineItemInvoice = Array.isArray(lineItems) && lineItems.length > 0;
+
+  const bodyRows = isLineItemInvoice
+    ? lineItems
+        .map(
+          (l) => `<tr>
+            <td>${escapeHtml(l.title)}<span class="line2">${escapeHtml(l.subtitle || "")}</span></td>
+            <td class="qty">${Number(l.qty) || 0}</td>
+            <td class="num">$${(Number(l.unit) || 0).toFixed(2)}</td>
+            <td class="num">$${(Number(l.amount) || 0).toFixed(2)}</td>
+          </tr>`
+        )
+        .join("")
+    : `<tr>
+            <td>${escapeHtml(booking.title)}<span class="line2">${escapeHtml(booking.subtitle || "")}</span></td>
+            <td class="qty">${qty}</td>
+            <td class="num">$${unit.toFixed(2)}</td>
+            <td class="num">$${(unit * qty).toFixed(2)}</td>
+          </tr>`;
+
+  const subtotalBase = isLineItemInvoice
+    ? lineItems.reduce((sum, l) => sum + (Number(l.amount) || 0), 0)
+    : unit * qty;
+
   const rows = [
-    ["Subtotal", `$${(unit * qty).toFixed(2)}`],
+    ["Subtotal", `$${subtotalBase.toFixed(2)}`],
   ];
   if (money.discount > 0) rows.push(["Discount", `-$${money.discount.toFixed(2)}`]);
+
+  const detailsSchedule = scheduleLine || `${escapeHtml(longDate(booking.date))} • ${escapeHtml(booking.time || "")}`;
+  const detailsSummary = summaryLine || `${qty} adult${qty > 1 ? "s" : ""} • ${escapeHtml(methodLabel)}`;
+
 
   const html = `<!doctype html>
 <html lang="en">
@@ -81,20 +125,15 @@ export function openInvoicePdf({ booking, money, contact, reference, payMethod, 
         <div class="card">
           <h3>Invoice details</h3>
           <p><b>${today}</b></p>
-          <p>${escapeHtml(longDate(booking.date))} • ${escapeHtml(booking.time || "")}</p>
-          <p>${qty} adult${qty > 1 ? "s" : ""} • ${escapeHtml(methodLabel)}</p>
+          <p>${detailsSchedule}</p>
+          <p>${detailsSummary}</p>
         </div>
       </div>
 
       <table>
         <thead><tr><th>Description</th><th class="qty">Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr></thead>
         <tbody>
-          <tr>
-            <td>${escapeHtml(booking.title)}<span class="line2">${escapeHtml(booking.subtitle || "")}</span></td>
-            <td class="qty">${qty}</td>
-            <td class="num">$${unit.toFixed(2)}</td>
-            <td class="num">$${(unit * qty).toFixed(2)}</td>
-          </tr>
+          ${bodyRows}
         </tbody>
         <tfoot>
           ${rows.map(([label, val]) => `<tr><td colspan="3" class="num">${label}</td><td class="num">${val}</td></tr>`).join("")}
@@ -105,7 +144,7 @@ export function openInvoicePdf({ booking, money, contact, reference, payMethod, 
       <span class="status">✓ ${dueLabel}</span>
     </div>
     <div class="foot">
-      Thank you for choosing SovannDomNour. Questions about this invoice? Call +855 275 5071.
+      ${footNote ? escapeHtml(footNote) : "Thank you for choosing SovannDomNour. Questions about this invoice? Call +855 275 5071."}
     </div>
   </div>
 </body>

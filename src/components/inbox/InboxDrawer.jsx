@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Inbox as InboxIcon,
   ArrowRight,
+  UtensilsCrossed,
 } from "lucide-react";
 import { formatPrice } from "../../utils/helpers";
 
@@ -37,10 +38,11 @@ export default function InboxDrawer() {
       if (activeTab === "unread" && alert.isRead) return false;
       if (activeTab === "stays" && alert.type !== "hotel_booking") return false;
       if (activeTab === "tours" && alert.type !== "ticket_booking") return false;
+      if (activeTab === "dining" && alert.type !== "food_order") return false;
 
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();
-        const text = `${alert.title} ${alert.subtitle} ${alert.hotelName || ""} ${alert.roomType || ""} ${alert.referenceNo || ""}`.toLowerCase();
+        const text = `${alert.title} ${alert.subtitle} ${alert.hotelName || ""} ${alert.roomType || ""} ${alert.restaurantName || ""} ${alert.referenceNo || ""}`.toLowerCase();
         return text.includes(q);
       }
       return true;
@@ -124,6 +126,26 @@ export default function InboxDrawer() {
                 >
                   Stays
                 </button>
+                <button
+                  onClick={() => setActiveTab("tours")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                    activeTab === "tours"
+                      ? "bg-primary text-white"
+                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  Tours
+                </button>
+                <button
+                  onClick={() => setActiveTab("dining")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                    activeTab === "dining"
+                      ? "bg-primary text-white"
+                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  Dining ({alerts.filter((a) => a.type === "food_order").length})
+                </button>
               </div>
 
               {unreadCount > 0 && (
@@ -149,7 +171,7 @@ export default function InboxDrawer() {
                   No alerts in this view
                 </h3>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs mx-auto">
-                  When you book hotel rooms or tour experiences, all your confirmations and travel vouchers will arrive here.
+                  When you book hotel rooms, tour experiences or restaurant pickup orders, all your confirmations and travel vouchers will arrive here.
                 </p>
                 <Link
                   to="/stays"
@@ -179,11 +201,15 @@ export default function InboxDrawer() {
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                         alert.type === "hotel_booking"
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                          : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                          : alert.type === "food_order"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                       }`}
                     >
                       {alert.type === "hotel_booking" ? (
                         <Hotel className="w-5 h-5" />
+                      ) : alert.type === "food_order" ? (
+                        <UtensilsCrossed className="w-5 h-5" />
                       ) : (
                         <Ticket className="w-5 h-5" />
                       )}

@@ -312,7 +312,7 @@ export default function OwnerSettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Business Name</label>
                 <input
                   type="text"
-                  defaultValue="Smart Tourism Hospitality Group"
+                  defaultValue="SovannDomNour Hospitality Group"
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition"
                 />
               </div>
@@ -328,7 +328,7 @@ export default function OwnerSettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Website</label>
                 <input
                   type="url"
-                  defaultValue="https://smarttourism.cambodia.gov.kh"
+                  defaultValue="https://sovanndomnour.com"
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition"
                 />
               </div>

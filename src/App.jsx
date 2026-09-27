@@ -21,6 +21,7 @@ import HotelDetailPage from "./pages/HotelDetailPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import CheckoutPage from "./pages/CheckoutPage";
+import RestaurantCheckoutPage from "./pages/RestaurantCheckoutPage";
 import AiPage from "./pages/AiPage";
 import TripPlannerPage from "./pages/TripPlannerPage";
 import OwnerDashboard from "./pages/OwnerDashboard";
@@ -78,6 +79,7 @@ function App() {
       <Route path="/login" element={<LoginPage mode="login" />} />
       <Route path="/register" element={<LoginPage mode="register" />} />
       <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/restaurant-checkout" element={<RestaurantCheckoutPage />} />
       <Route
         path="/owner/*"
         element={

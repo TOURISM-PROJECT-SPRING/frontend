@@ -4,6 +4,19 @@ import { orderService } from "../../services/orderService";
 import { restaurantService } from "../../services/restaurantService";
 import { formatPrice } from "../../utils/helpers";
 
+// Mirrors OrderStatusEnum in the backend. The two states the dashboard used to
+// omit — PREPARING and READY — are the core of the kitchen workflow, so the
+// owner has to be able to both filter for them and move an order into them.
+const ORDER_STATUS_ACTIONS = [
+  { value: "CONFIRMED", label: "Confirm order", className: "bg-blue-600 hover:bg-blue-700" },
+  { value: "PREPARING", label: "Start preparing", className: "bg-amber-500 hover:bg-amber-600" },
+  { value: "READY", label: "Mark ready", className: "bg-violet-600 hover:bg-violet-700" },
+  { value: "COMPLETED", label: "Complete order", className: "bg-green-600 hover:bg-green-700" },
+  { value: "CANCELLED", label: "Cancel order", className: "bg-red-500 hover:bg-red-600" },
+];
+
+const TERMINAL_STATUSES = ["CANCELLED", "COMPLETED"];
+
 export default function OwnerOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
@@ -83,7 +96,7 @@ export default function OwnerOrdersPage() {
       {/* Tabs */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex gap-1.5 overflow-x-auto hide-scrollbar w-full sm:w-auto bg-white dark:bg-gray-900 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-800">
-          {["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map((st) => (
+          {["ALL", "PENDING", "CONFIRMED", "PREPARING", "READY", "COMPLETED", "CANCELLED"].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
@@ -152,6 +165,8 @@ export default function OwnerOrdersPage() {
                           ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                           : order.status === "CANCELLED"
                           ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                          : order.status === "READY"
+                          ? "bg-violet-500/10 text-violet-600 dark:text-violet-400"
                           : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       }`}
                     >
@@ -184,7 +199,9 @@ export default function OwnerOrdersPage() {
       </div>
 
       {/* Order Detail Modal */}
-      {selectedOrder && (
+      {selectedOrder && (() => {
+        const current = (selectedOrder.status || "PENDING").toUpperCase();
+        return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedOrder(null)} />
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100 dark:border-gray-800">
@@ -219,23 +236,34 @@ export default function OwnerOrdersPage() {
               </div>
             </div>
 
-            <div className="flex gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-              <button
-                onClick={() => handleUpdateStatus(selectedOrder.id, "CONFIRMED")}
-                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition"
-              >
-                Confirm Order
-              </button>
-              <button
-                onClick={() => handleUpdateStatus(selectedOrder.id, "COMPLETED")}
-                className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition"
-              >
-                Complete Order
-              </button>
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+              {TERMINAL_STATUSES.includes(current) ? (
+                <p className="text-[11px] text-gray-400">
+                  This order is {current.toLowerCase()} and can no longer change status.
+                </p>
+              ) : (
+                <>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    Update status
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ORDER_STATUS_ACTIONS.filter((a) => a.value !== current).map((a) => (
+                      <button
+                        key={a.value}
+                        onClick={() => handleUpdateStatus(selectedOrder.id, a.value)}
+                        className={`py-2 rounded-xl text-xs font-semibold text-white transition ${a.className}`}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

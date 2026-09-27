@@ -104,10 +104,14 @@ export default function PaymentDetailsCard({
   onBook,
   chargeDateLabel,
   cancelCutoff,
+  allowPayLater = true,
 }) {
   const patchCard = (p) => setCard((c) => ({ ...c, ...p }));
-  const dueToday = payTiming === "now" ? money.total : 0;
+  const dueToday = payTiming === "now" || !allowPayLater ? money.total : 0;
   const currentCardBrand = useMemo(() => detectCardBrand(card?.number), [card?.number]);
+  // Food orders are settled up front, so "reserve now, pay later" is hidden
+  // there rather than promising a $0 charge that is then collected anyway.
+  const payLater = allowPayLater ? payTiming : "now";
 
   const inputBase =
     "h-12 w-full rounded-xl border bg-white px-3.5 text-[15px] text-ink outline-none transition-all placeholder:text-muted/60";
@@ -141,20 +145,20 @@ export default function PaymentDetailsCard({
             <span className="text-xs font-semibold text-brand-600">Flexible options</span>
           </div>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className={`mt-3 grid gap-3 ${allowPayLater ? "sm:grid-cols-2" : ""}`}>
             {/* Pay Now Option */}
             <button
               type="button"
               onClick={() => setPayTiming("now")}
               className={`group relative flex flex-col justify-between rounded-xl border-2 p-4 text-left transition-all ${
-                payTiming === "now"
+                payLater === "now"
                   ? "border-brand-700 bg-brand-50/40 shadow-xs ring-1 ring-brand-700/20"
                   : "border-line bg-white hover:border-brand-300 hover:bg-slate-50/50"
               }`}
             >
               <div className="flex w-full items-start justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  <Radio checked={payTiming === "now"} />
+                  <Radio checked={payLater === "now"} />
                   <span className="font-display text-base font-bold text-brand-900">Pay now</span>
                 </div>
                 <span className="font-display text-lg font-extrabold text-brand-800">{money.usd(money.total)}</span>
@@ -169,35 +173,37 @@ export default function PaymentDetailsCard({
             </button>
 
             {/* Pay Later Option */}
-            <button
-              type="button"
-              onClick={() => setPayTiming("later")}
-              disabled={payMethod === "bakong"}
-              className={`group relative flex flex-col justify-between rounded-xl border-2 p-4 text-left transition-all ${
-                payMethod === "bakong"
-                  ? "cursor-not-allowed border-line bg-slate-50/60 opacity-50"
-                  : payTiming === "later"
-                    ? "border-brand-700 bg-brand-50/40 shadow-xs ring-1 ring-brand-700/20"
-                    : "border-line bg-white hover:border-brand-300 hover:bg-slate-50/50"
-              }`}
-            >
-              <div className="flex w-full items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <Radio checked={payTiming === "later"} />
-                  <div>
-                    <span className="font-display text-base font-bold text-brand-900">Reserve now, pay later</span>
+            {allowPayLater && (
+              <button
+                type="button"
+                onClick={() => setPayTiming("later")}
+                disabled={payMethod === "bakong"}
+                className={`group relative flex flex-col justify-between rounded-xl border-2 p-4 text-left transition-all ${
+                  payMethod === "bakong"
+                    ? "cursor-not-allowed border-line bg-slate-50/60 opacity-50"
+                    : payTiming === "later"
+                      ? "border-brand-700 bg-brand-50/40 shadow-xs ring-1 ring-brand-700/20"
+                      : "border-line bg-white hover:border-brand-300 hover:bg-slate-50/50"
+                }`}
+              >
+                <div className="flex w-full items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <Radio checked={payTiming === "later"} />
+                    <div>
+                      <span className="font-display text-base font-bold text-brand-900">Reserve now, pay later</span>
+                    </div>
                   </div>
+                  <span className="font-display text-lg font-extrabold text-brand-800">{money.usd(0)}</span>
                 </div>
-                <span className="font-display text-lg font-extrabold text-brand-800">{money.usd(0)}</span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-muted">
-                Zero fees today. Automatically charged {money.usd(money.total)} on <span className="font-semibold text-ink">{chargeDateLabel}</span>.
-              </p>
-              <div className="mt-3 flex items-center gap-1.5 border-t border-line/60 pt-2 text-[11px] font-semibold text-emerald-700">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>$0 due today • Cancel anytime</span>
-              </div>
-            </button>
+                <p className="mt-2 text-xs leading-relaxed text-muted">
+                  Zero fees today. Automatically charged {money.usd(money.total)} on <span className="font-semibold text-ink">{chargeDateLabel}</span>.
+                </p>
+                <div className="mt-3 flex items-center gap-1.5 border-t border-line/60 pt-2 text-[11px] font-semibold text-emerald-700">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span>$0 due today • Cancel anytime</span>
+                </div>
+              </button>
+            )}
           </div>
         </div>
 
@@ -545,7 +551,7 @@ export default function PaymentDetailsCard({
               <span className="text-xs font-bold uppercase tracking-wider text-muted">
                 {payMethod === "cash"
                   ? "Amount to pay on arrival"
-                  : payTiming === "now"
+                  : payLater === "now"
                     ? "Total amount"
                     : "Amount due today"}
               </span>
@@ -553,7 +559,7 @@ export default function PaymentDetailsCard({
                 {money.usd(dueToday)}
               </p>
             </div>
-            {payTiming === "later" && (
+            {payLater === "later" && (
               <div className="text-right text-xs text-muted">
                 <span>Total booking: </span>
                 <span className="font-bold text-ink">{money.usd(money.total)}</span>
@@ -563,7 +569,7 @@ export default function PaymentDetailsCard({
           </div>
 
           <p className="mx-auto mt-4 max-w-xl text-center text-xs text-muted">
-            By clicking &quot;{payTiming === "now" ? "Confirm & Pay" : "Reserve spot"}&quot;, you agree to SovannDomNour&apos;s{" "}
+            By clicking &quot;{payLater === "now" ? "Confirm & Pay" : "Reserve spot"}&quot;, you agree to SovannDomNour&apos;s{" "}
             <a href="#" className="font-semibold text-brand-700 underline underline-offset-2 hover:text-brand-900">
               Terms of Service
             </a>{" "}
@@ -595,7 +601,7 @@ export default function PaymentDetailsCard({
                 <span>
                   {payMethod === "cash"
                     ? `Reserve • Pay ${money.usd(money.total)} in cash`
-                    : payTiming === "now"
+                    : payLater === "now"
                       ? `Confirm & Pay ${money.usd(money.total)}`
                       : `Reserve Now • Pay ${money.usd(0)} Today`}
                 </span>

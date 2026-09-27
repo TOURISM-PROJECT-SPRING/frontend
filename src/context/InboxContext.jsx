@@ -2,11 +2,29 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import { useAuth } from "./AuthContext";
 import { roomBookingService } from "../services/roomBookingService";
 import { ticketBookingService } from "../services/ticketBookingService";
+import { orderService } from "../services/orderService";
+import { foodOrderPaymentLabel, readFoodOrderPrefs } from "../utils/foodOrderPrefs";
+import { tableByNumber } from "../components/checkout/restaurantCheckoutData";
 
 const INBOX_READ_KEY = "smart_tourism_inbox_read_ids";
 const LOCAL_ALERTS_KEY = "smart_tourism_inbox_local_alerts";
 
 const InboxContext = createContext(null);
+
+// FoodOrderResponse.pickupTime / createdAt are java.time.LocalDateTime, which
+// Jackson writes as a local ISO string ("2026-09-27T15:00:00") — new Date()
+// reads that back in the browser's own zone, which is what we want to show.
+function formatLocalDateTime(value, opts) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString("en-US", opts);
+}
+
+function orderItemCount(order) {
+  if (!Array.isArray(order?.items)) return 0;
+  return order.items.reduce((n, i) => n + (Number(i?.quantity) || 0), 0);
+}
 
 export function InboxProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
@@ -68,9 +86,10 @@ export function InboxProvider({ children }) {
 
     if (isAuthenticated && user?.id) {
       try {
-        const [roomBookings, ticketBookings] = await Promise.all([
+        const [roomBookings, ticketBookings, foodOrders] = await Promise.all([
           roomBookingService.getRoomBookingsByUser(user.id).catch(() => []),
           ticketBookingService.getTicketBookingsByUser(user.id).catch(() => []),
+          orderService.getOrdersByUser(user.id).catch(() => []),
         ]);
 
         // Convert room bookings to inbox alerts
@@ -119,6 +138,59 @@ export function InboxProvider({ children }) {
             referenceNo: `TB-${String(tb.id).padStart(5, "0")}`,
             bookingData: tb,
             timestamp: tb.createdAt || new Date().toISOString(),
+            isRead: isRead,
+          });
+        });
+
+        // Convert restaurant pickup orders to inbox alerts
+        (foodOrders || []).forEach((o) => {
+          const alertId = `food-order-${o.id}`;
+          const isRead = readIds.includes(alertId);
+          const itemCount = orderItemCount(o);
+          const pickupLabel = formatLocalDateTime(o.pickupTime, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          });
+          // BookingVoucherModal reads `amount`/`paymentMethod`, which the food
+          // order DTO does not carry. Fulfilment and table are client-side too.
+          const prefs = readFoodOrderPrefs(o.id) || {};
+          const isDineIn = prefs.fulfilment === "dine_in";
+          const table = isDineIn ? tableByNumber(prefs.tableNumber) : null;
+          const paymentMethod = foodOrderPaymentLabel(o.id);
+          const bookingData = {
+            ...o,
+            amount: o.totalPrice,
+            paymentMethod,
+            fulfilment: prefs.fulfilment || "takeaway",
+            tableNumber: table?.number || null,
+            guests: prefs.guests ?? null,
+          };
+          loadedList.push({
+            id: alertId,
+            type: "food_order",
+            title: `${isDineIn ? "🍽️" : "🍛"} ${isDineIn ? "Dine-in Order" : "Food Order"} Confirmed: ${o.restaurantName || "Restaurant"}`,
+            subtitle: `${itemCount} ${itemCount === 1 ? "item" : "items"} • ${
+              isDineIn ? `Table ${table?.number || "—"} • ` : ""
+            }${isDineIn ? "Seated" : "Pickup"} ${pickupLabel}`,
+            message: `Your ${isDineIn ? "dine-in" : "pickup"} order at ${
+              o.restaurantName || "the restaurant"
+            } is confirmed for ${pickupLabel}.`,
+            pickupTime: o.pickupTime,
+            amount: o.totalPrice,
+            restaurantName: o.restaurantName,
+            itemCount,
+            items: o.items,
+            status: o.status || "PENDING",
+            paymentMethod,
+            fulfilment: bookingData.fulfilment,
+            tableNumber: bookingData.tableNumber,
+            guests: bookingData.guests,
+            referenceNo: `FO-${String(o.id).padStart(5, "0")}`,
+            bookingData,
+            timestamp: o.createdAt || o.pickupTime || new Date().toISOString(),
             isRead: isRead,
           });
         });

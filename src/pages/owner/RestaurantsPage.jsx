@@ -6,8 +6,14 @@ import { foodService } from "../../services/foodService";
 import { tourPlaceService } from "../../services/tourPlaceService";
 import { Link } from "react-router-dom";
 import ImageUpload from "../../components/ui/ImageUpload";
+import { useAuth } from "../../context/AuthContext";
 
 export default function OwnerRestaurantsPage() {
+  const { user } = useAuth();
+  // Admins oversee every business; a plain owner only edits their own records.
+  const isAdmin = (user?.roles || []).includes("ADMIN");
+  const canEdit = (r) => isAdmin || (r?.ownerId != null && r.ownerId === user?.id);
+
   const [restaurants, setRestaurants] = useState([]);
   const [places, setPlaces] = useState([]);
   const [menuCounts, setMenuCounts] = useState({});
@@ -35,7 +41,7 @@ export default function OwnerRestaurantsPage() {
     setLoading(true);
     try {
       const [restData, placeData, foodData] = await Promise.all([
-        restaurantService.getAllRestaurantsWithImages().catch(() => []),
+        restaurantService.getMyRestaurantsWithImages().catch(() => []),
         tourPlaceService.getAllTourPlaces().catch(() => []),
         foodService.getAllFoods().catch(() => []),
       ]);
@@ -85,6 +91,10 @@ export default function OwnerRestaurantsPage() {
   };
 
   const openEditModal = async (r) => {
+    if (!canEdit(r)) {
+      setErrorMessage("You can only edit restaurants you own.");
+      return;
+    }
     setEditItem(r);
     setErrorMessage("");
     setImages([]);
@@ -173,6 +183,11 @@ export default function OwnerRestaurantsPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    if (!canEdit(deleteTarget)) {
+      setDeleteTarget(null);
+      setErrorMessage("You can only delete restaurants you own.");
+      return;
+    }
     try {
       await restaurantService.deleteRestaurant(deleteTarget.id);
       setRestaurants((prev) => prev.filter((r) => r.id !== deleteTarget.id));
@@ -270,6 +285,16 @@ export default function OwnerRestaurantsPage() {
                 </p>
               )}
 
+              {!canEdit(r) && (
+                <p className="mb-3 flex items-start gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 px-2.5 py-2 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                  <AlertCircle className="w-3.5 h-3.5 mt-px shrink-0" />
+                  <span>
+                    Read only — this restaurant belongs to another partner
+                    {r.ownerName ? ` (${r.ownerName})` : ""}.
+                  </span>
+                </p>
+              )}
+
               <div className="flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
                 <Link
                   to={`/owner/menu?restaurantId=${r.id}`}
@@ -279,13 +304,17 @@ export default function OwnerRestaurantsPage() {
                 </Link>
                 <button
                   onClick={() => openEditModal(r)}
-                  className="flex items-center justify-center py-2 px-3 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                  disabled={!canEdit(r)}
+                  title={canEdit(r) ? "Edit restaurant" : "You do not own this restaurant"}
+                  className="flex items-center justify-center py-2 px-3 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-800"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setDeleteTarget(r)}
-                  className="flex items-center justify-center py-2 px-3 text-xs font-medium text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition"
+                  disabled={!canEdit(r)}
+                  title={canEdit(r) ? "Delete restaurant" : "You do not own this restaurant"}
+                  className="flex items-center justify-center py-2 px-3 text-xs font-medium text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50 dark:disabled:hover:bg-red-500/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

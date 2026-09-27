@@ -2,14 +2,13 @@ import Icon from "../ui/Icon";
 import Breadcrumb from "./Breadcrumb";
 
 // Top of the page: breadcrumb bar, oversized title, a location selector and the
-// two action pills. Title/subtitle/location are driven by the selected province.
+// map action pill. Title/subtitle/location are driven by the selected province.
 export default function PageHeader({
   title,
   subtitle,
   province = "",
   provinces = [],
   onProvince,
-  onReserve,
   onMap,
 }) {
   return (
@@ -44,14 +43,6 @@ export default function PageHeader({
               </span>
             </label>
 
-            <button
-              type="button"
-              onClick={onReserve}
-              className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-brand-700 bg-white px-5 text-[15px] font-bold text-brand-800 transition hover:bg-brand-50 active:scale-[0.98]"
-            >
-              <Icon name="calendar" size={18} className="text-brand-700" />
-              Reserve a table
-            </button>
             <button
               type="button"
               onClick={onMap}

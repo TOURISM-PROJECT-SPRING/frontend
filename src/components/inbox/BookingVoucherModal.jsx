@@ -1,15 +1,46 @@
-import { X, Calendar, MapPin, Users, CreditCard, ShieldCheck, Printer, CheckCircle2, Clock, Hotel, Compass, AlertCircle } from "lucide-react";
+import { X, Calendar, MapPin, Users, CreditCard, ShieldCheck, Printer, CheckCircle2, Clock, Hotel, Compass, UtensilsCrossed, ShoppingBag, AlertCircle } from "lucide-react";
 import { formatPrice } from "../../utils/helpers";
 
 export default function BookingVoucherModal({ booking, onClose }) {
   if (!booking) return null;
 
-  const isHotel = Boolean(booking.hotelName || booking.roomType || booking.checkIn);
-  const isTicket = Boolean(booking.ticketName || booking.tourismPlaceName || booking.visitDate);
+  // Food orders are checked first: a pickup order carries neither hotel nor
+  // ticket fields, and would otherwise fall through to the tour branch.
+  const isFood = Boolean(booking.restaurantName || booking.pickupTime);
+  const isHotel = !isFood && Boolean(booking.hotelName || booking.roomType || booking.checkIn);
+  const isTicket = !isFood && !isHotel;
 
   const referenceNo = booking.id
-    ? `${isHotel ? "RB" : "TB"}-${String(booking.id).padStart(5, "0")}`
+    ? `${isFood ? "FO" : isHotel ? "RB" : "TB"}-${String(booking.id).padStart(5, "0")}`
     : "BOOK-REF";
+
+  const pickupLabel = (() => {
+    if (!booking.pickupTime) return "N/A";
+    const d = new Date(booking.pickupTime);
+    if (Number.isNaN(d.getTime())) return String(booking.pickupTime);
+    return d.toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  })();
+
+  const orderLines = (Array.isArray(booking.items) ? booking.items : []).filter(Boolean);
+  const totalUnits = orderLines.reduce((n, i) => n + (Number(i.quantity) || 0), 0);
+
+  // FoodOrderItemResponse exposes subTotal (and unitPrice); older/looser payloads
+  // may only carry unitPrice, so fall back to deriving the line total.
+  const lineTotal = (item) => {
+    const qty = Number(item.quantity) || 0;
+    const subtotal = item.subTotal != null ? Number(item.subTotal) : null;
+    if (subtotal != null && !Number.isNaN(subtotal)) return subtotal;
+    const unit = Number(item.unitPrice ?? item.price) || 0;
+    return unit * (qty || 1);
+  };
+  const hasLineTotals = orderLines.some((i) => i.subTotal != null || i.unitPrice != null || i.price != null);
+  const isDineIn = booking.fulfilment === "dine_in";
 
   const checkInDate = booking.checkIn ? new Date(booking.checkIn) : null;
   const checkOutDate = booking.checkOut ? new Date(booking.checkOut) : null;
@@ -47,11 +78,21 @@ export default function BookingVoucherModal({ booking, onClose }) {
           </div>
 
           <h2 className="text-xl sm:text-2xl font-bold">
-            {isHotel ? booking.hotelName || "Hotel Reservation" : booking.ticketName || "Tour Experience"}
+            {isFood
+              ? booking.restaurantName || "Food Order"
+              : isHotel
+                ? booking.hotelName || "Hotel Reservation"
+                : booking.ticketName || "Tour Experience"}
           </h2>
           <p className="text-sm text-white/80 mt-1 flex items-center gap-1">
             <MapPin className="w-4 h-4 shrink-0 text-white/90" />
-            {isHotel ? "Cambodia Hospitality & Stays" : booking.tourismPlaceName || "Cambodia Experience"}
+            {isFood
+              ? booking.fulfilment === "dine_in"
+                ? `Dine in — Table ${booking.tableNumber || "—"}`
+                : "Cambodia Table — Takeaway"
+              : isHotel
+                ? "Cambodia Hospitality & Stays"
+                : booking.tourismPlaceName || "Cambodia Experience"}
           </p>
         </div>
 
@@ -73,6 +114,28 @@ export default function BookingVoucherModal({ booking, onClose }) {
                   <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{booking.checkOut || "N/A"}</p>
                   <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
                     <Clock className="w-3.5 h-3.5 text-primary" /> Until 12:00 PM
+                  </span>
+                </div>
+              </div>
+            ) : isFood ? (
+              <div className="grid grid-cols-2 gap-4 divide-x divide-gray-200 dark:divide-gray-700">
+                <div>
+                  <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider block">
+                    {booking.fulfilment === "dine_in" ? "Seated At" : "Pickup Time"}
+                  </span>
+                  <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{pickupLabel}</p>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    {booking.fulfilment === "dine_in" ? "Table held for you" : "Collect from counter"}
+                  </span>
+                </div>
+                <div className="pl-4">
+                  <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider block">Order Size</span>
+                  <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">
+                    {totalUnits} {totalUnits === 1 ? "Item" : "Items"}
+                  </p>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                    <UtensilsCrossed className="w-3.5 h-3.5 text-primary" /> Kitchen prepares fresh
                   </span>
                 </div>
               </div>
@@ -141,6 +204,48 @@ export default function BookingVoucherModal({ booking, onClose }) {
                 </>
               )}
 
+              {isFood && (
+                <>
+                  {orderLines.map((item, idx) => (
+                    <div key={`${item.foodId ?? "item"}-${idx}`} className="p-3.5 flex justify-between items-center gap-3">
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2 min-w-0">
+                        <ShoppingBag className="w-4 h-4 text-primary shrink-0" />
+                        <span className="truncate">{item.foodName || `Menu item #${item.foodId ?? "—"}`}</span>
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white shrink-0">
+                        ×{item.quantity || 1}
+                        {hasLineTotals && (
+                          <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">
+                            {formatPrice(lineTotal(item))}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+
+                  <div className="p-3.5 flex justify-between items-center">
+                    <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      {booking.fulfilment === "dine_in" ? "Seated At" : "Pickup Slot"}
+                    </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{pickupLabel}</span>
+                  </div>
+
+                  <div className="p-3.5 flex justify-between items-center">
+                    <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                      <UtensilsCrossed className="w-4 h-4 text-primary" /> Service
+                    </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {isDineIn
+                        ? `Dine in${booking.tableNumber ? ` · Table ${booking.tableNumber}` : ""}${
+                            booking.guests ? ` · ${booking.guests} ${booking.guests === 1 ? "guest" : "guests"}` : ""
+                          }`
+                        : "Takeaway"}
+                    </span>
+                  </div>
+                </>
+              )}
+
               <div className="p-3.5 flex justify-between items-center">
                 <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-primary" /> Payment Method
@@ -168,10 +273,13 @@ export default function BookingVoucherModal({ booking, onClose }) {
               </div>
               <div>
                 <p className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Digital Check-In Code
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  {isFood ? "Pickup Code" : "Digital Check-In Code"}
                 </p>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                  Present this QR or reference #{referenceNo} at reception.
+                  {isFood
+                    ? `Show this code or reference #${referenceNo} when collecting your order.`
+                    : `Present this QR or reference #${referenceNo} at reception.`}
                 </p>
               </div>
             </div>

@@ -23,7 +23,6 @@ import RestaurantCardSkeleton from "../components/restaurants/RestaurantCardSkel
 import EmptyState from "../components/restaurants/EmptyState";
 import MobileFilterDrawer from "../components/restaurants/MobileFilterDrawer";
 import MapModal from "../components/restaurants/MapModal";
-import ReservationModal from "../components/restaurants/ReservationModal";
 import FloatingTripCart from "../components/home/FloatingTripCart";
 
 export default function RestaurantSearchPage() {
@@ -32,9 +31,6 @@ export default function RestaurantSearchPage() {
   const [sort, setSort] = useState("featured");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
-  const [reserveOpen, setReserveOpen] = useState(false);
-  // Which card's "Book a table" was clicked — preselects the reservation modal.
-  const [reserveFor, setReserveFor] = useState(null);
 
   const { isSaved, toggle } = useFavorites();
   const toast = useToast();
@@ -76,11 +72,6 @@ export default function RestaurantSearchPage() {
     );
   };
 
-  const openReserve = (r) => {
-    setReserveFor(r || null);
-    setReserveOpen(true);
-  };
-
   return (
     <div className="animate-fade">
       <PageHeader
@@ -89,7 +80,6 @@ export default function RestaurantSearchPage() {
         province={filters.province}
         provinces={provinces}
         onProvince={(v) => patch({ province: v })}
-        onReserve={() => setReserveOpen(true)}
         onMap={() => setMapOpen(true)}
       />
 
@@ -164,7 +154,6 @@ export default function RestaurantSearchPage() {
                   restaurant={r}
                   favorite={isSaved("restaurant", r.id)}
                   onToggleFavorite={toggleFavorite}
-                  onBookTable={openReserve}
                 />
               ))
             )}
@@ -187,15 +176,6 @@ export default function RestaurantSearchPage() {
         provinces={provinces}
       />
       <MapModal open={mapOpen} onClose={() => setMapOpen(false)} restaurants={visible} title={title} />
-      <ReservationModal
-        open={reserveOpen}
-        onClose={() => {
-          setReserveOpen(false);
-          setReserveFor(null);
-        }}
-        restaurants={visible.length ? visible : all}
-        initialRestaurantId={reserveFor?.id}
-      />
       <FloatingTripCart />
     </div>
   );

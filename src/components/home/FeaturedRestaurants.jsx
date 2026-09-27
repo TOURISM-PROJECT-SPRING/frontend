@@ -14,7 +14,7 @@ export default function FeaturedRestaurants() {
       <SectionHeading
         eyebrow="What to eat"
         title="Taste Cambodia"
-        subtitle="From royal Khmer cuisine to buzzing street stalls — book a table or order in."
+        subtitle="From royal Khmer cuisine to buzzing street stalls — browse the menu and order in."
         action={
           <Link to="/restaurant" className="group hidden items-center gap-1.5 text-sm font-bold text-brand-700 sm:inline-flex">
             View All <Icon name="arrow-right" size={16} className="transition-transform duration-500 ease-out group-hover:translate-x-1" />
