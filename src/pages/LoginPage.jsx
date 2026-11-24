@@ -22,6 +22,26 @@ function GoogleIcon() {
   );
 }
 
+function FacebookIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="11" fill="#1877F2" />
+      <path
+        d="M13.7 20V12.9H16.1L16.5 10.1H13.7V8.3C13.7 7.5 14 6.9 15.1 6.9H16.6V4.4C16.3 4.4 15.4 4.3 14.4 4.3 12.2 4.3 11 5.6 11 8V10.1H8.7V12.9H11V20H13.7Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
+
 function Field({ icon, label, type = "text", placeholder, value, onChange, autoComplete, trailing }) {
   return (
     <label className="block">
@@ -239,10 +259,20 @@ export default function LoginPage({ mode = "login" }) {
             type="button"
             disabled={loading}
             onClick={() => socialAuth("google")}
-            className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow-md disabled:opacity-70"
+            className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow-md disabled:opacity-70 mb-5"
           >
             <GoogleIcon />
             Continue with Google
+          </button>
+
+           <button
+            type="button"
+            disabled={loading}
+            onClick={() => socialAuth("facebook")}
+            className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-white text-sm font-semibold text-ink shadow-sm transition-all hover:border-gray-300 hover:shadow-md disabled:opacity-70"
+          >
+            <FacebookIcon />
+            Continue with Facebook
           </button>
 
           <p className="mt-8 text-center text-sm text-muted">
