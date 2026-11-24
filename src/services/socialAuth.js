@@ -177,54 +177,61 @@ export function getGoogleAccessToken() {
 // FACEBOOK LOGIN
 // =========================
 
-export function getFacebookAccessToken() {
-  return loadFacebookScript().then(
-    (FB) =>
-      new Promise((resolve, reject) => {
-        let settled = false;
 
-        const finish = (error, token) => {
-          if (settled) return;
+export async function getFacebookAccessToken() {
+  const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
 
-          settled = true;
-          clearTimeout(timer);
+  if (!appId) {
+    throw new Error("VITE_FACEBOOK_APP_ID is missing");
+  }
 
-          if (error) reject(error);
-          else resolve(token);
-        };
+  // SDK គួរត្រូវបាន preload មុនពេលចុច button
+  if (!window.FB) {
+    throw new Error(
+      "Facebook SDK is not ready. Please reload and try again."
+    );
+  }
 
-        const timer = setTimeout(() => {
-          finish(new Error("Facebook sign-in timed out."));
-        }, OAUTH_WAIT_MS);
+  return new Promise((resolve, reject) => {
+    let settled = false;
 
-        try {
-          FB.login(
-            (response) => {
-              const token =
-                response?.authResponse?.accessToken;
+    const finish = (error, token) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
 
-              if (!token) {
-                finish(
-                  new Error(
-                    "Facebook sign-in was cancelled or denied."
-                  )
-                );
-                return;
-              }
+      if (error) reject(error);
+      else resolve(token);
+    };
 
-              finish(null, token);
-            },
-            {
-              scope: "public_profile,email",
-              return_scopes: true,
-            }
-          );
-        } catch (error) {
-          finish(error);
-        }
-      })
-  );
+    const timer = setTimeout(() => {
+      finish(new Error("Facebook login timed out."));
+    }, 30000);
+
+    try {
+      window.FB.login(
+        (response) => {
+          const token = response?.authResponse?.accessToken;
+
+          if (!token) {
+            finish(
+              new Error(
+                "Facebook login was cancelled or not authorized."
+              )
+            );
+            return;
+          }
+
+          finish(null, token);
+        },
+        { scope: "public_profile,email" }
+      );
+    } catch (error) {
+      finish(error);
+    }
+  });
 }
+
 
 // =========================
 // SOCIAL PROVIDERS

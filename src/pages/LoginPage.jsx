@@ -112,22 +112,48 @@ export default function LoginPage({ mode = "login" }) {
     }
   };
 
-  const socialAuth = async (provider) => {
-    setError(null);
-    setLoading(true);
-    try {
-      // 1. Open the provider's official dialog and get a real OAuth token.
-      const providerToken = await getSocialToken(provider);
-      // 2. Verify it server-side and persist the backend-issued session JWT.
-      const auth = await socialLogin({ provider, token: providerToken });
-      const dest = location.state?.from || homePathFor(auth?.user);
-      navigate(dest, { replace: true });
-    } catch (err) {
-      setError(err.message || "Could not sign in with that provider.");
-    } finally {
-      setLoading(false);
-    }
-  };
+
+const socialAuth = async (provider) => {
+  if (loading) return;
+
+  setError(null);
+  setLoading(true);
+
+  try {
+    console.log("[Social Login] Starting:", provider);
+
+    // Step 1: Get OAuth token
+    console.log("[Social Login] Opening provider popup...");
+
+    const providerToken = await getSocialToken(provider);
+
+    // Never log the actual token
+    console.log("[Social Login] Provider token received");
+
+    // Step 2: Authenticate with Spring Boot
+    console.log("[Social Login] Sending token to backend...");
+
+    const auth = await socialLogin({
+      provider,
+      token: providerToken,
+    });
+
+    console.log("[Social Login] Backend authentication successful");
+
+    // Step 3: Redirect by role
+    const dest =
+      location.state?.from || homePathFor(auth?.user);
+
+    navigate(dest, { replace: true });
+  } catch (err) {
+    console.error("[Social Login] Failed:", err);
+    setError(err.message || "Social login failed.");
+  } finally {
+    console.log("[Social Login] Finished");
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
