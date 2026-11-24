@@ -49,7 +49,7 @@ function loadGoogleScript() {
 // FACEBOOK SDK
 // =========================
 
-function loadFacebookScript() {
+export function loadFacebookScript() {
   const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
 
   if (!appId) {
@@ -226,8 +226,8 @@ export async function getFacebookAccessToken() {
         },
         { scope: "public_profile,email" }
       );
-    } catch (error) {
-      finish(error);
+    } catch {
+      finish(new Error("Could not open Facebook sign-in."));
     }
   });
 }

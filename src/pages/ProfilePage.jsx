@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useBookings } from "../hooks/useResource";
 import { useToast } from "../components/ui/Toast";
 import Icon from "../components/ui/Icon";
+import ConnectedAccounts from "../components/profile/ConnectedAccounts";
 import TripCard from "../components/profile/TripCard";
 import { Modal } from "../components/ui/Modal";
 import SmartImage from "../components/ui/SmartImage";
@@ -31,7 +32,7 @@ function initials(name) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, isDemo, logout, updateUser } = useAuth();
+  const { user, token, isDemo, logout, updateUser } = useAuth();
   const toast = useToast();
   const { items: bookings, loading } = useBookings();
 
@@ -378,6 +379,9 @@ export default function ProfilePage() {
 
           {/* Main Section Content */}
           <main className="min-w-0">
+            {tab === "profile" && (
+              <ConnectedAccounts key={token} sessionToken={isDemo ? null : token} onSignOut={logout} />
+            )}
             
             {/* ======================= TAB: PROFILE DETAILS ======================= */}
             {tab === "profile" && (

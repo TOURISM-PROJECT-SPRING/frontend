@@ -16,6 +16,14 @@ export const authService = {
     const response = await axiosClient.post(`/auth/social/${provider}`, { token });
     return response.data;
   },
+  getConnectedAccounts: async (expectedSessionToken) => {
+    const response = await axiosClient.get('/auth/social/connections', { expectedSessionToken });
+    return response.data;
+  },
+  linkFacebook: async (token, expectedSessionToken) => {
+    const response = await axiosClient.post('/auth/social/facebook/link', { token }, { expectedSessionToken });
+    return response.data;
+  },
   register: async ({ fullname, fullName, username, email, password } = {}) => {
     const response = await axiosClient.post('/auth/register', {
       fullname: fullname || fullName,
@@ -32,8 +40,10 @@ export const authService = {
     });
     return response.data;
   },
-  logout: async () => {
-    const response = await axiosClient.post('/auth/logout');
+  logout: async (sessionToken) => {
+    const response = await axiosClient.post('/auth/logout', undefined, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
     return response.data;
   },
   updateProfile: async ({ fullname, email, phone, address } = {}) => {

@@ -242,7 +242,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     // Best-effort server logout; never block the local sign-out.
     if (token && token !== "demo-token") {
-      authService.logout().catch(() => {});
+      authService.logout(token).catch(() => {});
     }
     setAvatarUrl("");
     persist(null, null);
